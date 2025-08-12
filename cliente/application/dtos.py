@@ -1,0 +1,35 @@
+from dataclasses import dataclass
+from typing import Optional
+from decimal import Decimal
+
+
+@dataclass
+class CrearClienteRequest:
+    nombre: str
+    rif: str
+    telefono: Optional[str] = None
+    email: Optional[str] = None
+    direccion: Optional[str] = None
+
+
+@dataclass
+class ClienteResponse:
+    id: str
+    nombre: str
+    rif: str
+    telefono: Optional[str]
+    email: Optional[str]
+    direccion: Optional[str]
+
+
+@dataclass
+class ResumenClienteResponse:
+    id: str
+    nombre: str
+    rif: str
+    total_vencido: Decimal
+    total_por_vencer: Decimal
+    total_creditos: Decimal
+    total_neto: Decimal
+    cantidad_documentos: int
+    dias_promedio_vencimiento: int

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cobranzas App</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#EF4444">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Cobranzas">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/icon-16x16.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#EF4444',
+                        secondary: '#64748B',
+                        accent: '#F97316',
+                        success: '#10B981',
+                        warning: '#F59E0B',
+                        error: '#EF4444'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div id="app" class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-primary text-white shadow-lg">
+            <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+                <div class="flex items-center">
+                    <button id="backBtn" class="mr-3 text-white hover:text-gray-200 hidden">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1 id="pageTitle" class="text-xl font-bold">Situación</h1>
+                </div>
+                <button class="text-white hover:text-gray-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-6 pb-20">
+            <!-- Dashboard View -->
+            <div id="dashboard-view" class="space-y-6">
+                <!-- Progress Indicators -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">¿CÓMO VAMOS?</h2>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Van</span>
+                            <span class="text-sm font-medium">144k jun</span>
+                            <span class="text-sm font-medium">155k may</span>
+                            <span class="text-sm text-gray-600">Faltan</span>
+                        </div>
+                        <div class="relative">
+                            <div class="w-full bg-gray-200 rounded-full h-4">
+                                <div class="bg-blue-500 h-4 rounded-full" style="width: 48%"></div>
+                            </div>
+                            <div class="flex justify-between text-sm mt-1">
+                                <span class="text-gray-600">69.4k</span>
+                                <span class="text-gray-600">85.8k</span>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <div class="w-full bg-gray-200 rounded-full h-4">
+                                <div class="bg-orange-500 h-4 rounded-full" style="width: 75%"></div>
+                            </div>
+                            <div class="flex justify-between text-sm mt-1">
+                                <span class="text-gray-600">25d</span>
+                                <span class="text-gray-600">6d</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cuentas por Cobrar -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">CUENTAS POR COBRAR</h2>
+                    <div class="grid grid-cols-3 gap-4 mb-4">
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500">Vencido</p>
+                            <p class="text-xl font-semibold text-primary" id="totalVencido">82,224.59</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500">Cantidad</p>
+                            <p class="text-xl font-semibold text-accent" id="cantidadVencido">87</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500">Días</p>
+                            <p class="text-xl font-semibold text-accent" id="diasVencido">38</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4 mb-4">
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500">Total</p>
+                            <p class="text-xl font-semibold text-gray-700" id="totalGeneral">104,949.48</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500">Cantidad</p>
+                            <p class="text-xl font-semibold text-gray-700" id="cantidadTotal">129</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500">Días</p>
+                            <p class="text-xl font-semibold text-gray-700" id="diasTotal">29</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500">Neto</p>
+                            <p class="text-xl font-semibold text-gray-700" id="totalNeto">100,771.82</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500">Créditos</p>
+                            <p class="text-xl font-semibold text-success" id="totalCreditos">4,177.66</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Documentos Pendientes -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-gray-800">Documentos pendientes</h2>
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="space-y-6">
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-lg font-semibold text-gray-800 mb-4">VENTAS</h2>
+                        <canvas id="ventasChart" height="200"></canvas>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-lg font-semibold text-gray-800 mb-4">COBROS</h2>
+                        <canvas id="cobrosChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clientes View -->
+            <div id="clientes-view" class="hidden">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Lista de Clientes</h2>
+                    <div id="clientesList" class="space-y-4">
+                        <!-- Clientes will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cliente Detail View -->
+            <div id="cliente-detail-view" class="hidden">
+                <!-- Client details will be loaded here -->
+            </div>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2">
+            <div class="flex justify-around">
+                <button class="nav-item flex flex-col items-center py-2 px-3 rounded-lg transition-colors active" data-view="dashboard">
+                    <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
+                    </svg>
+                    <span class="text-xs">Situación</span>
+                </button>
+                <button class="nav-item flex flex-col items-center py-2 px-3 rounded-lg transition-colors" data-view="clientes">
+                    <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>
+                    </svg>
+                    <span class="text-xs">Clientes</span>
+                </button>
+                <button class="nav-item flex flex-col items-center py-2 px-3 rounded-lg transition-colors" data-view="tareas">
+                    <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="text-xs">Tareas</span>
+                </button>
+                <button class="nav-item flex flex-col items-center py-2 px-3 rounded-lg transition-colors" data-view="eventos">
+                    <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="text-xs">Eventos</span>
+                </button>
+                <button class="nav-item flex flex-col items-center py-2 px-3 rounded-lg transition-colors" data-view="mas">
+                    <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
+                    </svg>
+                    <span class="text-xs">Más</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script src="/static/js/pwa.js"></script>
+</body>
+</html>

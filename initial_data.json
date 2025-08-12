@@ -1,0 +1,79 @@
+[
+{
+    "model": "cliente.clientemodel",
+    "pk": "CLI_J502107347",
+    "fields": {
+        "nombre": "GOLFEADOS EN BANDA, C.A.",
+        "rif": "J502107347",
+        "telefono": "+58-414-1234567",
+        "email": "contacto@golfeados.com",
+        "direccion": "Caracas, Venezuela",
+        "created_at": "2025-01-01T10:00:00Z",
+        "updated_at": "2025-01-01T10:00:00Z"
+    }
+},
+{
+    "model": "cobranza.documentomodel", 
+    "pk": "DOC_AJPM1069833",
+    "fields": {
+        "cliente_id": "CLI_J502107347",
+        "numero": "AJPM1069833",
+        "tipo": "FACTURA",
+        "monto": "256.49",
+        "fecha_emision": "2025-04-16",
+        "fecha_vencimiento": "2025-04-16",
+        "estado": "VENCIDO",
+        "descripcion": "Factura de servicios",
+        "created_at": "2025-04-16T10:00:00Z",
+        "updated_at": "2025-04-16T10:00:00Z"
+    }
+},
+{
+    "model": "cobranza.documentomodel",
+    "pk": "DOC_69833", 
+    "fields": {
+        "cliente_id": "CLI_J502107347",
+        "numero": "69833",
+        "tipo": "FACTURA",
+        "monto": "1859.57",
+        "fecha_emision": "2025-04-16",
+        "fecha_vencimiento": "2025-05-01",
+        "estado": "VENCIDO",
+        "descripcion": "Factura de productos",
+        "created_at": "2025-04-16T10:00:00Z",
+        "updated_at": "2025-04-16T10:00:00Z"
+    }
+},
+{
+    "model": "cobranza.documentomodel",
+    "pk": "DOC_AJPM1070804",
+    "fields": {
+        "cliente_id": "CLI_J502107347", 
+        "numero": "AJPM1070804",
+        "tipo": "FACTURA",
+        "monto": "121.00",
+        "fecha_emision": "2025-05-03",
+        "fecha_vencimiento": "2025-05-03",
+        "estado": "VENCIDO",
+        "descripcion": "Factura de servicios adicionales",
+        "created_at": "2025-05-03T10:00:00Z",
+        "updated_at": "2025-05-03T10:00:00Z"
+    }
+},
+{
+    "model": "cobranza.documentomodel",
+    "pk": "DOC_CREDITO001",
+    "fields": {
+        "cliente_id": "CLI_J502107347",
+        "numero": "CREDITO001", 
+        "tipo": "CREDITO",
+        "monto": "400.29",
+        "fecha_emision": "2025-06-01",
+        "fecha_vencimiento": "2025-06-01",
+        "estado": "PENDIENTE",
+        "descripcion": "Nota de crédito",
+        "created_at": "2025-06-01T10:00:00Z",
+        "updated_at": "2025-06-01T10:00:00Z"
+    }
+}
+]

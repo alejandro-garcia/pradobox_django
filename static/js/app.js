@@ -2,12 +2,24 @@ class CobranzasApp {
     constructor() {
         this.currentView = 'dashboard';
         this.apiBaseUrl = '/api';
+        this.offlineMode = false;
         this.init();
     }
 
     init() {
+        this.initializeIndexedDB();
         this.setupEventListeners();
         this.loadDashboard();
+        this.updateStorageInfo();
+    }
+
+    async initializeIndexedDB() {
+        try {
+            await window.indexedDBService.init();
+            console.log('IndexedDB initialized successfully');
+        } catch (error) {
+            console.error('Error initializing IndexedDB:', error);
+        }
     }
 
     setupEventListeners() {
@@ -23,6 +35,44 @@ class CobranzasApp {
         document.getElementById('backBtn').addEventListener('click', () => {
             this.navigateTo('dashboard');
         });
+
+        // Import/Sync functionality
+        this.setupImportEventListeners();
+    }
+
+    setupImportEventListeners() {
+        // Test connection button
+        document.getElementById('testConnectionBtn').addEventListener('click', async () => {
+            await this.testSQLConnection();
+        });
+
+        // Start import button
+        document.getElementById('startImportBtn').addEventListener('click', async () => {
+            await this.startImport();
+        });
+
+        // Clear data button
+        document.getElementById('clearDataBtn').addEventListener('click', async () => {
+            if (confirm('¿Está seguro de que desea eliminar todos los datos locales?')) {
+                await this.clearLocalData();
+            }
+        });
+
+        // Import progress listener
+        window.addEventListener('importProgress', (event) => {
+            this.updateImportProgress(event.detail);
+        });
+
+        // Offline mode toggle
+        document.getElementById('offlineMode').addEventListener('change', (e) => {
+            this.offlineMode = e.target.checked;
+            localStorage.setItem('offlineMode', this.offlineMode);
+        });
+
+        // Load saved settings
+        const savedOfflineMode = localStorage.getItem('offlineMode') === 'true';
+        document.getElementById('offlineMode').checked = savedOfflineMode;
+        this.offlineMode = savedOfflineMode;
     }
 
     navigateTo(view) {
@@ -78,15 +128,25 @@ class CobranzasApp {
             case 'clientes':
                 this.loadClientes();
                 break;
+            case 'mas':
+                this.updateStorageInfo();
+                break;
             // Add other views as needed
         }
     }
 
     async loadDashboard() {
         try {
-            debugger;
-            const response = await fetch(`${this.apiBaseUrl}/dashboard/`);
-            const data = await response.json();
+            let data;
+            
+            if (this.offlineMode) {
+                // Load from IndexedDB
+                data = await this.loadDashboardFromIndexedDB();
+            } else {
+                // Load from API
+                const response = await fetch(`${this.apiBaseUrl}/dashboard/`);
+                data = await response.json();
+            }
 
             // Update dashboard data
             document.getElementById('totalVencido').textContent = this.formatCurrency(data.situacion.total_vencido);
@@ -108,10 +168,50 @@ class CobranzasApp {
         }
     }
 
+    async loadDashboardFromIndexedDB() {
+        const resumen = await window.indexedDBService.getResumenCobranzas();
+        
+        return {
+            situacion: {
+                total_vencido: resumen.total_vencido,
+                cantidad_documentos_vencidos: resumen.cantidad_vencidos,
+                dias_promedio_vencimiento: resumen.dias_promedio_vencimiento,
+                total_neto: resumen.total_vencido + resumen.total_por_vencer + resumen.total_creditos,
+                cantidad_documentos_por_vencer: resumen.cantidad_por_vencer,
+                total_creditos: resumen.total_creditos
+            },
+            ventas_por_mes: [
+                { mes: 'may', monto: 155000 },
+                { mes: 'jun', monto: 144000 },
+                { mes: 'jul', monto: 69400 }
+            ],
+            cobros_por_mes: [
+                { mes: 'may', monto: 188000 },
+                { mes: 'jun', monto: 185000 },
+                { mes: 'jul', monto: 71400 }
+            ]
+        };
+    }
+
     async loadClientes() {
         try {
-            const response = await fetch(`${this.apiBaseUrl}/clientes/`);
-            const clientes = await response.json();
+            let clientes;
+            
+            if (this.offlineMode) {
+                clientes = await window.indexedDBService.getClientes();
+                // Transform to match API format
+                clientes = clientes.map(cliente => ({
+                    id: cliente.co_cli,
+                    nombre: cliente.cli_des,
+                    rif: cliente.rif,
+                    telefono: cliente.telefonos,
+                    email: cliente.email,
+                    direccion: cliente.direc1
+                }));
+            } else {
+                const response = await fetch(`${this.apiBaseUrl}/clientes/`);
+                clientes = await response.json();
+            }
 
             const clientesList = document.getElementById('clientesList');
             clientesList.innerHTML = '';
@@ -124,6 +224,100 @@ class CobranzasApp {
         } catch (error) {
             console.error('Error loading clientes:', error);
             this.showError('Error cargando los clientes');
+        }
+    }
+
+    async testSQLConnection() {
+        const connectionConfig = this.getSQLConnectionConfig();
+        const testBtn = document.getElementById('testConnectionBtn');
+        const importBtn = document.getElementById('startImportBtn');
+        
+        testBtn.disabled = true;
+        testBtn.textContent = 'Probando...';
+        
+        try {
+            const isConnected = await window.importService.testConnection(connectionConfig);
+            
+            if (isConnected) {
+                this.showSuccess('Conexión exitosa');
+                importBtn.disabled = false;
+            } else {
+                this.showError('Error de conexión. Verifique los datos.');
+                importBtn.disabled = true;
+            }
+        } catch (error) {
+            this.showError('Error probando conexión: ' + error.message);
+            importBtn.disabled = true;
+        } finally {
+            testBtn.disabled = false;
+            testBtn.textContent = 'Probar Conexión';
+        }
+    }
+
+    async startImport() {
+        const connectionConfig = this.getSQLConnectionConfig();
+        const importBtn = document.getElementById('startImportBtn');
+        const progressDiv = document.getElementById('importProgress');
+        
+        importBtn.disabled = true;
+        importBtn.textContent = 'Importando...';
+        progressDiv.classList.remove('hidden');
+        
+        try {
+            const result = await window.importService.importFromMSSQL(connectionConfig);
+            
+            this.showSuccess(`Importación completada: ${result.clientes_imported} clientes, ${result.documentos_imported} documentos`);
+            await this.updateStorageInfo();
+            
+        } catch (error) {
+            this.showError('Error durante la importación: ' + error.message);
+        } finally {
+            importBtn.disabled = false;
+            importBtn.textContent = 'Iniciar Importación';
+            progressDiv.classList.add('hidden');
+        }
+    }
+
+    getSQLConnectionConfig() {
+        return {
+            server: document.getElementById('sqlServer').value,
+            database: document.getElementById('sqlDatabase').value,
+            username: document.getElementById('sqlUsername').value,
+            password: document.getElementById('sqlPassword').value
+        };
+    }
+
+    updateImportProgress(progress) {
+        document.getElementById('progressText').textContent = progress.step;
+        document.getElementById('progressPercentage').textContent = `${progress.percentage}%`;
+        document.getElementById('progressBar').style.width = `${progress.percentage}%`;
+    }
+
+    async updateStorageInfo() {
+        try {
+            const info = await window.indexedDBService.getStorageInfo();
+            
+            document.getElementById('clientesCount').textContent = info.clientes_count;
+            document.getElementById('documentosCount').textContent = info.documentos_count;
+            
+            if (info.last_sync) {
+                const date = new Date(info.last_sync);
+                document.getElementById('lastSync').textContent = date.toLocaleString();
+            } else {
+                document.getElementById('lastSync').textContent = 'Nunca';
+            }
+        } catch (error) {
+            console.error('Error updating storage info:', error);
+        }
+    }
+
+    async clearLocalData() {
+        try {
+            await window.indexedDBService.clearAllData();
+            await this.updateStorageInfo();
+            this.showSuccess('Datos locales eliminados correctamente');
+        } catch (error) {
+            this.showError('Error eliminando datos locales: ' + error.message);
         }
     }
 
@@ -252,11 +446,16 @@ class CobranzasApp {
         const ctx = document.getElementById('ventasChart').getContext('2d');
         
         // Destroy existing chart if it exists
-        if (window.ventasChart) {
+        // if (window.ventasChart != null) {
+        //     window.ventasChart.destroy();
+        // }
+
+        if(window.ventasChart instanceof Chart)
+        {
             window.ventasChart.destroy();
         }
 
-        window.ventasChart = new Chat.Chart(ctx, {
+        window.ventasChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: data.map(item => item.mes),
@@ -293,7 +492,7 @@ class CobranzasApp {
         const ctx = document.getElementById('cobrosChart').getContext('2d');
         
         // Destroy existing chart if it exists
-        if (window.cobrosChart) {
+        if (window.cobrosChart instanceof Chart) {
             window.cobrosChart.destroy();
         }
 
@@ -337,16 +536,25 @@ class CobranzasApp {
         }).format(amount);
     }
 
+    showSuccess(message) {
+        this.showNotification(message, 'success');
+    }
+
     showError(message) {
+        this.showNotification(message, 'error');
+    }
+
+    showNotification(message, type = 'error') {
         // Simple error notification
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'fixed top-4 left-4 right-4 bg-red-500 text-white p-4 rounded-lg shadow-lg z-50';
-        errorDiv.textContent = message;
+        const notificationDiv = document.createElement('div');
+        const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+        notificationDiv.className = `fixed top-4 left-4 right-4 ${bgColor} text-white p-4 rounded-lg shadow-lg z-50`;
+        notificationDiv.textContent = message;
         
-        document.body.appendChild(errorDiv);
+        document.body.appendChild(notificationDiv);
         
         setTimeout(() => {
-            errorDiv.remove();
+            notificationDiv.remove();
         }, 3000);
     }
 }

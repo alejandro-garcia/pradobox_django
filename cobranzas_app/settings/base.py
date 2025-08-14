@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'cliente',
     'cobranza',
     'dashboard',
+    'import_service',
 ]
 
 MIDDLEWARE = [

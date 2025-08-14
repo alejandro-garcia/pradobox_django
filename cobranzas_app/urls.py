@@ -8,5 +8,6 @@ urlpatterns = [
     path('api/clientes/', include('cliente.infrastructure.urls')),
     path('api/cobranzas/', include('cobranza.infrastructure.urls')),
     path('api/dashboard/', include('dashboard.infrastructure.urls')),
+    path('api/import/', include('import_service.urls')),
     path('', TemplateView.as_view(template_name='index.html'), name='home'),
 ]

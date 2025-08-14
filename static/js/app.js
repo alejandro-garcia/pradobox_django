@@ -3,6 +3,12 @@ class CobranzasApp {
         this.currentView = 'dashboard';
         this.apiBaseUrl = '/api';
         this.offlineMode = false;
+        this.charts = {
+            ventas: null,
+            cobros: null
+        };
+        this.dashboardLoaded = false;
+        this.sqlConfig = null;
         this.init();
     }
 
@@ -36,18 +42,19 @@ class CobranzasApp {
             this.navigateTo('dashboard');
         });
 
+        // Refresh button
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            this.refreshDashboard();
+        });
+
         // Import/Sync functionality
         this.setupImportEventListeners();
     }
 
     setupImportEventListeners() {
-        // Test connection button
-        document.getElementById('testConnectionBtn').addEventListener('click', async () => {
-            await this.testSQLConnection();
-        });
-
         // Start import button
         document.getElementById('startImportBtn').addEventListener('click', async () => {
+            debugger;
             await this.startImport();
         });
 
@@ -67,6 +74,11 @@ class CobranzasApp {
         document.getElementById('offlineMode').addEventListener('change', (e) => {
             this.offlineMode = e.target.checked;
             localStorage.setItem('offlineMode', this.offlineMode);
+            
+            // If we're on dashboard, refresh to show appropriate data
+            if (this.currentView === 'dashboard') {
+                this.refreshDashboard();
+            }
         });
 
         // Load saved settings
@@ -118,6 +130,11 @@ class CobranzasApp {
             backBtn.classList.remove('hidden');
         }
 
+        // Clean up charts when leaving dashboard
+        if (this.currentView === 'dashboard' && view !== 'dashboard') {
+            this.destroyCharts();
+        }
+
         this.currentView = view;
 
         // Load view data
@@ -135,8 +152,26 @@ class CobranzasApp {
         }
     }
 
+    async refreshDashboard() {
+        // Reset dashboard state to allow reloading
+        this.dashboardLoaded = false;
+        this.loadingDashboard = false;
+        
+        // Clear existing charts
+        this.destroyCharts();
+        
+        // Reload dashboard
+        await this.loadDashboard();
+    }
+
     async loadDashboard() {
         try {
+            // Evitar múltiples cargas simultáneas y cargas innecesarias
+            if (this.loadingDashboard || this.dashboardLoaded) {
+                return;
+            }
+            this.loadingDashboard = true;
+            
             let data;
             
             if (this.offlineMode) {
@@ -158,13 +193,21 @@ class CobranzasApp {
             document.getElementById('totalNeto').textContent = this.formatCurrency(data.situacion.total_neto);
             document.getElementById('totalCreditos').textContent = this.formatCurrency(Math.abs(data.situacion.total_creditos));
 
-            // Create charts
-            this.createVentasChart(data.ventas_por_mes);
-            this.createCobrosChart(data.cobros_por_mes);
+            // Create charts only if they don't exist
+            if (!this.charts.ventas) {
+                this.createVentasChart(data.ventas_por_mes);
+            }
+            if (!this.charts.cobros) {
+                this.createCobrosChart(data.cobros_por_mes);
+            }
+
+            this.dashboardLoaded = true;
 
         } catch (error) {
             console.error('Error loading dashboard:', error);
             this.showError('Error cargando el dashboard');
+        } finally {
+            this.loadingDashboard = false;
         }
     }
 
@@ -227,35 +270,7 @@ class CobranzasApp {
         }
     }
 
-    async testSQLConnection() {
-        const connectionConfig = this.getSQLConnectionConfig();
-        const testBtn = document.getElementById('testConnectionBtn');
-        const importBtn = document.getElementById('startImportBtn');
-        
-        testBtn.disabled = true;
-        testBtn.textContent = 'Probando...';
-        
-        try {
-            const isConnected = await window.importService.testConnection(connectionConfig);
-            
-            if (isConnected) {
-                this.showSuccess('Conexión exitosa');
-                importBtn.disabled = false;
-            } else {
-                this.showError('Error de conexión. Verifique los datos.');
-                importBtn.disabled = true;
-            }
-        } catch (error) {
-            this.showError('Error probando conexión: ' + error.message);
-            importBtn.disabled = true;
-        } finally {
-            testBtn.disabled = false;
-            testBtn.textContent = 'Probar Conexión';
-        }
-    }
-
     async startImport() {
-        const connectionConfig = this.getSQLConnectionConfig();
         const importBtn = document.getElementById('startImportBtn');
         const progressDiv = document.getElementById('importProgress');
         
@@ -264,7 +279,7 @@ class CobranzasApp {
         progressDiv.classList.remove('hidden');
         
         try {
-            const result = await window.importService.importFromMSSQL(connectionConfig);
+            const result = await window.importService.importFromMSSQL();
             
             this.showSuccess(`Importación completada: ${result.clientes_imported} clientes, ${result.documentos_imported} documentos`);
             await this.updateStorageInfo();
@@ -276,15 +291,6 @@ class CobranzasApp {
             importBtn.textContent = 'Iniciar Importación';
             progressDiv.classList.add('hidden');
         }
-    }
-
-    getSQLConnectionConfig() {
-        return {
-            server: document.getElementById('sqlServer').value,
-            database: document.getElementById('sqlDatabase').value,
-            username: document.getElementById('sqlUsername').value,
-            password: document.getElementById('sqlPassword').value
-        };
     }
 
     updateImportProgress(progress) {
@@ -443,19 +449,24 @@ class CobranzasApp {
     }
 
     createVentasChart(data) {
-        const ctx = document.getElementById('ventasChart').getContext('2d');
+        console.log("ejecutando createVentasChart");
         
-        // Destroy existing chart if it exists
-        // if (window.ventasChart != null) {
-        //     window.ventasChart.destroy();
-        // }
-
-        if(window.ventasChart instanceof Chart)
-        {
-            window.ventasChart.destroy();
+        // Verificar si ya existe un gráfico
+        if (this.charts.ventas) {
+            console.log("Gráfico de ventas ya existe, actualizando datos");
+            this.charts.ventas.data.labels = data.map(item => item.mes);
+            this.charts.ventas.data.datasets[0].data = data.map(item => item.monto);
+            this.charts.ventas.update();
+            return;
         }
 
-        window.ventasChart = new Chart(ctx, {
+        const ctx = document.getElementById('ventasChart');
+        if (!ctx) {
+            console.error('Canvas ventasChart no encontrado');
+            return;
+        }
+
+        this.charts.ventas = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: data.map(item => item.mes),
@@ -486,17 +497,29 @@ class CobranzasApp {
                 }
             }
         });
+        
+        console.log("Gráfico de ventas creado exitosamente");
     }
 
     createCobrosChart(data) {
-        const ctx = document.getElementById('cobrosChart').getContext('2d');
+        console.log("ejecutando createCobrosChart");
         
-        // Destroy existing chart if it exists
-        if (window.cobrosChart instanceof Chart) {
-            window.cobrosChart.destroy();
+        // Verificar si ya existe un gráfico
+        if (this.charts.cobros) {
+            console.log("Gráfico de cobros ya existe, actualizando datos");
+            this.charts.cobros.data.labels = data.map(item => item.mes);
+            this.charts.cobros.data.datasets[0].data = data.map(item => item.monto);
+            this.charts.cobros.update();
+            return;
         }
 
-        window.cobrosChart = new Chart(ctx, {
+        const ctx = document.getElementById('cobrosChart');
+        if (!ctx) {
+            console.error('Canvas cobrosChart no encontrado');
+            return;
+        }
+
+        this.charts.cobros = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: data.map(item => item.mes),
@@ -527,6 +550,21 @@ class CobranzasApp {
                 }
             }
         });
+        
+        console.log("Gráfico de cobros creado exitosamente");
+    }
+
+    // Método para limpiar gráficos cuando sea necesario
+    destroyCharts() {
+        if (this.charts.ventas) {
+            this.charts.ventas.destroy();
+            this.charts.ventas = null;
+        }
+        if (this.charts.cobros) {
+            this.charts.cobros.destroy();
+            this.charts.cobros = null;
+        }
+        this.dashboardLoaded = false;
     }
 
     formatCurrency(amount) {

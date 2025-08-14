@@ -10,7 +10,7 @@ class ImportService {
         };
     }
 
-    async importFromMSSQL(connectionConfig) {
+    async importFromMSSQL() {
         if (this.isImporting) {
             throw new Error('Ya hay una importación en progreso');
         }
@@ -25,12 +25,12 @@ class ImportService {
 
             // Paso 1: Obtener documentos de MSSQL
             this.updateProgress('Obteniendo documentos...', 0, 100);
-            const documentos = await this.fetchDocumentosFromMSSQL(connectionConfig);
+            const documentos = await this.fetchDocumentosFromMSSQL();
             
             // Paso 2: Obtener clientes relacionados
             this.updateProgress('Obteniendo clientes...', 25, 100);
             const clientesCodes = [...new Set(documentos.map(doc => doc.co_cli))];
-            const clientes = await this.fetchClientesFromMSSQL(connectionConfig, clientesCodes);
+            const clientes = await this.fetchClientesFromMSSQL(clientesCodes);
 
             // Paso 3: Limpiar datos locales
             this.updateProgress('Limpiando datos locales...', 50, 100);
@@ -67,14 +67,13 @@ class ImportService {
         }
     }
 
-    async fetchDocumentosFromMSSQL(connectionConfig) {
+    async fetchDocumentosFromMSSQL() {
         const response = await fetch(`${this.apiBaseUrl}/import/documentos/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                connection: connectionConfig,
                 query: `
                     SELECT 
                         tipo_doc,
@@ -99,7 +98,7 @@ class ImportService {
         return await response.json();
     }
 
-    async fetchClientesFromMSSQL(connectionConfig, clientesCodes) {
+    async fetchClientesFromMSSQL(clientesCodes) {
         const codesString = clientesCodes.map(code => `'${code}'`).join(',');
         
         const response = await fetch(`${this.apiBaseUrl}/import/clientes/`, {
@@ -108,7 +107,6 @@ class ImportService {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                connection: connectionConfig,
                 query: `
                     SELECT 
                         co_cli,
@@ -152,24 +150,6 @@ class ImportService {
 
     isImportInProgress() {
         return this.isImporting;
-    }
-
-    async testConnection(connectionConfig) {
-        try {
-            const response = await fetch(`${this.apiBaseUrl}/import/test-connection/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ connection: connectionConfig })
-            });
-
-            const result = await response.json();
-            return result.success;
-        } catch (error) {
-            console.error('Error testing connection:', error);
-            return false;
-        }
     }
 }
 

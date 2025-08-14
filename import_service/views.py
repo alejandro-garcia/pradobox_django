@@ -4,35 +4,26 @@ from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 import json
+import os
+from decouple import config
 from .mssql_connector import MSSQLConnector
 
 
-@api_view(['POST'])
-@csrf_exempt
-def test_connection_view(request):
-    """Prueba la conexión a SQL Server"""
-    try:
-        connection_config = request.data.get('connection', {})
-        
-        if not all(key in connection_config for key in ['server', 'database', 'username', 'password']):
-            return Response({
-                'success': False,
-                'error': 'Faltan parámetros de conexión requeridos'
-            }, status=status.HTTP_400_BAD_REQUEST)
 
-        connector = MSSQLConnector(connection_config)
-        success = connector.test_connection()
+def get_sql_config_view():
+    """Obtiene la configuración de SQL Server desde las variables de entorno"""
+    try:
+        sql_config = {
+            'server': config('DATABASE_HOST', default=''),
+            'database': config('DATABASE_NAME', default=''),
+            'username': config('DATABASE_USER', default=''),
+            'password': config('DATABASE_PASSWORD', default='')
+        }
         
-        return Response({
-            'success': success,
-            'message': 'Conexión exitosa' if success else 'Error de conexión'
-        })
+        return sql_config
 
     except Exception as e:
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return None
 
 
 @api_view(['POST'])
@@ -40,15 +31,12 @@ def test_connection_view(request):
 def import_documentos_view(request):
     """Importa documentos desde SQL Server"""
     try:
-        connection_config = request.data.get('connection', {})
-        custom_query = request.data.get('query')
-        
-        if not connection_config:
-            return Response({
-                'error': 'Configuración de conexión requerida'
-            }, status=status.HTTP_400_BAD_REQUEST)
 
-        with MSSQLConnector(connection_config) as connector:
+        # connection_config = get_sql_config_view()
+        custom_query = request.data.get('query')
+
+
+        with MSSQLConnector() as connector:
             if custom_query:
                 documentos = connector.execute_query(custom_query)
             else:
@@ -67,16 +55,11 @@ def import_documentos_view(request):
 def import_clientes_view(request):
     """Importa clientes desde SQL Server"""
     try:
-        connection_config = request.data.get('connection', {})
         custom_query = request.data.get('query')
         cliente_codes = request.data.get('cliente_codes', [])
         
-        if not connection_config:
-            return Response({
-                'error': 'Configuración de conexión requerida'
-            }, status=status.HTTP_400_BAD_REQUEST)
 
-        with MSSQLConnector(connection_config) as connector:
+        with MSSQLConnector() as connector:
             if custom_query:
                 clientes = connector.execute_query(custom_query)
             else:
@@ -95,15 +78,10 @@ def import_clientes_view(request):
 def execute_custom_query_view(request):
     """Ejecuta una consulta personalizada"""
     try:
-        connection_config = request.data.get('connection', {})
         query = request.data.get('query', '')
         
-        if not connection_config or not query:
-            return Response({
-                'error': 'Configuración de conexión y consulta requeridas'
-            }, status=status.HTTP_400_BAD_REQUEST)
 
-        with MSSQLConnector(connection_config) as connector:
+        with MSSQLConnector() as connector:
             results = connector.execute_query(query)
             
             return Response({

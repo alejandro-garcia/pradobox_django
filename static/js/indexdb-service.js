@@ -77,6 +77,9 @@ class IndexedDBService {
     }
 
     async getDocumentos(filtros = {}) {
+        if (!this.db) {
+            await this.init();
+        }
         const transaction = this.db.transaction(['documentos'], 'readonly');
         const store = transaction.objectStore('documentos');
         

@@ -4,12 +4,16 @@ from django.conf import settings
 
 
 class MSSQLConnector:
-    def __init__(self, connection_config: Dict[str, str]):
-        self.server = connection_config.get('server')
-        self.database = connection_config.get('database')
-        self.username = connection_config.get('username')
-        self.password = connection_config.get('password')
-        self.driver = connection_config.get('driver', '{ODBC Driver 17 for SQL Server}')
+    def __init__(self):
+        from decouple import config
+        print(config('DATABASE_HOST', default=''))
+    
+    
+        self.server = config('DATABASE_HOST', default='')
+        self.database = config('DATABASE_NAME', default='')
+        self.username = config('DATABASE_USER', default='')
+        self.password = config('DATABASE_PASSWORD', default='')
+        self.driver = config('DATABASE_DRIVER', default='{ODBC Driver 17 for SQL Server}')
         self.connection = None
 
     def connect(self):

@@ -55,13 +55,24 @@ def import_documentos_view(request):
 def import_clientes_view(request):
     """Importa clientes desde SQL Server"""
     try:
-        custom_query = request.data.get('query')
-        cliente_codes = request.data.get('cliente_codes', [])
+        #custom_query = request.data.get('query')
+        cliente_codes = request.data.get('list_codes', [])
+        query = """
+            SELECT 
+                co_cli,
+                cli_des,
+                rif,
+                telefonos,
+                email,
+                direc1,
+                inactivo
+            FROM clientes 
+            ORDER BY cli_des
+        """
         
-
         with MSSQLConnector() as connector:
-            if custom_query:
-                clientes = connector.execute_query(custom_query)
+            if len(cliente_codes) == 0:
+                clientes = connector.execute_query(query)
             else:
                 clientes = connector.get_clientes(cliente_codes)
             

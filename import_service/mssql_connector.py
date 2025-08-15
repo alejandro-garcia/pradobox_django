@@ -117,10 +117,9 @@ class MSSQLConnector:
                 rif,
                 telefonos,
                 email,
-                direc1,
-                inactivo
+                direccion
             FROM clientes 
-            WHERE inactivo = 0 AND co_cli IN ('{codes_string}')
+            WHERE co_cli IN ('{codes_string}')
             ORDER BY cli_des
         """
         return self.execute_query(query)

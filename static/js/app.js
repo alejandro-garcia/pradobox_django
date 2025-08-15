@@ -249,7 +249,7 @@ class CobranzasApp {
                     rif: cliente.rif,
                     telefono: cliente.telefonos,
                     email: cliente.email,
-                    direccion: cliente.direc1
+                    direccion: cliente.direccion
                 }));
             } else {
                 const response = await fetch(`${this.apiBaseUrl}/clientes/`);
@@ -351,6 +351,7 @@ class CobranzasApp {
 
     async showClienteDetail(clienteId) {
         try {
+            debugger;
             const [clienteResponse, resumenResponse] = await Promise.all([
                 fetch(`${this.apiBaseUrl}/clientes/${clienteId}/`),
                 fetch(`${this.apiBaseUrl}/clientes/${clienteId}/resumen/`)

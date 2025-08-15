@@ -100,13 +100,10 @@ class ImportService {
 
     async fetchClientesFromMSSQL(clientesCodes) {
         const codesString = clientesCodes.map(code => `'${code}'`).join(',');
-        
-        const response = await fetch(`${this.apiBaseUrl}/import/clientes/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
+
+        /*
+        body: JSON.stringify({
+                list_codes: ${codesString}
                 query: `
                     SELECT 
                         co_cli,
@@ -121,6 +118,14 @@ class ImportService {
                     ORDER BY cli_des
                 `
             })
+                */
+        
+        const response = await fetch(`${this.apiBaseUrl}/import/clientes/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ list_codes: codesString })
         });
 
         if (!response.ok) {

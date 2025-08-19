@@ -27,20 +27,11 @@ def get_sql_config_view():
 
 
 @api_view(['POST'])
-@csrf_exempt
 def import_documentos_view(request):
     """Importa documentos desde SQL Server"""
     try:
-
-        # connection_config = get_sql_config_view()
-        custom_query = request.data.get('query')
-
-
         with MSSQLConnector() as connector:
-            if custom_query:
-                documentos = connector.execute_query(custom_query)
-            else:
-                documentos = connector.get_documentos_cc()
+            documentos = connector.get_documentos_cc()
             
             return Response(documentos)
 

@@ -9,14 +9,39 @@ class CobranzasApp {
         };
         this.dashboardLoaded = false;
         this.sqlConfig = null;
-        this.init();
+
+        // Escuchar cambios de autenticación
+        window.addEventListener('authStateChanged', (event) => {
+            if (event.detail.authenticated) {
+                this.init();
+            } else {
+                this.initialized = false;
+            }
+        });
+        
+        // Verificar autenticación e inicializar
+        this.checkAuthAndInit();
+        //this.init();
+    }
+
+    async checkAuthAndInit() {
+        // Esperar a que el servicio de auth se inicialice
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        if (window.authService.requireAuth()) {
+            this.init();
+        }
     }
 
     init() {
+        if (this.initialized) return;
+        this.initialized = true;
+        
         this.initializeIndexedDB();
         this.setupEventListeners();
         this.loadDashboard();
         this.updateStorageInfo();
+        this.updateUserInfo();
     }
 
     async initializeIndexedDB() {
@@ -45,6 +70,13 @@ class CobranzasApp {
         // Refresh button
         document.getElementById('refreshBtn').addEventListener('click', () => {
             this.refreshDashboard();
+        });
+
+        // Logout button
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            if (confirm('¿Está seguro de que desea cerrar sesión?')) {
+                window.authService.logout();
+            }
         });
 
         // Import/Sync functionality
@@ -179,7 +211,15 @@ class CobranzasApp {
                 data = await this.loadDashboardFromIndexedDB();
             } else {
                 // Load from API
-                const response = await fetch(`${this.apiBaseUrl}/dashboard/`);
+                const response = await fetch(`${this.apiBaseUrl}/dashboard/`, {
+                    headers: window.authService.getAuthHeaders()
+                });
+                
+                if (response.status === 401) {
+                    window.authService.logout();
+                    return;
+                }
+                
                 data = await response.json();
             }
 
@@ -252,7 +292,15 @@ class CobranzasApp {
                     direccion: cliente.direccion
                 }));
             } else {
-                const response = await fetch(`${this.apiBaseUrl}/clientes/`);
+                const response = await fetch(`${this.apiBaseUrl}/clientes/`, {
+                    headers: window.authService.getAuthHeaders()
+                });
+                
+                if (response.status === 401) {
+                    window.authService.logout();
+                    return;
+                }
+                
                 clientes = await response.json();
             }
 
@@ -353,9 +401,18 @@ class CobranzasApp {
         try {
             debugger;
             const [clienteResponse, resumenResponse] = await Promise.all([
-                fetch(`${this.apiBaseUrl}/clientes/${clienteId}/`),
-                fetch(`${this.apiBaseUrl}/clientes/${clienteId}/resumen/`)
+                fetch(`${this.apiBaseUrl}/clientes/${clienteId}/`, {
+                    headers: window.authService.getAuthHeaders()
+                }),
+                fetch(`${this.apiBaseUrl}/clientes/${clienteId}/resumen/`, {
+                    headers: window.authService.getAuthHeaders()
+                })
             ]);
+
+            if (clienteResponse.status === 401 || resumenResponse.status === 401) {
+                window.authService.logout();
+                return;
+            }
 
             const cliente = await clienteResponse.json();
             const resumen = await resumenResponse.json();
@@ -467,6 +524,24 @@ class CobranzasApp {
             return;
         }
 
+        // responsive: true,
+/*
+,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                console.log("ejecutando callback... valor:", value);
+                                return (value / 1000).toFixed(0) + 'k';
+                            }
+                        }
+                    }
+                }
+
+                data: data.map(item => (item.monto / 1000).toFixed(0) + 'k'),
+                    */
+
         this.charts.ventas = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -479,7 +554,6 @@ class CobranzasApp {
                 }]
             },
             options: {
-                responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
@@ -491,6 +565,7 @@ class CobranzasApp {
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
+                                console.log("ejecutando callback... valor:", value);
                                 return (value / 1000).toFixed(0) + 'k';
                             }
                         }
@@ -520,6 +595,7 @@ class CobranzasApp {
             return;
         }
 
+        //responsive: true,
         this.charts.cobros = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -532,7 +608,6 @@ class CobranzasApp {
                 }]
             },
             options: {
-                responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
@@ -544,6 +619,7 @@ class CobranzasApp {
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
+                                console.log("ejecutando callback chart cobro, value:", value);
                                 return (value / 1000).toFixed(0) + 'k';
                             }
                         }
@@ -566,6 +642,13 @@ class CobranzasApp {
             this.charts.cobros = null;
         }
         this.dashboardLoaded = false;
+    }
+
+    updateUserInfo() {
+        const user = window.authService.getCurrentUser();
+        if (user) {
+            document.getElementById('userInfo').textContent = user.nombre_completo || user.username;
+        }
     }
 
     formatCurrency(amount) {

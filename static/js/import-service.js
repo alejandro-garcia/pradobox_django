@@ -10,6 +10,18 @@ class ImportService {
         };
     }
 
+    // CSRF helpers
+    getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    getCsrfToken() {
+        return this.getCookie('csrftoken');
+    }
+
     async importFromMSSQL() {
         if (this.isImporting) {
             throw new Error('Ya hay una importación en progreso');
@@ -72,23 +84,9 @@ class ImportService {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': this.getCsrfToken() || ''
             },
-            body: JSON.stringify({
-                query: `
-                    SELECT 
-                        tipo_doc,
-                        nro_doc,
-                        co_cli,
-                        co_ven,
-                        fec_emis,
-                        fec_venc,
-                        saldo,
-                        anulado
-                    FROM docum_cc 
-                    WHERE saldo <> 0 AND anulado = 0
-                    ORDER BY fec_venc DESC
-                `
-            })
+            body: JSON.stringify({})
         });
 
         if (!response.ok) {
@@ -124,6 +122,7 @@ class ImportService {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': this.getCsrfToken() || ''
             },
             body: JSON.stringify({ list_codes: codesString })
         });

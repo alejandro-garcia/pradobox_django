@@ -108,7 +108,10 @@ class MSSQLConnector:
             return []
         
         # Crear lista de códigos para la consulta IN
-        codes_string = "', '".join(cliente_codes)
+        if type(cliente_codes).__name__ == "str":
+            codes_string = cliente_codes
+        else:
+            codes_string = "', '".join(cliente_codes)
         
         query = f"""
             SELECT 
@@ -119,7 +122,7 @@ class MSSQLConnector:
                 email,
                 direccion
             FROM clientes 
-            WHERE co_cli IN ('{codes_string}')
+            WHERE co_cli IN ({codes_string})
             ORDER BY cli_des
         """
         return self.execute_query(query)

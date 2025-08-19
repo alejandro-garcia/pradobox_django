@@ -13,7 +13,9 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/icon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/icon-16x16.png">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+    <script src="/static/js/auth-service.js"></script>
     <script src="/static/js/indexdb-service.js"></script>
     <script src="/static/js/import-service.js"></script>
     <script>
@@ -46,11 +48,19 @@
                     </button>
                     <h1 id="pageTitle" class="text-xl font-bold">Situación</h1>
                 </div>
+                <div class="flex items-center space-x-3">
+                    <span id="userInfo" class="text-sm text-white opacity-90"></span>
                 <button id="refreshBtn" class="text-white hover:text-gray-200">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                     </svg>
                 </button>
+                    <button id="logoutBtn" class="text-white hover:text-gray-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </header>
 

@@ -7,9 +7,7 @@
         "rif": "J502107347",
         "telefono": "+58-414-1234567",
         "email": "contacto@golfeados.com",
-        "direccion": "Caracas, Venezuela",
-        "created_at": "2025-01-01T10:00:00Z",
-        "updated_at": "2025-01-01T10:00:00Z"
+        "direccion": "Caracas, Venezuela"
     }
 },
 {
@@ -23,9 +21,7 @@
         "fecha_emision": "2025-04-16",
         "fecha_vencimiento": "2025-04-16",
         "estado": "VENCIDO",
-        "descripcion": "Factura de servicios",
-        "created_at": "2025-04-16T10:00:00Z",
-        "updated_at": "2025-04-16T10:00:00Z"
+        "descripcion": "Factura de servicios"
     }
 },
 {
@@ -39,9 +35,7 @@
         "fecha_emision": "2025-04-16",
         "fecha_vencimiento": "2025-05-01",
         "estado": "VENCIDO",
-        "descripcion": "Factura de productos",
-        "created_at": "2025-04-16T10:00:00Z",
-        "updated_at": "2025-04-16T10:00:00Z"
+        "descripcion": "Factura de productos"
     }
 },
 {
@@ -55,9 +49,7 @@
         "fecha_emision": "2025-05-03",
         "fecha_vencimiento": "2025-05-03",
         "estado": "VENCIDO",
-        "descripcion": "Factura de servicios adicionales",
-        "created_at": "2025-05-03T10:00:00Z",
-        "updated_at": "2025-05-03T10:00:00Z"
+        "descripcion": "Factura de servicios adicionales"
     }
 },
 {
@@ -71,9 +63,7 @@
         "fecha_emision": "2025-06-01",
         "fecha_vencimiento": "2025-06-01",
         "estado": "PENDIENTE",
-        "descripcion": "Nota de crédito",
-        "created_at": "2025-06-01T10:00:00Z",
-        "updated_at": "2025-06-01T10:00:00Z"
+        "descripcion": "Nota de crédito"
     }
 }
 ]

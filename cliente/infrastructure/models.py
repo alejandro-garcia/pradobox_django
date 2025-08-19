@@ -8,8 +8,8 @@ class ClienteModel(models.Model):
     telefono = models.CharField(db_column='telefonos', max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     direccion = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(db_column='fe_us_in', auto_now_add=True)
-    updated_at = models.DateTimeField(db_column='fe_us_mo', auto_now=True)
+    #created_at = models.DateTimeField(db_column='fe_us_in', auto_now_add=True)
+    #updated_at = models.DateTimeField(db_column='fe_us_mo', auto_now=True)
     
     class Meta:
         db_table = 'clientes'

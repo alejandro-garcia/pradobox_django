@@ -2,13 +2,18 @@ from typing import List, Optional
 from datetime import date
 from decimal import Decimal
 from django.db import models
-from django.db.models import Sum, Count, Q, Avg, ExpressionWrapper, F, FloatField, IntegerField
+from django.db.models import Sum, Count, Q, Avg, ExpressionWrapper, F, FloatField, IntegerField, DecimalField , Max, Case, When, Value, BigIntegerField, Func
 from django.utils import timezone
-from django.db.models.functions import Now, Cast
-from shared.domain.value_objects import DocumentId, ClientId, Money
+from django.db.models.functions import Now, Cast, Round
+from shared.domain.value_objects import DocumentId, ClientId, Money, SellerId
 from ..domain.entities import Documento, TipoDocumento, EstadoDocumento, ResumenCobranzas
 from ..domain.repository import DocumentoRepository
 from .models import DocumentoModel
+
+class DateDiff(Func):
+    function = "DATEDIFF"
+    template = "%(function)s(DAY, %(expressions)s)"
+    output_field = IntegerField()
 
 
 class DjangoDocumentoRepository(DocumentoRepository):
@@ -25,6 +30,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
                 'fecha_vencimiento': entity.fecha_vencimiento,
                 'estado': entity.estado.value,
                 'descripcion': entity.descripcion,
+                'co_ven': entity.co_ven 
             }
         )
         return self._to_domain(documento_model)
@@ -65,7 +71,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
         documento_models = DocumentoModel.objects.filter(estado=estado.value)
         return [self._to_domain(model) for model in documento_models]
     
-    def get_resumen_cobranzas(self) -> ResumenCobranzas:
+    def get_resumen_cobranzas(self, seller_id: SellerId) -> ResumenCobranzas:
         today = timezone.now().date()
         
         # Totales por estado
@@ -73,7 +79,13 @@ class DjangoDocumentoRepository(DocumentoRepository):
             fecha_vencimiento__lt=today,
             saldo__gt=0,
             anulado=False
-        ).aggregate(
+        )
+
+        if seller_id.value != "-1":
+            vencidos  = vencidos.filter(co_ven=seller_id.value) 
+        
+        
+        vencidos = vencidos.aggregate(
             total=Sum('saldo', default=0),
             cantidad=Count('id')
         )
@@ -81,8 +93,12 @@ class DjangoDocumentoRepository(DocumentoRepository):
         por_vencer = DocumentoModel.objects.filter(
             fecha_vencimiento__gte=today,
             saldo__gt=0,
-            anulado=False
-        ).aggregate(
+            anulado=False)
+        
+        if seller_id.value != "-1":
+            por_vencer  = por_vencer.filter(co_ven=seller_id.value) 
+        
+        por_vencer = por_vencer.aggregate(
             total=Sum('saldo', default=0),
             cantidad=Count('id')
         )
@@ -91,7 +107,12 @@ class DjangoDocumentoRepository(DocumentoRepository):
             tipo='N/CR',
             saldo__gt=0,
             anulado=False
-        ).aggregate(
+        )
+        
+        if seller_id.value != "-1":
+            creditos  = creditos.filter(co_ven=seller_id.value)
+
+        creditos = creditos.aggregate(
             total=Sum('saldo', default=0)
         )
         
@@ -108,18 +129,114 @@ class DjangoDocumentoRepository(DocumentoRepository):
 
         # Promedio de días de vencimiento (SQLite-specific)
         today = timezone.now().date()
-        dias_promedio = DocumentoModel.objects.filter(
-            fecha_vencimiento__lt=today,
-            saldo__gt=0,
-            anulado=False
-        ).annotate(
-            dias_vencido=ExpressionWrapper(
-                Cast(Now(), output_field=models.DateField()) - F('fecha_vencimiento'),
-                output_field=IntegerField()
+        # dias_promedio = DocumentoModel.objects.filter(
+        #     fecha_vencimiento__lt=today,
+        #     saldo__gt=0,
+        #     anulado=False
+        # )
+
+        # if seller_id.value != "-1":
+        #     dias_promedio  = dias_promedio.filter(co_ven=seller_id.value)
+        
+        # dias_promedio = dias_promedio.annotate(
+        #     dias_vencido=ExpressionWrapper(
+        #         Cast(Now(), output_field=models.DateField()) - F('fecha_vencimiento'),
+        #         output_field=IntegerField()
+        #     )
+        # ).aggregate(
+        #     promedio=Avg('dias_vencido')
+        # )['promedio'] or 0
+
+        # PRUEBA 2
+        # dias_promedio_query = DocumentoModel.objects.filter(
+        #     anulado=False,
+        #     fecha_vencimiento__lte=today,
+        #     fecha_vencimiento__gte='1900-01-01'  # Restricción para evitar fechas muy antiguas
+        # ).exclude(
+        #     saldo=0,
+        #     tipo='N/CR'
+        # )
+
+        # if seller_id.value != "-1":
+        #     dias_promedio_query = dias_promedio_query.filter(co_ven=seller_id.value)
+
+        # dias_promedio = dias_promedio_query.annotate(
+        #     saldo_ajustado=Case(
+        #         When(tipo='ADEL', then=-F('saldo')),
+        #         default=F('saldo'),
+        #         output_field=DecimalField(max_digits=12, decimal_places=2)
+        #     )
+        # ).values('cliente').annotate(
+        #     total_saldo=Sum('saldo_ajustado'),
+        #     dias_vcto=Max(
+        #         Case(
+        #             When(tipo='ADEL', then=Value(0)),
+        #             default=Cast(
+        #                 Cast(timezone.now(), output_field=models.DateField()) - F('fecha_vencimiento'),
+        #                 output_field=BigIntegerField()
+        #             ),
+        #             output_field=BigIntegerField()
+        #         )
+        #     )
+        # ).exclude(
+        #     total_saldo=0
+        # ).aggregate(
+        #     promedio=Avg('dias_vcto')
+        # )['promedio']
+
+        # Round to integer if needed
+        #if dias_promedio is not None:
+         #   dias_promedio = round(dias_promedio)
+
+
+        dias_promedio_query = DocumentoModel.objects.filter(
+                anulado=False,
+                fecha_vencimiento__lte=today
+            ).exclude(
+                tipo="N/CR",
+                saldo=0
             )
-        ).aggregate(
-            promedio=Avg('dias_vencido')
-        )['promedio'] or 0
+
+        if seller_id.value != "-1":
+            dias_promedio_query  = dias_promedio_query.filter(co_ven=seller_id.value)
+
+        subquery = (
+            dias_promedio_query.values("cliente")  # equivale a group by co_cli
+            .annotate(
+                dias_vcto=Max(
+                    Case(
+                        When(tipo="ADEL", then=Value(0)),
+                        default=DateDiff(
+                            F("fecha_vencimiento"),
+                            Func(function="GETDATE")   
+                        ),
+                        output_field=IntegerField(),
+                    )
+                ),
+                saldo_sum=Sum(
+                    Case(
+                        When(tipo="ADEL", then=F("saldo") * -1),
+                        default=F("saldo"),
+                        output_field=DecimalField(),
+                    )
+                ),
+            )
+            .exclude(saldo_sum=0)  # having SUM(...) <> 0
+            .values("dias_vcto")
+        )
+
+        # Query final con AVG
+        dias_promedio = (
+            subquery.aggregate(
+                dias=Round(Avg("dias_vcto"), 0)
+            )
+        )
+
+        promedio_vencimiento = 0 
+
+        if dias_promedio:
+            promedio_vencimiento = dias_promedio['dias']
+
         
         return ResumenCobranzas(
             total_vencido=Money(Decimal(str(vencidos['total']))),
@@ -127,7 +244,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
             total_creditos=Money(Decimal(str(creditos['total']))),  # Los créditos son negativos
             cantidad_vencidos=vencidos['cantidad'],
             cantidad_por_vencer=por_vencer['cantidad'],
-            dias_promedio_vencimiento=int(dias_promedio)
+            dias_promedio_vencimiento=int(promedio_vencimiento)
         )
     
     def get_resumen_por_cliente(self, cliente_id: ClientId) -> ResumenCobranzas:

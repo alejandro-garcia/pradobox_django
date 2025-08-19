@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import List, Optional
 from datetime import date
 from shared.infrastructure.repository import Repository
-from shared.domain.value_objects import DocumentId, ClientId
+from shared.domain.value_objects import DocumentId, ClientId, SellerId
 from .entities import Documento, ResumenCobranzas, EstadoDocumento
 
 
@@ -25,7 +25,7 @@ class DocumentoRepository(Repository[Documento, DocumentId]):
         pass
     
     @abstractmethod
-    def get_resumen_cobranzas(self) -> ResumenCobranzas:
+    def get_resumen_cobranzas(self, seller_id: SellerId) -> ResumenCobranzas:
         pass
     
     @abstractmethod

@@ -1,6 +1,7 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from cobranza.infrastructure.repository_impl import DjangoDocumentoRepository
+from shared.domain.value_objects import SellerId
 from ..application.use_cases import ObtenerDashboardUseCase
 
 
@@ -10,7 +11,8 @@ def dashboard_view(request):
     documento_repository = DjangoDocumentoRepository()
     use_case = ObtenerDashboardUseCase(documento_repository)
     
-    dashboard_data = use_case.execute(None)
+    seller_id = SellerId(request.user.codigo_vendedor_profit if request.user.codigo_vendedor_profit else '-1')
+    dashboard_data = use_case.execute(seller_id)
     
     return Response({
         'situacion': {

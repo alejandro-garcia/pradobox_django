@@ -1,6 +1,6 @@
 from typing import List
 from shared.application.use_case import UseCase
-from shared.domain.value_objects import DocumentId, ClientId, Money
+from shared.domain.value_objects import DocumentId, ClientId, Money, SellerId
 from shared.domain.exceptions import EntityNotFoundException
 from ..domain.entities import Documento, TipoDocumento, EstadoDocumento
 from ..domain.repository import DocumentoRepository
@@ -72,13 +72,13 @@ class ObtenerDocumentosUseCase(UseCase[FiltroDocumentosRequest, List[DocumentoRe
         )
 
 
-class ObtenerResumenCobranzasUseCase(UseCase[None, ResumenCobranzasResponse]):
+class ObtenerResumenCobranzasUseCase(UseCase[str, ResumenCobranzasResponse]):
     
     def __init__(self, documento_repository: DocumentoRepository):
         self.documento_repository = documento_repository
     
-    def execute(self, _: None) -> ResumenCobranzasResponse:
-        resumen = self.documento_repository.get_resumen_cobranzas()
+    def execute(self, seller_id: SellerId) -> ResumenCobranzasResponse:
+        resumen = self.documento_repository.get_resumen_cobranzas(seller_id)
         
         return ResumenCobranzasResponse(
             total_vencido=resumen.total_vencido.amount,
@@ -115,3 +115,4 @@ class ObtenerDocumentosVencidosUseCase(UseCase[None, List[DocumentoResponse]]):
             esta_vencido=documento.esta_vencido,
             descripcion=documento.descripcion
         )
+

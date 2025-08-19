@@ -1,2 +1,77 @@
-node_modules
+# Entorno virtual
+.venv/
+venv/
 .env
+.env/
+.env.local
+.env.development
+.env.production
+.env.test
+
+
+# Archivos de configuración local
+settings/local.py
+settings/dev.py
+*.local.yaml
+*.local.yml
+
+# Archivos de base de datos
+*.sqlite3
+*.db
+*.sql
+*.dump
+
+# Archivos de migraciones (opcional, dependiendo del flujo de trabajo)
+*/migrations/*.py
+!*/migrations/__init__.py
+
+# Archivos estáticos y medios
+staticfiles/
+media/
+*.css.map
+*.js.map
+
+# Archivos de caché
+*.pyc
+__pycache__/
+*.cache
+.pytest_cache/
+**/__pycache__/
+
+# Archivos de IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+
+# Archivos de entorno de Python
+*.pyc
+*.pyo
+*.pyd
+*.py.class
+*.egg-info/
+dist/
+build/
+*.egg
+*.whl
+
+# Archivos de logs
+*.log
+logs/
+
+# Archivos de sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos de dependencias
+node_modules/
+bower_components/
+
+# Archivos de Tailwind (si usas Tailwind CSS)
+.tailwindcss
+.postcssrc
+
+# carpeta de anexos
+attachments/

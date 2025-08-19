@@ -1,17 +1,21 @@
 from shared.application.use_case import UseCase
 from cobranza.domain.repository import DocumentoRepository
+from shared.domain.value_objects import SellerId
 from .dtos import DashboardResponse, SituacionGeneralResponse, VentasMesResponse, CobrosMesResponse, IndicadoresResponse
 from decimal import Decimal
 
 
-class ObtenerDashboardUseCase(UseCase[None, DashboardResponse]):
+class ObtenerDashboardUseCase(UseCase[SellerId, DashboardResponse]):
     
     def __init__(self, documento_repository: DocumentoRepository):
         self.documento_repository = documento_repository
     
-    def execute(self, _: None) -> DashboardResponse:
+    def execute(self, seller_id: SellerId) -> DashboardResponse:
         # Obtener resumen de cobranzas
-        resumen = self.documento_repository.get_resumen_cobranzas()
+        
+        #seller_id = SellerId(user_data.get('codigo_vendedor_profit', ''))
+
+        resumen = self.documento_repository.get_resumen_cobranzas(seller_id)
         
         # Datos simulados para ventas y cobros por mes
         ventas_por_mes = [

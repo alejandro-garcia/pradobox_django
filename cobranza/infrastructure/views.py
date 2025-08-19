@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from datetime import datetime
 from shared.domain.exceptions import EntityNotFoundException
+from shared.domain.value_objects import SellerId
 from ..application.use_cases import (
     CrearDocumentoUseCase,
     ObtenerDocumentosUseCase,
@@ -82,9 +83,11 @@ def documentos_view(request):
 @api_view(['GET'])
 def resumen_cobranzas_view(request):
     repository = get_documento_repository()
+
+    seller_id = SellerId(request.user.codigo_vendedor_profit)
     
     use_case = ObtenerResumenCobranzasUseCase(repository)
-    resumen = use_case.execute(None)
+    resumen = use_case.execute(seller_id)
     
     return Response({
         'total_vencido': float(resumen.total_vencido),

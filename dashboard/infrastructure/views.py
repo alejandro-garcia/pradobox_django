@@ -5,18 +5,10 @@ from shared.domain.value_objects import SellerId
 from ..application.use_cases import ObtenerDashboardUseCase
 
 
-
-@api_view(['GET'])
-def dashboard_view(request):
-    print('dentro de dashboard_view')
+def get_dashboard(seller_id: SellerId):
     documento_repository = DjangoDocumentoRepository()
     use_case = ObtenerDashboardUseCase(documento_repository)
-
-    if type(request.user).__name__ != "AnonymousUser":
-        seller_id = SellerId(request.user.codigo_vendedor_profit if request.user.codigo_vendedor_profit else '-1')
-    else:
-        seller_id = SellerId("-1")
-        
+       
     dashboard_data = use_case.execute(seller_id)
     
     return Response({
@@ -51,4 +43,26 @@ def dashboard_view(request):
             'porcentaje_variacion_ventas': dashboard_data.indicadores.porcentaje_variacion_ventas,
             'porcentaje_variacion_cobros': dashboard_data.indicadores.porcentaje_variacion_cobros
         }
-    })
+    })    
+
+
+@api_view(['GET'])
+def dashboard_view(request):
+    print('dentro de dashboard_view')
+
+    if type(request.user).__name__ != "AnonymousUser":
+        seller_id = SellerId(request.user.codigo_vendedor_profit if request.user.codigo_vendedor_profit else '-1')
+    else:
+        seller_id = SellerId("-1")
+
+    return get_dashboard(seller_id)        
+
+@api_view(['GET'])
+def dashboard_seller_view(request, seller_id):
+    print('dentro de dashboard_view')
+    seller = SellerId(seller_id)
+   
+    return get_dashboard(seller)
+
+
+    

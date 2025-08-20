@@ -211,8 +211,12 @@ class CobranzasApp {
                 debugger;
                 data = await this.loadDashboardFromIndexedDB();
             } else {
+                debugger;
+                const user = window.authService.getCurrentUser();
+                const seller_code = user.codigo_vendedor_profit; 
+
                 // Load from API
-                const response = await fetch(`${this.apiBaseUrl}/dashboard/`, {
+                const response = await fetch(`${this.apiBaseUrl}/dashboard/${seller_code}`, {
                     headers: window.authService.getAuthHeaders()
                 });
                 

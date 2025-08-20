@@ -208,6 +208,7 @@ class CobranzasApp {
             
             if (this.offlineMode) {
                 // Load from IndexedDB
+                debugger;
                 data = await this.loadDashboardFromIndexedDB();
             } else {
                 // Load from API
@@ -376,7 +377,6 @@ class CobranzasApp {
     }
 
     createClienteCard(cliente) {
-        console.log("cliente", cliente);
         const card = document.createElement('div');
         card.className = 'bg-gray-50 rounded-lg p-4 cursor-pointer hover:bg-gray-100 transition-colors';
         card.onclick = () => this.showClienteDetail(cliente.id);
@@ -506,12 +506,9 @@ class CobranzasApp {
         `;
     }
 
-    createVentasChart(data) {
-        console.log("ejecutando createVentasChart");
-        
+    createVentasChart(data) {       
         // Verificar si ya existe un gráfico
         if (this.charts.ventas) {
-            console.log("Gráfico de ventas ya existe, actualizando datos");
             this.charts.ventas.data.labels = data.map(item => item.mes);
             this.charts.ventas.data.datasets[0].data = data.map(item => item.monto);
             this.charts.ventas.update();
@@ -565,7 +562,6 @@ class CobranzasApp {
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                console.log("ejecutando callback... valor:", value);
                                 return (value / 1000).toFixed(0) + 'k';
                             }
                         }
@@ -577,12 +573,9 @@ class CobranzasApp {
         console.log("Gráfico de ventas creado exitosamente");
     }
 
-    createCobrosChart(data) {
-        console.log("ejecutando createCobrosChart");
-        
+    createCobrosChart(data) {       
         // Verificar si ya existe un gráfico
         if (this.charts.cobros) {
-            console.log("Gráfico de cobros ya existe, actualizando datos");
             this.charts.cobros.data.labels = data.map(item => item.mes);
             this.charts.cobros.data.datasets[0].data = data.map(item => item.monto);
             this.charts.cobros.update();
@@ -619,7 +612,7 @@ class CobranzasApp {
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                console.log("ejecutando callback chart cobro, value:", value);
+                                //console.log("ejecutando callback chart cobro, value:", value);
                                 return (value / 1000).toFixed(0) + 'k';
                             }
                         }
@@ -627,8 +620,6 @@ class CobranzasApp {
                 }
             }
         });
-        
-        console.log("Gráfico de cobros creado exitosamente");
     }
 
     // Método para limpiar gráficos cuando sea necesario

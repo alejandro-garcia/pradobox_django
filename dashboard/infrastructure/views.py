@@ -10,7 +10,8 @@ def get_dashboard(seller_id: SellerId):
     use_case = ObtenerDashboardUseCase(documento_repository)
        
     dashboard_data = use_case.execute(seller_id)
-    
+
+   
     return Response({
         'situacion': {
             'total_vencido': float(dashboard_data.situacion.total_vencido),
@@ -19,7 +20,10 @@ def get_dashboard(seller_id: SellerId):
             'total_neto': float(dashboard_data.situacion.total_neto),
             'cantidad_documentos_vencidos': dashboard_data.situacion.cantidad_documentos_vencidos,
             'cantidad_documentos_por_vencer': dashboard_data.situacion.cantidad_documentos_por_vencer,
-            'dias_promedio_vencimiento': dashboard_data.situacion.dias_promedio_vencimiento
+            'dias_promedio_vencimiento': dashboard_data.situacion.dias_promedio_vencimiento,
+            'dias_promedio_ultima_factura': dashboard_data.situacion.dias_promedio_ultima_factura,
+            'dias_transcurridos': dashboard_data.situacion.dias_transcurridos, 
+            'dias_faltantes': dashboard_data.situacion.dias_faltantes
         },
         'ventas_por_mes': [
             {

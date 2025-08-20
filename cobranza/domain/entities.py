@@ -51,6 +51,9 @@ class ResumenCobranzas:
     cantidad_vencidos: int
     cantidad_por_vencer: int
     dias_promedio_vencimiento: int
+    dias_promedio_ultima_factura: int 
+    dias_transcurridos: int 
+    dias_faltantes: int
     
     @property
     def total_neto(self) -> Money:

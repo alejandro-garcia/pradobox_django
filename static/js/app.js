@@ -229,6 +229,12 @@ class CobranzasApp {
             }
 
             // Update dashboard data
+
+            document.getElementById('currentDay').textContent = data.situacion.dias_transcurridos.toString() + 'd';
+            document.getElementById('remainingDays').textContent = data.situacion.dias_faltantes.toString() + 'd';
+            let percentageDays = data.situacion.dias_transcurridos * 100 / (data.situacion.dias_faltantes + data.situacion.dias_transcurridos);
+            document.getElementById('daysPercentage').style= `width:${percentageDays}%`;
+
             document.getElementById('totalVencido').textContent = this.formatCurrency(data.situacion.total_vencido);
             document.getElementById('cantidadVencido').textContent = data.situacion.cantidad_documentos_vencidos;
             document.getElementById('diasVencido').textContent = data.situacion.dias_promedio_vencimiento;
@@ -444,11 +450,7 @@ class CobranzasApp {
                 <div class="bg-primary text-white rounded-lg p-6">
                     <h2 class="text-lg font-bold">${cliente.nombre}</h2>
                     <p class="text-sm opacity-90">Compañía</p>
-                    <div class="grid grid-cols-2 gap-4 mt-4 text-sm">
-                        <div>
-                            <p class="opacity-75">RIF</p>
-                            <p class="font-medium">${cliente.rif}</p>
-                        </div>
+                    <div class="grid grid-cols-1 gap-4 mt-4 text-sm">
                         <div>
                             <p class="opacity-75">RIF</p>
                             <p class="font-medium">${cliente.rif}</p>

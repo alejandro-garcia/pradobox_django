@@ -44,3 +44,30 @@ class DocumentoModel(models.Model):
     
     def __str__(self):
         return f"{self.tipo} {self.numero} - {self.cliente.nombre}"
+
+
+class VentaMes(models.Model):
+    id  = models.IntegerField(primary_key=True)
+    co_ven = models.CharField(db_column='co_ven', max_length=6, blank=True, null=True)
+    sales_date= models.CharField(db_column='mes', max_length=6, blank=False, null=False)
+    amount = models.DecimalField(db_column='monto_net', max_digits=12, decimal_places=2)
+
+    class Meta:
+        managed = False
+        db_table = 'vw_ventas_mensuales_vendedor'
+        verbose_name = 'VentasMes'
+        verbose_name_plural = 'VentasMensuales'
+        unique_together = ['co_ven', 'sales_date']
+
+class CobroMes(models.Model):
+    id  = models.IntegerField(primary_key=True)
+    co_ven = models.CharField(db_column='co_ven', max_length=6, blank=True, null=True)
+    cob_date= models.CharField(db_column='fec_cob', max_length=6, blank=False, null=False)
+    amount = models.DecimalField(db_column='monto', max_digits=12, decimal_places=2)
+
+    class Meta:
+        managed = False
+        db_table = 'vw_cobros_mensuales_vendedor'
+        verbose_name = 'CobroMes'
+        verbose_name_plural = 'CobrosMensuales'
+        unique_together = ['co_ven', 'cob_date']

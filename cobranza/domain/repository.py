@@ -1,4 +1,6 @@
 from abc import abstractmethod
+from ast import Dict
+from pickle import DICT
 from typing import List, Optional
 from datetime import date
 from shared.infrastructure.repository import Repository
@@ -30,4 +32,12 @@ class DocumentoRepository(Repository[Documento, DocumentId]):
     
     @abstractmethod
     def get_resumen_por_cliente(self, cliente_id: ClientId) -> ResumenCobranzas:
+        pass
+
+    @abstractmethod
+    def get_ventas_trimestre(self, seller_id: SellerId) -> List[Dict]:
+        pass
+
+    @abstractmethod
+    def get_cobros_trimestre(self, seller_id: SellerId) -> List[Dict]:
         pass

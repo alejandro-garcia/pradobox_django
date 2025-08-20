@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict
 from datetime import date
 from decimal import Decimal
 from django.db import models
@@ -8,7 +8,9 @@ from django.db.models.functions import Now, Cast, Round
 from shared.domain.value_objects import DocumentId, ClientId, Money, SellerId
 from ..domain.entities import Documento, TipoDocumento, EstadoDocumento, ResumenCobranzas
 from ..domain.repository import DocumentoRepository
-from .models import DocumentoModel
+from .models import CobroMes, DocumentoModel, VentaMes
+from shared.domain.constants import MESES_ES 
+import calendar
 
 class DateDiff(Func):
     function = "DATEDIFF"
@@ -237,6 +239,16 @@ class DjangoDocumentoRepository(DocumentoRepository):
         if dias_promedio:
             promedio_vencimiento = dias_promedio['dias']
 
+        # TODO: falta definir 
+        promedio_ultima_factura = 0 
+
+        dias_transcurridos = today.day
+        
+        ultimo_dia = calendar.monthrange(today.year, today.month)[1]
+
+        # Cantidad de días que faltan
+        dias_faltantes = ultimo_dia - today.day
+
         
         return ResumenCobranzas(
             total_vencido=Money(Decimal(str(vencidos['total']))),
@@ -244,7 +256,10 @@ class DjangoDocumentoRepository(DocumentoRepository):
             total_creditos=Money(Decimal(str(creditos['total']))),  # Los créditos son negativos
             cantidad_vencidos=vencidos['cantidad'],
             cantidad_por_vencer=por_vencer['cantidad'],
-            dias_promedio_vencimiento=int(promedio_vencimiento)
+            dias_promedio_vencimiento=int(promedio_vencimiento),
+            dias_promedio_ultima_factura=int(promedio_ultima_factura),
+            dias_transcurridos= dias_transcurridos,
+            dias_faltantes=dias_faltantes 
         )
     
     def get_resumen_por_cliente(self, cliente_id: ClientId) -> ResumenCobranzas:
@@ -284,6 +299,57 @@ class DjangoDocumentoRepository(DocumentoRepository):
             dias_promedio_vencimiento=0  # Calcular si es necesario
         )
     
+
+    def get_ventas_trimestre(self, seller_id: SellerId) -> List[Dict]:
+        if seller_id.value != "-1":
+            qs = (
+                VentaMes.objects.filter(co_ven=seller_id.value)
+                .values("sales_date")
+                .annotate(amount=Sum("amount"))
+                .order_by("sales_date")
+            )
+        else:
+            qs = (
+                VentaMes.objects.values("sales_date")
+                .annotate(amount=Sum("amount"))
+                .order_by("sales_date")
+            )
+
+        sales_list = []
+        for row in qs:
+            year_month = row["sales_date"]  # Ej: "202505"
+            mes_num = int(year_month[4:])   # "05" → 5
+            mes_nombre = MESES_ES.get(mes_num, str(mes_num))
+            sales_list.append({"mes": mes_nombre, "amount": row["amount"]})
+
+        return sales_list
+
+    def get_cobros_trimestre(self, seller_id: SellerId) -> List[Dict]:
+        if seller_id.value != "-1":
+            qs = (
+                CobroMes.objects.filter(co_ven=seller_id.value)
+                .values("cob_date")
+                .annotate(amount=Sum("amount"))
+                .order_by("cob_date")
+            )
+        else:
+            qs = (
+                CobroMes.objects.values("cob_date")
+                .annotate(amount=Sum("amount"))
+                .order_by("cob_date")
+            )
+
+        payments_list = []
+        for row in qs:
+            year_month = row["cob_date"]  # Ej: "202505"
+            mes_num = int(year_month[4:])   # "05" → 5
+            mes_nombre = MESES_ES.get(mes_num, str(mes_num))
+            payments_list.append({"mes": mes_nombre, "amount": row["amount"]})
+
+        return payments_list
+
+
+
     def _to_domain(self, model: DocumentoModel) -> Documento:
         return Documento(
             id=DocumentId(model.id),

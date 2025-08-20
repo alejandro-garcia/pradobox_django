@@ -5,13 +5,18 @@ from shared.domain.value_objects import SellerId
 from ..application.use_cases import ObtenerDashboardUseCase
 
 
+
 @api_view(['GET'])
 def dashboard_view(request):
     print('dentro de dashboard_view')
     documento_repository = DjangoDocumentoRepository()
     use_case = ObtenerDashboardUseCase(documento_repository)
-    
-    seller_id = SellerId(request.user.codigo_vendedor_profit if request.user.codigo_vendedor_profit else '-1')
+
+    if type(request.user).__name__ != "AnonymousUser":
+        seller_id = SellerId(request.user.codigo_vendedor_profit if request.user.codigo_vendedor_profit else '-1')
+    else:
+        seller_id = SellerId("-1")
+        
     dashboard_data = use_case.execute(seller_id)
     
     return Response({

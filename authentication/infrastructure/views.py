@@ -72,7 +72,8 @@ def validate_token_view(request):
                 'id': usuario.id,
                 'username': usuario.username,
                 'email': usuario.email,
-                'nombre_completo': usuario.nombre_completo
+                'nombre_completo': usuario.nombre_completo,
+                'codigo_vendedor_profit': usuario.codigo_vendedor_profit
             }
         })
     else:

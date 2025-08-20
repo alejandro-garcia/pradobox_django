@@ -9,6 +9,7 @@ class Usuario:
     username: str
     email: str
     nombre_completo: str
+    codigo_vendedor_profit: str
     is_active: bool = True
     last_login: Optional[datetime] = None
     

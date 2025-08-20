@@ -50,7 +50,8 @@ class LoginUseCase(UseCase[LoginRequest, LoginResponse]):
                 'id': usuario.id,
                 'username': usuario.username,
                 'email': usuario.email,
-                'nombre_completo': usuario.nombre_completo
+                'nombre_completo': usuario.nombre_completo,
+                'codigo_vendedor_profit': usuario.codigo_vendedor_profit
             },
             message="Login exitoso"
         )
@@ -88,6 +89,7 @@ class ValidateTokenUseCase(UseCase[str, Optional[UsuarioResponse]]):
                 username=usuario.username,
                 email=usuario.email,
                 nombre_completo=usuario.nombre_completo,
+                codigo_vendedor_profit=usuario.codigo_vendedor_profit,
                 is_active=usuario.is_active,
                 last_login=usuario.last_login
             )

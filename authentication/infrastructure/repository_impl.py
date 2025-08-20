@@ -53,6 +53,7 @@ class DjangoUsuarioRepository(UsuarioRepository):
             username=model.username,
             email=model.email,
             nombre_completo=model.nombre_completo or f"{model.first_name} {model.last_name}".strip(),
+            codigo_vendedor_profit=model.codigo_vendedor_profit,
             is_active=model.is_active,
             last_login=model.last_login
         )

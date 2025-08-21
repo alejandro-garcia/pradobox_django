@@ -11,6 +11,7 @@ class Cliente:
     telefono: Optional[str] = None
     email: Optional[str] = None
     direccion: Optional[str] = None
+    dias_ult_fact: Optional[int] = None
     
     def __post_init__(self):
         if not self.nombre or len(self.nombre.strip()) == 0:

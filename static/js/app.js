@@ -574,6 +574,7 @@ class CobranzasApp {
                     <h3 class="font-semibold text-gray-800">${cliente.nombre}</h3>
                     <p class="text-sm text-gray-600">${cliente.rif}</p>
                     ${cliente.telefono ? `<p class="text-sm text-gray-500">${cliente.telefono}</p>` : ''}
+                    ${cliente.dias_ult_fact ? `<p class="text-sm text-gray-500">${cliente.dias_ult_fact}d</p>` : 'N/A'}
                 </div>
                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>

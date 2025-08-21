@@ -30,7 +30,8 @@ def clientes_view(request):
             'rif': cliente.rif,
             'telefono': cliente.telefono,
             'email': cliente.email,
-            'direccion': cliente.direccion
+            'direccion': cliente.direccion,
+            'dias_ult_fact': cliente.dias_ult_fact
         } for cliente in clientes])
     
 
@@ -49,7 +50,8 @@ def cliente_detail_view(request, cliente_id):
             'rif': cliente.rif,
             'telefono': cliente.telefono,
             'email': cliente.email,
-            'direccion': cliente.direccion
+            'direccion': cliente.direccion,
+            'dias_ult_fact': cliente.dias_ult_fact
         })
         
     except EntityNotFoundException as e:

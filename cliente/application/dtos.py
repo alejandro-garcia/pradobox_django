@@ -20,6 +20,7 @@ class ClienteResponse:
     telefono: Optional[str]
     email: Optional[str]
     direccion: Optional[str]
+    dias_ult_fact: Optional[int] = None
 
 
 @dataclass

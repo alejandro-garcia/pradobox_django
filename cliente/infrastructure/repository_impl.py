@@ -29,7 +29,7 @@ class DjangoClienteRepository(ClienteRepository):
             return None
     
     def search_by_name(self, nombre: str) -> List[Cliente]:
-        cliente_models = ClienteModel.objects.filter(nombre__icontains=nombre)
+        cliente_models = ClienteModel.objects.filter(nombre__icontains=nombre).order_by('nombre')
         return [self._to_domain(model) for model in cliente_models]
     
     def get_resumen_cliente(self, cliente_id: ClientId) -> Optional[ResumenCliente]:

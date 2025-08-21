@@ -81,6 +81,9 @@ class CobranzasApp {
 
         // Import/Sync functionality
         this.setupImportEventListeners();
+        
+        // Client search functionality
+        this.setupClientSearchEventListeners();
     }
 
     setupImportEventListeners() {
@@ -117,6 +120,45 @@ class CobranzasApp {
         const savedOfflineMode = localStorage.getItem('offlineMode') === 'true';
         document.getElementById('offlineMode').checked = savedOfflineMode;
         this.offlineMode = savedOfflineMode;
+    }
+
+    setupClientSearchEventListeners() {
+        const searchInput = document.getElementById('clienteSearchInput');
+        const clearBtn = document.getElementById('clearSearchBtn');
+        let searchTimeout;
+
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.trim();
+                
+                // Show/hide clear button
+                if (searchTerm.length > 0) {
+                    clearBtn.classList.remove('hidden');
+                } else {
+                    clearBtn.classList.add('hidden');
+                }
+
+                // Clear previous timeout
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+
+                // Set new timeout for search
+                searchTimeout = setTimeout(() => {
+                    if (searchTerm.length >= 3 || searchTerm.length === 0) {
+                        this.searchClientes(searchTerm);
+                    }
+                }, 300); // 300ms delay for better UX
+            });
+        }
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                clearBtn.classList.add('hidden');
+                this.searchClientes('');
+            });
+        }
     }
 
     navigateTo(view) {
@@ -325,6 +367,8 @@ class CobranzasApp {
     }
 
     async loadClientes() {
+        this.showClientesLoading(true);
+        
         try {
             let clientes;
             
@@ -352,17 +396,113 @@ class CobranzasApp {
                 clientes = await response.json();
             }
 
-            const clientesList = document.getElementById('clientesList');
-            clientesList.innerHTML = '';
-
-            clientes.forEach(cliente => {
-                const clienteCard = this.createClienteCard(cliente);
-                clientesList.appendChild(clienteCard);
-            });
+            this.displayClientes(clientes);
+            this.updateSearchResults(clientes.length, '');
 
         } catch (error) {
             console.error('Error loading clientes:', error);
             this.showError('Error cargando los clientes');
+            this.displayClientes([]);
+        } finally {
+            this.showClientesLoading(false);
+        }
+    }
+
+    async searchClientes(searchTerm) {
+        this.showClientesLoading(true);
+        
+        try {
+            let clientes;
+            
+            if (this.offlineMode) {
+                clientes = await window.indexedDBService.getClientes();
+                // Transform and filter locally
+                clientes = clientes
+                    .map(cliente => ({
+                        id: cliente.co_cli,
+                        nombre: cliente.cli_des,
+                        rif: cliente.rif,
+                        telefono: cliente.telefonos,
+                        email: cliente.email,
+                        direccion: cliente.direccion
+                    }))
+                    .filter(cliente => 
+                        searchTerm === '' || 
+                        cliente.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+                    );
+            } else {
+                const url = searchTerm 
+                    ? `${this.apiBaseUrl}/clientes/?search=${encodeURIComponent(searchTerm)}`
+                    : `${this.apiBaseUrl}/clientes/`;
+                    
+                const response = await fetch(url, {
+                    headers: window.authService.getAuthHeaders()
+                });
+                
+                if (response.status === 401) {
+                    window.authService.logout();
+                    return;
+                }
+                
+                clientes = await response.json();
+            }
+
+            this.displayClientes(clientes);
+            this.updateSearchResults(clientes.length, searchTerm);
+
+        } catch (error) {
+            console.error('Error searching clientes:', error);
+            this.showError('Error buscando clientes');
+            this.displayClientes([]);
+        } finally {
+            this.showClientesLoading(false);
+        }
+    }
+
+    displayClientes(clientes) {
+        const clientesList = document.getElementById('clientesList');
+        const clientesEmpty = document.getElementById('clientesEmpty');
+        
+        clientesList.innerHTML = '';
+        
+        if (clientes.length === 0) {
+            clientesEmpty.classList.remove('hidden');
+        } else {
+            clientesEmpty.classList.add('hidden');
+            clientes.forEach(cliente => {
+                const clienteCard = this.createClienteCard(cliente);
+                clientesList.appendChild(clienteCard);
+            });
+        }
+    }
+
+    showClientesLoading(show) {
+        const loadingDiv = document.getElementById('clientesLoading');
+        const clientesList = document.getElementById('clientesList');
+        const clientesEmpty = document.getElementById('clientesEmpty');
+        
+        if (show) {
+            loadingDiv.classList.remove('hidden');
+            clientesList.classList.add('hidden');
+            clientesEmpty.classList.add('hidden');
+        } else {
+            loadingDiv.classList.add('hidden');
+            clientesList.classList.remove('hidden');
+        }
+    }
+
+    updateSearchResults(count, searchTerm) {
+        const searchResults = document.getElementById('searchResults');
+        const searchResultsText = document.getElementById('searchResultsText');
+        
+        if (searchTerm && searchTerm.length >= 3) {
+            searchResults.classList.remove('hidden');
+            searchResultsText.textContent = `${count} cliente${count !== 1 ? 's' : ''} encontrado${count !== 1 ? 's' : ''} para "${searchTerm}"`;
+        } else if (searchTerm && searchTerm.length > 0 && searchTerm.length < 3) {
+            searchResults.classList.remove('hidden');
+            searchResultsText.textContent = 'Ingresa al menos 3 caracteres para buscar';
+        } else {
+            searchResults.classList.add('hidden');
         }
     }
 

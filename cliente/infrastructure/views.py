@@ -19,8 +19,11 @@ def clientes_view(request):
     repository = get_cliente_repository()
     
     if request.method == 'GET':
+        search_term = request.GET.get('search', '').strip()
+        
         use_case = ListarClientesUseCase(repository)
-        clientes = use_case.execute(None)
+        clientes = use_case.execute(search_term if search_term else None)
+        
         return Response([{
             'id': cliente.id,
             'nombre': cliente.nombre,

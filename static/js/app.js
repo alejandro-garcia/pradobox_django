@@ -229,6 +229,43 @@ class CobranzasApp {
             }
 
             // Update dashboard data
+            debugger; 
+            let currentSales = 0;
+            if (data.ventas_por_mes.length == 3){
+                let correntSalesNum = data.ventas_por_mes[2].monto / 1000
+
+                //verificar el mayor de los ultimos 2 meses 
+                let topSales = 0;
+                let topSalesMonth = ""; 
+                let lessSales = 0;
+                let lessSalesMonth = "";
+                let lessSalesIndex = 1;
+
+                let topSalesIndex = 0;
+                
+                if  (data.ventas_por_mes[0].monto < data.ventas_por_mes[1].monto) {
+                    topSalesIndex = 1
+                    lessSalesIndex = 0;
+                }
+                
+                topSales = data.ventas_por_mes[topSalesIndex].monto / 1000;
+                let remainingSales  = Math.round((topSales - correntSalesNum),1)
+
+                topSalesMonth = data.ventas_por_mes[topSalesIndex].mes;
+
+                lessSales = (data.ventas_por_mes[lessSalesIndex].monto / 1000).toString().split(".")[0] + "K";
+                lessSalesMonth = data.ventas_por_mes[lessSalesIndex].mes;
+
+                let salesPercentage = (topSales !== 0) ? correntSalesNum * 100 / topSales: 0; 
+
+                let currentSales = (data.ventas_por_mes[2].monto / 1000).toString().split(".")[0] + "K";
+
+                document.getElementById('currentSales').textContent = currentSales;
+                document.getElementById('lessSales').textContent = lessSales + " " + lessSalesMonth;
+                document.getElementById('topSales').textContent = topSales.toString().split(".")[0] + "K" + " " + topSalesMonth;
+                document.getElementById('remainingSales').textContent = remainingSales.toString().split(".")[0] + "K";
+                document.getElementById('salesPercentage').style= `width:${salesPercentage}%`;
+            }
 
             document.getElementById('currentDay').textContent = data.situacion.dias_transcurridos.toString() + 'd';
             document.getElementById('remainingDays').textContent = data.situacion.dias_faltantes.toString() + 'd';

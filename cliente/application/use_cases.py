@@ -58,7 +58,10 @@ class ObtenerClienteUseCase(UseCase[str, ClienteResponse]):
             telefono=cliente.telefono,
             email=cliente.email,
             direccion=cliente.direccion,
-            dias_ult_fact=cliente.dias_ult_fact
+            dias_ult_fact=cliente.dias_ult_fact,
+            vencido=cliente.vencido,
+            total=cliente.total,  
+            ventas_ultimo_trimestre=cliente.ventas_ultimo_trimestre
         )
 
 
@@ -104,7 +107,10 @@ class ListarClientesUseCase(UseCase[None, List[ClienteResponse]]):
                 telefono=cliente.telefono,
                 email=cliente.email,
                 direccion=cliente.direccion,
-                dias_ult_fact=cliente.dias_ult_fact
+                dias_ult_fact=cliente.dias_ult_fact,
+                vencido=cliente.vencido,
+                total=cliente.total,
+                ventas_ultimo_trimestre=cliente.ventas_ultimo_trimestre
             )
             for cliente in clientes
         ]

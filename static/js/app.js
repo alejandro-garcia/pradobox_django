@@ -563,24 +563,52 @@ class CobranzasApp {
         }
     }
 
+    parseAmountToMilesK(amount) {
+        let addSuffix = false;
+        let result = amount;
+        
+        if (amount >= 1000) {
+            addSuffix = true;
+            result = result / 1000;
+        }
+
+        if (addSuffix) 
+            return result.toFixed(0) + 'k';
+        else
+            return result.toFixed(0);   
+    } 
+
     createClienteCard(cliente) {
         const card = document.createElement('div');
         card.className = 'bg-gray-50 rounded-lg p-4 cursor-pointer hover:bg-gray-100 transition-colors';
         card.onclick = () => this.showClienteDetail(cliente.id);
 
-        card.innerHTML = `
+        let expiredAmountText = this.parseAmountToMilesK(cliente.vencido || 0);
+        let totalAmountText = this.parseAmountToMilesK(cliente.total || 0);
+        let lastQuarterSalesText = this.parseAmountToMilesK(cliente.ventas_ultimo_trimestre || 0);
+        
+        card.innerHTML += `
             <div class="flex justify-between items-start">
                 <div class="flex-1">
-                    <h3 class="font-semibold text-gray-800">${cliente.nombre}</h3>
-                    <p class="text-sm text-gray-600">${cliente.rif}</p>
-                    ${cliente.telefono ? `<p class="text-sm text-gray-500">${cliente.telefono}</p>` : ''}
-                    ${cliente.dias_ult_fact ? `<p class="text-sm text-gray-500">${cliente.dias_ult_fact}d</p>` : 'N/A'}
+                    <div class="grid grid-cols-1 gap-1">
+                        <h3 class="font-semibold text-gray-800 break-words" >${cliente.nombre}</h3>
+                    </div>
                 </div>
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
+                <div class="flex flex-col items-end space-y-1">
+                    <div class="flex space-x-2">
+                        <span class="text-sm ${cliente.vencido ? 'text-red-500' : 'text-gray-500'}">${expiredAmountText}</span>
+                        <span class="text-sm text-gray-500">${cliente.dias_ult_fact  || 'N/A'}</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <span class="text-sm text-orange-500">${totalAmountText}</span>
+                        <span class="text-sm text-gray-500">${lastQuarterSalesText}</span>
+                    </div>
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </div>
             </div>
-        `;  
+        `;
 
         return card;
     }

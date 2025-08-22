@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-from shared.domain.value_objects import ClientId, Money
+from shared.domain.value_objects import ClientId, Money, Decimal
 
 
 @dataclass
@@ -12,6 +12,9 @@ class Cliente:
     email: Optional[str] = None
     direccion: Optional[str] = None
     dias_ult_fact: Optional[int] = None
+    vencido: Optional[Decimal] = Decimal(0)
+    total: Optional[Decimal] = Decimal(0)
+    ventas_ultimo_trimestre: Optional[Decimal] = Decimal(0)
     
     def __post_init__(self):
         if not self.nombre or len(self.nombre.strip()) == 0:

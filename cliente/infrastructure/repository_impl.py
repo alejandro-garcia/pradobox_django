@@ -127,5 +127,8 @@ class DjangoClienteRepository(ClienteRepository):
             telefono=model.telefono,
             email=model.email,
             direccion=model.direccion,
-            dias_ult_fact=model.dias_ult_fact
+            dias_ult_fact=model.dias_ult_fact,
+            vencido=model.vencido,
+            total=model.total,
+            ventas_ultimo_trimestre=model.ventas_ultimo_trimestre
         )

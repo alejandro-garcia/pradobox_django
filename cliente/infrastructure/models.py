@@ -9,6 +9,9 @@ class ClienteModel(models.Model):
     email = models.EmailField(blank=True, null=True)
     direccion = models.TextField(blank=True, null=True)
     dias_ult_fact = models.IntegerField(db_column='dias_ult_fact', blank=True, null=True)
+    vencido = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    ventas_ultimo_trimestre = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     #created_at = models.DateTimeField(db_column='fe_us_in', auto_now_add=True)
     #updated_at = models.DateTimeField(db_column='fe_us_mo', auto_now=True)
     

@@ -113,4 +113,5 @@ class ListarClientesUseCase(UseCase[None, List[ClienteResponse]]):
                 ventas_ultimo_trimestre=cliente.ventas_ultimo_trimestre
             )
             for cliente in clientes
+            if cliente.total > 0 or len(search_term or '') >= 3
         ]

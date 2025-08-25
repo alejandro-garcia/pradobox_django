@@ -17,7 +17,7 @@ class DjangoClienteRepository(ClienteRepository):
             return None
     
     def find_all(self) -> List[Cliente]:
-        cliente_models = ClienteModel.objects.all()
+        cliente_models = ClienteModel.objects.all().order_by('dias_ult_fact', 'nombre')
         return [self._to_domain(model) for model in cliente_models]
     
     

@@ -5,7 +5,8 @@ from shared.domain.exceptions import EntityNotFoundException
 from ..application.use_cases import ( 
     ObtenerClienteUseCase, 
     ObtenerResumenClienteUseCase,
-    ListarClientesUseCase
+    ListarClientesUseCase,
+    ListarClientesPorVendedorUseCase
 )
 
 from .repository_impl import DjangoClienteRepository
@@ -37,6 +38,29 @@ def clientes_view(request):
             'ventas_ultimo_trimestre': float(cliente.ventas_ultimo_trimestre) if cliente.ventas_ultimo_trimestre else 0
         } for cliente in clientes])
     
+
+@api_view(['GET'])
+def clients_by_seller(request, seller_id):
+    repository = get_cliente_repository()
+
+    search_term = request.GET.get('search', '').strip()
+    
+    use_case =  ListarClientesPorVendedorUseCase(repository)
+
+    clientes = use_case.execute(seller_id, search_term if search_term else None)
+
+    return Response([{
+        'id': cliente.id,
+        'nombre': cliente.nombre,
+        'rif': cliente.rif,
+        'telefono': cliente.telefono,
+        'email': cliente.email,
+        'direccion': cliente.direccion,
+        'dias_ult_fact': cliente.dias_ult_fact,
+        'vencido': float(cliente.vencido) if cliente.vencido else 0,
+        'total': float(cliente.total) if cliente.total else 0,
+        'ventas_ultimo_trimestre': float(cliente.ventas_ultimo_trimestre) if cliente.ventas_ultimo_trimestre else 0
+    } for cliente in clientes])
 
 
 @api_view(['GET'])

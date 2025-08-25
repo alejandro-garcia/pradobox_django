@@ -1,7 +1,7 @@
 from typing import List, Optional
 from decimal import Decimal
 from django.db import connection
-from shared.domain.value_objects import ClientId, Money
+from shared.domain.value_objects import ClientId, Money, SellerId
 from ..domain.entities import Cliente, ResumenCliente
 from ..domain.repository import ClienteRepository
 from .models import ClienteModel
@@ -27,9 +27,31 @@ class DjangoClienteRepository(ClienteRepository):
             return self._to_domain(cliente_model)
         except ClienteModel.DoesNotExist:
             return None
+        
+    def find_by_seller(self, seller_id: SellerId) -> List[Cliente]:
+        cliente_models = ClienteModel.objects.all().order_by('dias_ult_fact', 'nombre')
+        
+        if seller_id and seller_id.value != "-1":
+            cliente_models = cliente_models.filter(vendedor__codigo=seller_id.value).order_by('dias_ult_fact', 'nombre')
+        
+        return [self._to_domain(model) for model in cliente_models]
+    
     
     def search_by_name(self, nombre: str) -> List[Cliente]:
         cliente_models = ClienteModel.objects.filter(nombre__icontains=nombre).order_by('nombre')
+        return [self._to_domain(model) for model in cliente_models]
+    
+    
+    def search_by_name_and_seller(self, nombre: str, seller_id: SellerId) -> List[Cliente]:
+
+        if not nombre or len(nombre) < 3:
+            cliente_models = ClienteModel.objects.all().order_by('dias_ult_fact','nombre')
+        else:
+            cliente_models = ClienteModel.objects.filter(nombre__icontains=nombre).order_by('dias_ult_fact','nombre')
+        
+        if seller_id and seller_id.value != "-1":
+            cliente_models = cliente_models.filter(vendedor__codigo=seller_id.value).order_by('dias_ult_fact', 'nombre')
+        
         return [self._to_domain(model) for model in cliente_models]
     
     def get_resumen_cliente(self, cliente_id: ClientId) -> Optional[ResumenCliente]:

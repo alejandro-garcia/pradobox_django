@@ -464,7 +464,11 @@ class CobranzasApp {
                     direccion: cliente.direccion
                 }));
             } else {
-                const response = await fetch(`${this.apiBaseUrl}/clientes/`, {
+                const user = window.authService.getCurrentUser();
+                const sellerCode = user.codigo_vendedor_profit; 
+                debugger;
+
+                const response = await fetch(`${this.apiBaseUrl}/clientes/vendedor/${sellerCode}`, {
                     headers: window.authService.getAuthHeaders()
                 });
                 
@@ -659,9 +663,12 @@ class CobranzasApp {
                         cliente.nombre.toLowerCase().includes(searchTerm.toLowerCase())
                     );
             } else {
+                const user = window.authService.getCurrentUser();
+                const seller_code = user.codigo_vendedor_profit; 
+                debugger;
                 const url = searchTerm 
-                    ? `${this.apiBaseUrl}/clientes/?search=${encodeURIComponent(searchTerm)}`
-                    : `${this.apiBaseUrl}/clientes/`;
+                    ? `${this.apiBaseUrl}/clientes/vendedor/${seller_code}?search=${encodeURIComponent(searchTerm)}`
+                    : `${this.apiBaseUrl}/clientes/vendedor/${seller_code}`;
                     
                 const response = await fetch(url, {
                     headers: window.authService.getAuthHeaders()

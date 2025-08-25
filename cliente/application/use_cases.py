@@ -1,6 +1,6 @@
 from typing import List, Optional
 from shared.application.use_case import UseCase
-from shared.domain.value_objects import ClientId
+from shared.domain.value_objects import ClientId, SellerId
 from shared.domain.exceptions import EntityNotFoundException
 from ..domain.entities import Cliente
 from ..domain.repository import ClienteRepository
@@ -114,4 +114,28 @@ class ListarClientesUseCase(UseCase[None, List[ClienteResponse]]):
             )
             for cliente in clientes
             if cliente.total > 0 or len(search_term or '') >= 3
+        ]
+    
+class ListarClientesPorVendedorUseCase(UseCase[List[str], List[ClienteResponse]]):
+    
+    def __init__(self, cliente_repository: ClienteRepository):
+        self.cliente_repository = cliente_repository
+    
+    def execute(self, seller_id: str, search_term: Optional[str]) -> List[ClienteResponse]:
+        clientes = self.cliente_repository.search_by_name_and_seller(search_term, SellerId(seller_id))
+        
+        return [
+            ClienteResponse(
+                id=cliente.id.value,
+                nombre=cliente.nombre,
+                rif=cliente.rif,
+                telefono=cliente.telefono,
+                email=cliente.email,
+                direccion=cliente.direccion,
+                dias_ult_fact=cliente.dias_ult_fact,
+                vencido=cliente.vencido,
+                total=cliente.total,
+                ventas_ultimo_trimestre=cliente.ventas_ultimo_trimestre
+            )
+            for cliente in clientes
         ]

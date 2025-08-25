@@ -12,12 +12,13 @@ class DocumentoModel(models.Model):
         ('AJMN', 'Ajuste Negativo Manual')
     ]
     
-    # ESTADO_CHOICES = [
-    #     ('PENDIENTE', 'Pendiente'),
-    #     ('PAGADO', 'Pagado'),
-    #     ('VENCIDO', 'Vencido'),
-    #     ('ANULADO', 'Anulado'),
-    # ]
+    ESTADO_CHOICES = [
+        ('PENDIENTE', 'Pendiente'),
+        ('PAGADO', 'Pagado'),
+        ('VENCIDO', 'Vencido'),
+        ('ANULADO', 'Anulado'),
+        ('OTRO', 'Otro')
+    ]
     
     id  = models.CharField(max_length=50,primary_key=True)
     cliente = models.ForeignKey(ClienteModel, db_column='co_cli',on_delete=models.CASCADE, related_name='documentos')
@@ -28,7 +29,7 @@ class DocumentoModel(models.Model):
     fecha_emision = models.DateField(db_column='fec_emis')
     fecha_vencimiento = models.DateField(db_column='fec_venc')
     co_ven = models.CharField(db_column='co_ven', max_length=6, blank=True, null=True)
-    #estado = models.CharField(db_column='estado', max_length=20, choices=ESTADO_CHOICES, default='PENDIENTE')
+    estado = models.CharField(db_column='estado', max_length=20, choices=ESTADO_CHOICES, default='PENDIENTE')
 
     anulado = models.BooleanField(db_column='anulado', default=False)
     descripcion = models.TextField(db_column='observa', blank=True, null=True)

@@ -116,3 +116,31 @@ class ObtenerDocumentosVencidosUseCase(UseCase[None, List[DocumentoResponse]]):
             descripcion=documento.descripcion
         )
 
+
+class VerDocumentosPendientesUseCase(UseCase[str, List[DocumentoResponse]]):
+    
+    def __init__(self, documento_repository: DocumentoRepository):
+        self.documento_repository = documento_repository
+    
+    def execute(self, seller_id: str) -> List[DocumentoResponse]:
+        # Obtener todos los documentos pendientes (vencidos y por vencer)
+        documentos_pendientes = self.documento_repository.find_documentos_pendientes(seller_id)
+        
+        return [self._to_response(doc) for doc in documentos_pendientes]
+    
+    def _to_response(self, documento: Documento) -> DocumentoResponse:
+        return DocumentoResponse(
+            id=documento.id.value,
+            cliente_id=documento.cliente_id.value,
+            numero=documento.numero,
+            tipo=documento.tipo.value,
+            monto=documento.monto.amount,
+            fecha_emision=documento.fecha_emision,
+            fecha_vencimiento=documento.fecha_vencimiento,
+            estado=documento.estado.value,
+            dias_vencimiento=documento.dias_vencimiento,
+            esta_vencido=documento.esta_vencido,
+            descripcion=documento.descripcion,
+            cliente_nombre=getattr(documento, 'cliente_nombre', ''),
+            co_ven=documento.co_ven
+        )

@@ -8,7 +8,8 @@ from ..application.use_cases import (
     CrearDocumentoUseCase,
     ObtenerDocumentosUseCase,
     ObtenerResumenCobranzasUseCase,
-    ObtenerDocumentosVencidosUseCase
+    ObtenerDocumentosVencidosUseCase,
+    VerDocumentosPendientesUseCase
 )
 from ..application.dtos import CrearDocumentoRequest, FiltroDocumentosRequest
 from .repository_impl import DjangoDocumentoRepository
@@ -119,4 +120,30 @@ def documentos_vencidos_view(request):
         'dias_vencimiento': doc.dias_vencimiento,
         'esta_vencido': doc.esta_vencido,
         'descripcion': doc.descripcion
+    } for doc in documentos])
+
+
+@api_view(['GET'])
+def documentos_pendientes_view(request):
+    repository = get_documento_repository()
+    
+    seller_id = request.user.codigo_vendedor_profit if hasattr(request.user, 'codigo_vendedor_profit') else "-1"
+    
+    use_case = VerDocumentosPendientesUseCase(repository)
+    documentos = use_case.execute(seller_id)
+    
+    return Response([{
+        'id': doc.id,
+        'cliente_id': doc.cliente_id,
+        'cliente_nombre': doc.cliente_nombre,
+        'numero': doc.numero,
+        'tipo': doc.tipo,
+        'monto': float(doc.monto),
+        'fecha_emision': doc.fecha_emision,
+        'fecha_vencimiento': doc.fecha_vencimiento,
+        'estado': doc.estado,
+        'dias_vencimiento': doc.dias_vencimiento,
+        'esta_vencido': doc.esta_vencido,
+        'descripcion': doc.descripcion,
+        'co_ven': doc.co_ven
     } for doc in documentos])

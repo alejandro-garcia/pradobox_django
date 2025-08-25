@@ -28,6 +28,8 @@ class DocumentoResponse:
     dias_vencimiento: int
     esta_vencido: bool
     descripcion: Optional[str]
+    cliente_nombre: Optional[str] = None
+    co_ven: Optional[str] = None
 
 
 @dataclass

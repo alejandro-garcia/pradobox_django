@@ -6,16 +6,23 @@ from shared.domain.value_objects import DocumentId, ClientId, Money
 
 
 class TipoDocumento(Enum):
-    FACTURA = "FACTURA"
-    NOTA_DEBITO = "NOTA_DEBITO"
-    CREDITO = "CREDITO"
-
+    FACTURA = "FACT"
+    NOTA_DEBITO = "N/DB"
+    CREDITO = "N/CR"
+    ADELANTO = "ADEL"
+    AJUSTE_POSITIVO_MANUAL = "AJPM"
+    AJUSTE_NEGATIVO_MANUAL = "AJNM"
+    AJUSTE_POSITIVO_AUTOMATICO = "AJPA"
+    AJUSTE_NEGATIVO_AUTOMATICO = "AJNA"
+    CHEQUE = "CHEQ"
+    GIRO = "GIRO"
 
 class EstadoDocumento(Enum):
     PENDIENTE = "PENDIENTE"
     PAGADO = "PAGADO"
     VENCIDO = "VENCIDO"
     ANULADO = "ANULADO"
+    OTRO = "OTRO"
 
 
 @dataclass
@@ -34,7 +41,12 @@ class Documento:
     @property
     def dias_vencimiento(self) -> int:
         """Calcula los días de vencimiento (positivo si está vencido)"""
-        delta = date.today() - self.fecha_vencimiento
+        
+        if type(self.fecha_vencimiento).__name__ == 'datetime':
+            delta = date.today() - self.fecha_vencimiento.date()
+        else:
+            delta = date.today() - self.fecha_vencimiento
+            
         return delta.days
     
     @property

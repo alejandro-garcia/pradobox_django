@@ -300,6 +300,27 @@ class DjangoDocumentoRepository(DocumentoRepository):
         )
     
 
+    def find_documentos_pendientes(self, seller_id: str) -> List[Documento]:
+        """Obtiene todos los documentos pendientes (vencidos y por vencer) con información del cliente"""
+        query = DocumentoModel.objects.select_related('cliente').filter(
+            saldo__gt=0,
+            anulado=False
+        )
+        
+        if seller_id != "-1":
+            query = query.filter(co_ven=seller_id)
+        
+        query = query.order_by('-fecha_vencimiento')
+        
+        documentos = []
+        for model in query:
+            documento = self._to_domain(model)
+            # Agregar nombre del cliente como atributo adicional
+            documento.cliente_nombre = model.cliente.nombre
+            documentos.append(documento)
+        
+        return documentos
+
     def get_ventas_trimestre(self, seller_id: SellerId) -> List[Dict]:
         if seller_id.value != "-1":
             qs = (

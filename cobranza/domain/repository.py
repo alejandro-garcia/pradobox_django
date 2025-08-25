@@ -35,6 +35,9 @@ class DocumentoRepository(Repository[Documento, DocumentId]):
         pass
 
     @abstractmethod
+    def find_documentos_pendientes(self, seller_id: str) -> List[Documento]:
+        pass
+    @abstractmethod
     def get_ventas_trimestre(self, seller_id: SellerId) -> List[Dict]:
         pass
 

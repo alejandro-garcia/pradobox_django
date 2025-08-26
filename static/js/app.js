@@ -178,6 +178,8 @@ class CobranzasApp {
 
     navigateTo(view) {
         // Update navigation state
+        debugger;
+
         document.querySelectorAll('.nav-item').forEach(item => {
             item.classList.remove('active', 'text-primary');
             item.classList.add('text-gray-600');
@@ -207,7 +209,8 @@ class CobranzasApp {
             'documentos-pendientes': 'Cobrables',
             'tareas': 'Tareas',
             'eventos': 'Eventos',
-            'mas': 'Más'
+            'mas': 'Más',
+            'docs-pdtes-cliente': 'Cobrables'
         };
 
         document.getElementById('pageTitle').textContent = titles[view] || 'Cobranzas';
@@ -237,6 +240,10 @@ class CobranzasApp {
                 break;
             case 'documentos-pendientes':
                 this.loadDocumentosPendientes();
+                break;
+            case 'docs-pdtes-cliente':
+                // Handled when opening from client detail
+                this.LoadClientPendingDocs(this.currentClientId);
                 break;
             case 'mas':
                 this.updateStorageInfo();
@@ -505,6 +512,20 @@ class CobranzasApp {
         }
     }
 
+    showClientDocsPendingLoading(show) {
+        const loading = document.getElementById('clientDocsPendingLoading');
+        const list = document.getElementById('clientDocsPendingList');
+        const empty = document.getElementById('documentosPendientesEmpty');
+        
+        if (show) {
+            loading.classList.remove('hidden');
+            list.innerHTML = '';
+            empty.classList.add('hidden');
+        } else {
+            loading.classList.add('hidden');
+        }
+    }
+
     async loadDocumentosPendientes() {
         this.showDocumentosPendientesLoading(true);
         
@@ -559,6 +580,60 @@ class CobranzasApp {
             this.showDocumentosPendientesLoading(false);
         }
     }
+    async LoadClientPendingDocs(clientId) {
+        this.showClientDocsPendingLoading(true);
+        
+        try {
+            let data;
+            
+            if (this.offlineMode) {
+                // Load from IndexedDB
+                const documentos = await window.indexedDBService.getDocumentos();
+                const resumen = await window.indexedDBService.getResumenCobranzas();
+                
+                data = {
+                    documentos: documentos.map(doc => ({
+                        ...doc,
+                        cliente_nombre: 'Cliente Local', // En IndexedDB necesitaríamos hacer join
+                        dias_vencimiento: this.calculateDaysOverdue(doc.fec_venc),
+                        esta_vencido: new Date(doc.fec_venc) < new Date()
+                    })),
+                    resumen: resumen
+                };
+            } else {
+                // Load from API
+                const [documentosResponse, resumenResponse] = await Promise.all([
+                    fetch(`${this.apiBaseUrl}/cobranzas/pendientes/${clientId}`, {
+                        headers: window.authService.getAuthHeaders()
+                    }),
+                    fetch(`${this.apiBaseUrl}/dashboard/`, {
+                        headers: window.authService.getAuthHeaders()
+                    })
+                ]);
+                
+                if (documentosResponse.status === 401 || resumenResponse.status === 401) {
+                    window.authService.logout();
+                    return;
+                }
+                
+                const documentos = await documentosResponse.json();
+                const dashboardData = await resumenResponse.json();
+                
+                data = {
+                    documentos: documentos,
+                    resumen: dashboardData.situacion
+                };
+            }
+            
+            this.displayClientDocsPending(data);
+            
+        } catch (error) {
+            console.error('Error loading documentos pendientes:', error);
+            this.showError('Error cargando documentos pendientes');
+        } finally {
+            this.showClientDocsPendingLoading(false);
+        }
+    }
 
     displayDocumentosPendientes(data) {
         // Update resumen
@@ -587,6 +662,70 @@ class CobranzasApp {
         }
         
         documentosEmpty.classList.add('hidden');
+        
+        documentosList.innerHTML = data.documentos.map(doc => {
+            const tipoColor = this.getTipoColor(doc.tipo);
+            const tipoAbrev = this.getTipoAbreviacion(doc.tipo);
+            const timeAgo = this.getTimeAgo(doc.fecha_emision);
+            const diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
+            const diasVencido = doc.dias_vencimiento;
+            const isOverdue = doc.esta_vencido;
+            
+            return `
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                    <!-- Fila 1: Tipo, Cliente, Tiempo -->
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full ${tipoColor} flex items-center justify-center">
+                                <span class="text-white text-xs font-bold">${tipoAbrev}</span>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 text-sm">${doc.cliente_nombre}</p>
+                                <p class="text-xs text-gray-500">${doc.numero}</p>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-500">${timeAgo}</span>
+                    </div>
+                    
+                    <!-- Fila 2: Fecha emisión, Días crédito, Monto -->
+                    <div class="flex justify-between items-center mb-2 text-sm">
+                        <div class="flex items-center space-x-1">
+                            <span class="text-gray-600">E</span>
+                            <span class="text-gray-900">${this.formatDate(doc.fecha_emision)}</span>
+                        </div>
+                        <span class="text-gray-600">${diasCredito}d</span>
+                        <span class="text-gray-900 font-medium">${this.formatCurrency(doc.monto)}</span>
+                    </div>
+                    
+                    <!-- Fila 3: Fecha vencimiento, Días vencido, Saldo -->
+                    <div class="flex justify-between items-center text-sm">
+                        <div class="flex items-center space-x-1">
+                            <span class="text-gray-600">V</span>
+                            <span class="text-gray-900">${this.formatDate(doc.fecha_vencimiento)}</span>
+                        </div>
+                        <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${Math.abs(diasVencido)}d</span>
+                        <div class="text-right">
+                            <span class="text-xs text-gray-500">falta</span>
+                            <span class="text-red-500 font-medium">${this.formatCurrency(doc.monto)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    displayClientDocsPending(data) {
+        // Display documentos
+        const documentosList = document.getElementById('clientDocsPendingList');
+        //const documentosEmpty = document.getElementById('documentosPendientesEmpty');
+        
+        if (data.documentos.length === 0) {
+            documentosList.innerHTML = '';
+            //documentosEmpty.classList.remove('hidden');
+            return;
+        }
+        
+        //documentosEmpty.classList.add('hidden');
         
         documentosList.innerHTML = data.documentos.map(doc => {
             const tipoColor = this.getTipoColor(doc.tipo);
@@ -891,6 +1030,14 @@ class CobranzasApp {
             // Update header
             document.getElementById('pageTitle').textContent = cliente.nombre;
 
+            // set pending document listener 
+            document.getElementById('clientPendingDocs').onclick = () => {
+                debugger;
+                this.currentClientId = clienteId;
+                this.LoadClientPendingDocs(clienteId);
+                this.showView('docs-pdtes-cliente');
+            };
+
         } catch (error) {
             console.error('Error loading cliente detail:', error);
             this.showError('Error cargando los detalles del cliente');
@@ -1089,7 +1236,11 @@ class CobranzasApp {
                 <!-- Documentos Pendientes -->
                 <div id="clientPendingDocs" class="bg-white rounded-lg shadow-md p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">DOCUMENTOS PENDIENTES</h3>
-                    <div id="documentosPendientes">
+                    <div id="clientDocsPendingLoading" class="hidden text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <p class="mt-2 text-gray-600">Cargando documentos...</p>
+                    </div>
+                    <div id="clientDocsPendingList">
                         <!-- Documents will be loaded here -->
                     </div>
                 </div>

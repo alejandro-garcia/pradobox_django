@@ -5,10 +5,10 @@ from django.db import models
 from django.db.models import Sum, Count, Q, Avg, ExpressionWrapper, F, FloatField, IntegerField, DecimalField , Max, Case, When, Value, BigIntegerField, Func
 from django.utils import timezone
 from django.db.models.functions import Now, Cast, Round
-from shared.domain.value_objects import DocumentId, ClientId, Money, SellerId
-from ..domain.entities import Documento, TipoDocumento, EstadoDocumento, ResumenCobranzas
-from ..domain.repository import DocumentoRepository
-from .models import CobroMes, DocumentoModel, VentaMes
+from shared.domain.value_objects import DocumentId, ClientId, Money, SellerId, EventId
+from ..domain.entities import Documento, TipoDocumento, EstadoDocumento, ResumenCobranzas, Evento
+from ..domain.repository import DocumentoRepository, EventoRepository
+from .models import CobroMes, DocumentoModel, VentaMes, EventoModel
 from shared.domain.constants import MESES_ES 
 import calendar
 
@@ -320,6 +320,24 @@ class DjangoDocumentoRepository(DocumentoRepository):
             documentos.append(documento)
         
         return documentos
+    
+    def find_documentos_pendientes_cliente(self, client_id: str) -> List[Documento]:
+        """Obtiene todos los documentos pendientes (vencidos y por vencer) con información del cliente"""
+        query = DocumentoModel.objects.select_related('cliente').filter(
+            saldo__gt=0,
+            anulado=False,
+            cliente_id=client_id
+        ).order_by('-fecha_emision')
+        
+      
+        documentos = []
+        for model in query:
+            documento = self._to_domain(model)
+            # Agregar nombre del cliente como atributo adicional
+            documento.cliente_nombre = model.cliente.nombre
+            documentos.append(documento)
+        
+        return documentos
 
     def get_ventas_trimestre(self, seller_id: SellerId) -> List[Dict]:
         if seller_id.value != "-1":
@@ -369,8 +387,6 @@ class DjangoDocumentoRepository(DocumentoRepository):
 
         return payments_list
 
-
-
     def _to_domain(self, model: DocumentoModel) -> Documento:
         return Documento(
             id=DocumentId(model.id),
@@ -382,4 +398,39 @@ class DjangoDocumentoRepository(DocumentoRepository):
             fecha_vencimiento=model.fecha_vencimiento,
             estado=EstadoDocumento(model.estado),
             descripcion=model.descripcion
+        )
+    
+class DjangoEventoRepository(EventoRepository):
+    def find_all(self) -> List[Documento]:
+        evento_models = EventoModel.objects.all()
+        return [self._to_domain(model) for model in evento_models]
+    
+    def find_by_id(self, entity_id):
+        evento_models = EventoModel.objects.find(id=entity_id.value)
+        return [self._to_domain(model) for model in evento_models]
+    
+    def find_eventos_cliente(self, client_id: str) -> List[Evento]:
+
+        query = EventoModel.objects.filter(co_cli=client_id)
+
+        eventos = []
+        
+        for row in query:
+            evento = self._to_domain(row)
+            eventos.append(evento)
+        
+        return eventos
+    
+    def _to_domain(self, model: EventoModel) -> Evento:
+        return Evento(
+            id=EventId(model.id),
+            cliente_id=ClientId(model.co_cli),
+            company_id=model.company,
+            tipo=TipoDocumento(model.doc_type),
+            numero=model.doc_number,
+            fecha_emision=model.fec_emis,
+            fecha_vencimiento=model.fec_venc,
+            monto=Money(model.amount),
+            saldo=Money(model.amount_pending),
+            descripcion=model.comment
         )

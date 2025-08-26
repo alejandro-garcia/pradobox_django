@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date
 from enum import Enum
 from typing import Optional
-from shared.domain.value_objects import DocumentId, ClientId, Money
+from shared.domain.value_objects import DocumentId, ClientId, Money, EventId
 
 
 class TipoDocumento(Enum):
@@ -16,6 +16,8 @@ class TipoDocumento(Enum):
     AJUSTE_NEGATIVO_AUTOMATICO = "AJNA"
     CHEQUE = "CHEQ"
     GIRO = "GIRO"
+    COBRO = "COB"
+    DEVOLUCION = "DEV"
 
 class EstadoDocumento(Enum):
     PENDIENTE = "PENDIENTE"
@@ -46,7 +48,7 @@ class Documento:
             delta = date.today() - self.fecha_vencimiento.date()
         else:
             delta = date.today() - self.fecha_vencimiento
-            
+
         return delta.days
     
     @property
@@ -70,3 +72,32 @@ class ResumenCobranzas:
     @property
     def total_neto(self) -> Money:
         return self.total_vencido + self.total_por_vencer + self.total_creditos
+    
+@dataclass
+class Evento:
+    id: EventId
+    cliente_id: ClientId
+    company_id: int
+    tipo: TipoDocumento
+    numero: str
+    fecha_emision: date
+    fecha_vencimiento: date
+    monto: Money
+    saldo: Money
+    descripcion: Optional[str] = None
+    
+    @property
+    def dias_vencimiento(self) -> int:
+        """Calcula los días de vencimiento (positivo si está vencido)"""
+        
+        if type(self.fecha_vencimiento).__name__ == 'datetime':
+            delta = date.today() - self.fecha_vencimiento.date()
+        else:
+            delta = date.today() - self.fecha_vencimiento
+            
+        return delta.days
+    
+    # @property
+    # def esta_vencido(self) -> bool:
+    #     """Indica si el documento está vencido"""
+    #     return self.dias_vencimiento > 0 and self.estado == EstadoDocumento.PENDIENTE

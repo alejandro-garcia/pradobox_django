@@ -72,3 +72,22 @@ class CobroMes(models.Model):
         verbose_name = 'CobroMes'
         verbose_name_plural = 'CobrosMensuales'
         unique_together = ['co_ven', 'cob_date']
+
+class EventoModel(models.Model):
+    id  = models.CharField(max_length=50,primary_key=True)
+    co_cli = models.CharField(db_column='co_cli', max_length=10, blank=True, null=True)
+    company = models.IntegerField(db_column='empresa', blank=True, null=True)
+    doc_type = models.CharField(db_column='tipo_doc', max_length=4, blank=True, null=True)
+    doc_number = models.IntegerField(db_column='nro_doc', blank=True, null=True)
+    fec_emis = models.DateField(db_column='fec_emis', blank=False, null=False)
+    fec_venc = models.DateField(db_column='fec_venc', blank=False, null=False)
+    amount = models.DecimalField(db_column='monto_net', max_digits=12, decimal_places=2)
+    amount_pending = models.DecimalField(db_column='saldo', max_digits=12, decimal_places=2)
+    comment = models.TextField(db_column='observa', blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'vw_eventos'
+        verbose_name = 'Evento'
+        verbose_name_plural = 'Eventos'
+        unique_together = ['company', 'co_cli', 'doc_type', 'doc_number']

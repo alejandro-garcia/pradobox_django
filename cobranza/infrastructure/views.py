@@ -9,14 +9,19 @@ from ..application.use_cases import (
     ObtenerDocumentosUseCase,
     ObtenerResumenCobranzasUseCase,
     ObtenerDocumentosVencidosUseCase,
-    VerDocumentosPendientesUseCase
+    VerDocumentosPendientesUseCase,
+    VerDocumentosPendientesClienteUseCase,
+    EventosClienteUseCase
 )
 from ..application.dtos import CrearDocumentoRequest, FiltroDocumentosRequest
-from .repository_impl import DjangoDocumentoRepository
+from .repository_impl import DjangoDocumentoRepository, DjangoEventoRepository
 
 
 def get_documento_repository():
     return DjangoDocumentoRepository()
+
+def get_evento_repository():
+    return DjangoEventoRepository()
 
 
 @api_view(['GET', 'POST'])
@@ -146,4 +151,48 @@ def documentos_pendientes_view(request):
         'esta_vencido': doc.esta_vencido,
         'descripcion': doc.descripcion,
         'co_ven': doc.co_ven
+    } for doc in documentos])
+
+@api_view(['GET'])
+def documentos_pendientes_cliente_view(request, client_id):
+    repository = get_documento_repository()
+    
+    use_case = VerDocumentosPendientesClienteUseCase(repository)
+    documentos = use_case.execute(client_id)
+    
+    return Response([{
+        'id': doc.id,
+        'cliente_id': doc.cliente_id,
+        'cliente_nombre': doc.cliente_nombre,
+        'numero': doc.numero,
+        'tipo': doc.tipo,
+        'monto': float(doc.monto),
+        'fecha_emision': doc.fecha_emision,
+        'fecha_vencimiento': doc.fecha_vencimiento,
+        'estado': doc.estado,
+        'dias_vencimiento': doc.dias_vencimiento,
+        'esta_vencido': doc.esta_vencido,
+        'descripcion': doc.descripcion,
+        'co_ven': doc.co_ven
+    } for doc in documentos])
+
+@api_view(['GET'])
+def eventos_cliente_view(request, client_id):
+    repository = get_evento_repository()
+    
+    use_case = EventosClienteUseCase(repository)
+
+    documentos = use_case.execute(client_id)
+   
+    return Response([{
+        'id': doc.id,
+        'cliente_id': doc.cliente_id,
+        'company_id': doc.company_id,
+        'tipo': doc.tipo,
+        'numero': doc.numero,
+        'fecha_emision': doc.fecha_emision,
+        'fecha_vencimiento': doc.fecha_vencimiento,
+        'monto': float(doc.monto),
+        'saldo': float(doc.saldo) if doc.saldo else 0,
+        'descripcion': doc.descripcion
     } for doc in documentos])

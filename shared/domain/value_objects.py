@@ -9,7 +9,10 @@ class Money:
     currency: str = "USD"
     
     def __post_init__(self):
-        if self.amount < 0:
+        # if self.amount is None:
+        #     self.amount = Decimal('0.00')
+
+        if self.amount and self.amount < 0:
             raise ValueError("Money amount cannot be negative")
     
     def __add__(self, other: 'Money') -> 'Money':
@@ -30,7 +33,14 @@ class DocumentId:
     def __post_init__(self):
         if not self.value or len(self.value.strip()) == 0:
             raise ValueError("Document ID cannot be empty")
-
+        
+@dataclass(frozen=True)
+class EventId:
+    value: str
+    
+    def __post_init__(self):
+        if not self.value or len(self.value.strip()) == 0:
+            raise ValueError("Document ID cannot be empty")
 
 @dataclass(frozen=True)
 class ClientId:

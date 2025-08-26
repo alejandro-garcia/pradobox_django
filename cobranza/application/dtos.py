@@ -49,3 +49,16 @@ class FiltroDocumentosRequest:
     estado: Optional[str] = None
     fecha_desde: Optional[date] = None
     fecha_hasta: Optional[date] = None
+
+@dataclass
+class EventoResponse:
+    id: str
+    cliente_id: str
+    company_id: int 
+    tipo: str
+    numero: str
+    fecha_emision: date
+    fecha_vencimiento: date
+    monto: Decimal
+    saldo: Decimal
+    descripcion: Optional[str]

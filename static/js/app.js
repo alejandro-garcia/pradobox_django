@@ -84,7 +84,6 @@ class CobranzasApp {
         const documentosPendientesBtn = document.querySelector('[data-view="documentos-pendientes"]');
         if (documentosPendientesBtn) {
             documentosPendientesBtn.addEventListener('click', () => {
-                debugger;
                 this.navigateTo('documentos-pendientes');
             });
         }
@@ -92,7 +91,6 @@ class CobranzasApp {
         const pendingDocsCard = document.getElementById('pendingDocsCard');
         if (pendingDocsCard) {
             pendingDocsCard.addEventListener('click', () => {
-                debugger;
                 this.navigateTo('documentos-pendientes');
             });
         }
@@ -107,7 +105,6 @@ class CobranzasApp {
     setupImportEventListeners() {
         // Start import button
         document.getElementById('startImportBtn').addEventListener('click', async () => {
-            debugger;
             await this.startImport();
         });
 
@@ -267,7 +264,9 @@ class CobranzasApp {
             'N/CR': 'bg-green-500',
             'ADEL': 'bg-purple-500',
             'AJPM': 'bg-indigo-500',
-            'AJMN': 'bg-red-500'
+            'AJMN': 'bg-red-500',
+            'DEV': 'bg-red-500',
+            'PAGO': 'bg-green-500'
         };
         return colors[tipo] || 'bg-gray-500';
     }
@@ -279,7 +278,9 @@ class CobranzasApp {
             'N/CR': 'C',
             'ADEL': 'A',
             'AJPM': 'P',
-            'AJMN': 'M'
+            'AJMN': 'M',
+            'DEV': 'D',
+            'PAGO': 'P'
         };
         return abrev[tipo] || 'D';
     }
@@ -330,7 +331,6 @@ class CobranzasApp {
                 debugger;
                 data = await this.loadDashboardFromIndexedDB();
             } else {
-                debugger;
                 const user = window.authService.getCurrentUser();
                 const seller_code = user.codigo_vendedor_profit; 
 
@@ -348,7 +348,7 @@ class CobranzasApp {
             }
 
             // Update dashboard data
-            debugger; 
+
             let currentSales = 0;
             if (data.ventas_por_mes.length == 3){
                 let correntSalesNum = data.ventas_por_mes[2].monto / 1000
@@ -466,7 +466,6 @@ class CobranzasApp {
             } else {
                 const user = window.authService.getCurrentUser();
                 const sellerCode = user.codigo_vendedor_profit; 
-                debugger;
 
                 const response = await fetch(`${this.apiBaseUrl}/clientes/vendedor/${sellerCode}`, {
                     headers: window.authService.getAuthHeaders()
@@ -665,7 +664,7 @@ class CobranzasApp {
             } else {
                 const user = window.authService.getCurrentUser();
                 const seller_code = user.codigo_vendedor_profit; 
-                debugger;
+
                 const url = searchTerm 
                     ? `${this.apiBaseUrl}/clientes/vendedor/${seller_code}?search=${encodeURIComponent(searchTerm)}`
                     : `${this.apiBaseUrl}/clientes/vendedor/${seller_code}`;
@@ -851,25 +850,39 @@ class CobranzasApp {
     async showClienteDetail(clienteId) {
         try {
             debugger;
-            const [clienteResponse, resumenResponse] = await Promise.all([
+
+            /*
+                fetch(`${this.apiBaseUrl}/cobranzas/pendientes/${clienteId}`, {
+                    headers: window.authService.getAuthHeaders()
+                })
+            */
+            const [clienteResponse, resumenResponse, eventsResponse] = await Promise.all([
                 fetch(`${this.apiBaseUrl}/clientes/${clienteId}/`, {
                     headers: window.authService.getAuthHeaders()
                 }),
                 fetch(`${this.apiBaseUrl}/clientes/${clienteId}/resumen/`, {
                     headers: window.authService.getAuthHeaders()
+                }),
+                fetch(`${this.apiBaseUrl}/cobranzas/eventos/${clienteId}`, {
+                    headers: window.authService.getAuthHeaders()
                 })
             ]);
 
-            if (clienteResponse.status === 401 || resumenResponse.status === 401) {
+            if (clienteResponse.status === 401 || resumenResponse.status === 401 || eventsResponse.status === 401) {
                 window.authService.logout();
                 return;
             }
 
             const cliente = await clienteResponse.json();
             const resumen = await resumenResponse.json();
+            const eventos = await eventsResponse.json();
 
             const detailView = document.getElementById('cliente-detail-view');
             detailView.innerHTML = this.createClienteDetailHTML(cliente, resumen);
+
+            if (eventos.length !== 0) {
+                 this.createClienteEventsHTML(eventos);
+            }
             
             // Hide clientes view and show detail view
             document.getElementById('clientes-view').classList.add('hidden');
@@ -882,6 +895,137 @@ class CobranzasApp {
             console.error('Error loading cliente detail:', error);
             this.showError('Error cargando los detalles del cliente');
         }
+    }
+
+    createClienteEventsHTML(docs){
+        debugger; 
+        const detailView = document.getElementById('cliente-detail-view');
+        const documentosList = detailView.querySelector('#eventList');
+
+        if (docs.length === 0) {
+            documentosList.innerHTML = `
+                <div class="text-center text-gray-500">
+                    <p class="text-lg font-medium">No hay eventos los ultimos 90 dias</p>
+                    <p class="text-sm">Este cliente no tiene eventos los ultimos 3 meses</p>
+                </div>
+            `;
+            return;
+        }
+
+        documentosList.innerHTML = docs.map(doc => {
+            const tipoColor = this.getTipoColor(doc.tipo);
+            const tipoAbrev = this.getTipoAbreviacion(doc.tipo);
+            const timeAgo = this.getTimeAgo(doc.fecha_emision);
+            const diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
+            const diasVencido = doc.dias_vencimiento;
+            const isOverdue = doc.esta_vencido;
+            
+            return `
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                    <!-- Fila 1: Tipo, Cliente, Tiempo -->
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full ${tipoColor} flex items-center justify-center">
+                                <span class="text-white text-xs font-bold">${tipoAbrev}</span>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 text-sm">${doc.numero}</p>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-500">${timeAgo}</span>
+                    </div>
+                    
+                    <!-- Fila 2: Fecha emisión, Días crédito, Monto -->
+                    <div class="flex justify-between items-center mb-2 text-sm">
+                        <div class="flex items-center space-x-1">
+                            <span class="text-gray-600">E </span>
+                            <span class="text-gray-900">${this.formatDate(doc.fecha_emision)}</span>
+                        </div>
+                        <span class="text-gray-600">${diasCredito}d</span>
+                        <span class="text-gray-900 font-medium">${this.formatCurrency(doc.monto)}</span>
+                    </div>
+                    
+                    <!-- Fila 3: Fecha vencimiento, Días vencido, Saldo -->
+                    <div class="flex justify-between items-center text-sm">
+                        <div class="flex items-center space-x-1">
+                            <span class="text-gray-600">V </span>
+                            <span class="text-gray-900">${this.formatDate(doc.fecha_vencimiento)}</span>
+                        </div>
+                        <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${Math.abs(diasVencido)}d</span>
+                        <div class="text-right">
+                            <span class="text-xs text-gray-500">falta</span>
+                            <span class="text-red-500 font-medium">${this.formatCurrency(doc.monto)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    createClientePendingDocsHTML(docs){
+    
+        const detailView = document.getElementById('cliente-detail-view');
+        const documentosList = detailView.querySelector('#documentosPendientes');
+
+        if (docs.length === 0) {
+            documentosList.innerHTML = `
+                <div class="text-center text-gray-500">
+                    <p class="text-lg font-medium">No hay documentos pendientes</p>
+                    <p class="text-sm">Este cliente no tiene documentos pendientes de cobro.</p>
+                </div>
+            `;
+            return;
+        }
+
+        documentosList.innerHTML = docs.map(doc => {
+            const tipoColor = this.getTipoColor(doc.tipo);
+            const tipoAbrev = this.getTipoAbreviacion(doc.tipo);
+            const timeAgo = this.getTimeAgo(doc.fecha_emision);
+            const diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
+            const diasVencido = doc.dias_vencimiento;
+            const isOverdue = doc.esta_vencido;
+            
+            return `
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                    <!-- Fila 1: Tipo, Cliente, Tiempo -->
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full ${tipoColor} flex items-center justify-center">
+                                <span class="text-white text-xs font-bold">${tipoAbrev}</span>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 text-sm">${doc.cliente_nombre}</p>
+                                <p class="text-xs text-gray-500">${doc.numero}</p>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-500">${timeAgo}</span>
+                    </div>
+                    
+                    <!-- Fila 2: Fecha emisión, Días crédito, Monto -->
+                    <div class="flex justify-between items-center mb-2 text-sm">
+                        <div class="flex items-center space-x-1">
+                            <span class="text-gray-600">E</span>
+                            <span class="text-gray-900">${this.formatDate(doc.fecha_emision)}</span>
+                        </div>
+                        <span class="text-gray-600">${diasCredito}d</span>
+                        <span class="text-gray-900 font-medium">${this.formatCurrency(doc.monto)}</span>
+                    </div>
+                    
+                    <!-- Fila 3: Fecha vencimiento, Días vencido, Saldo -->
+                    <div class="flex justify-between items-center text-sm">
+                        <div class="flex items-center space-x-1">
+                            <span class="text-gray-600">V</span>
+                            <span class="text-gray-900">${this.formatDate(doc.fecha_vencimiento)}</span>
+                        </div>
+                        <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${Math.abs(diasVencido)}d</span>
+                        <div class="text-right">
+                            <span class="text-xs text-gray-500">falta</span>
+                            <span class="text-red-500 font-medium">${this.formatCurrency(doc.monto)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
     createClienteDetailHTML(cliente, resumen) {
@@ -943,10 +1087,18 @@ class CobranzasApp {
                 </div>
 
                 <!-- Documentos Pendientes -->
-                <div class="bg-white rounded-lg shadow-md p-6">
+                <div id="clientPendingDocs" class="bg-white rounded-lg shadow-md p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">DOCUMENTOS PENDIENTES</h3>
                     <div id="documentosPendientes">
                         <!-- Documents will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Eventos -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">EVENTOS</h3>
+                    <div id="eventList">
+                        <!-- Events will be loaded here -->
                     </div>
                 </div>
             </div>

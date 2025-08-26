@@ -128,7 +128,7 @@ class ListarClientesPorVendedorUseCase(UseCase[List[str], List[ClienteResponse]]
             ClienteResponse(
                 id=cliente.id.value,
                 nombre=cliente.nombre,
-                rif=cliente.rif,
+                rif=cliente.rif,    
                 telefono=cliente.telefono,
                 email=cliente.email,
                 direccion=cliente.direccion,
@@ -138,4 +138,5 @@ class ListarClientesPorVendedorUseCase(UseCase[List[str], List[ClienteResponse]]
                 ventas_ultimo_trimestre=cliente.ventas_ultimo_trimestre
             )
             for cliente in clientes
+            if cliente.total > 0 or len(search_term or '') >= 3
         ]

@@ -12,6 +12,9 @@ class ClienteModel(models.Model):
     vencido = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     ventas_ultimo_trimestre = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    co_ven = models.CharField(db_column='co_ven', max_length=6, blank=True, null=True)
+    plaz_pag = models.IntegerField(db_column='plaz_pag', blank=True, null=True)
+
     #created_at = models.DateTimeField(db_column='fe_us_in', auto_now_add=True)
     #updated_at = models.DateTimeField(db_column='fe_us_mo', auto_now=True)
     

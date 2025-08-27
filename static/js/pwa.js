@@ -31,7 +31,7 @@ function showInstallPrompt() {
     installBanner.innerHTML = `
         <div class="flex items-center justify-between">
             <div>
-                <p class="font-medium">¿Instalar Cobranzas App?</p>
+                <p class="font-medium">¿Instalar PradoBox?</p>
                 <p class="text-sm opacity-90">Accede rápidamente desde tu pantalla de inicio</p>
             </div>
             <div class="flex space-x-2">

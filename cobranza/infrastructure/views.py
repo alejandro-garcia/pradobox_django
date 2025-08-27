@@ -194,5 +194,6 @@ def eventos_cliente_view(request, client_id):
         'fecha_vencimiento': doc.fecha_vencimiento,
         'monto': float(doc.monto),
         'saldo': float(doc.saldo) if doc.saldo else 0,
-        'descripcion': doc.descripcion
+        'descripcion': doc.descripcion, 
+        'dias_vencimiento': doc.dias_vencimiento
     } for doc in documentos])

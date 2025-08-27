@@ -78,8 +78,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
         
         # Totales por estado
         vencidos = DocumentoModel.objects.filter(
-            fecha_vencimiento__lt=today,
-            saldo__gt=0,
+            fecha_vencimiento__lte=today,
             anulado=False
         )
 
@@ -93,7 +92,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
         )
         
         por_vencer = DocumentoModel.objects.filter(
-            fecha_vencimiento__gte=today,
+            fecha_vencimiento__gt=today,
             saldo__gt=0,
             anulado=False)
         
@@ -106,8 +105,8 @@ class DjangoDocumentoRepository(DocumentoRepository):
         )
         
         creditos = DocumentoModel.objects.filter(
-            tipo='N/CR',
-            saldo__gt=0,
+            tipo__in=['N/CR','ADEL'],
+            saldo__lt=0,
             anulado=False
         )
         
@@ -217,7 +216,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
                 ),
                 saldo_sum=Sum(
                     Case(
-                        When(tipo="ADEL", then=F("saldo") * -1),
+                        When(tipo="ADEL", then=F("saldo")),  # * -1
                         default=F("saldo"),
                         output_field=DecimalField(),
                     )
@@ -248,6 +247,9 @@ class DjangoDocumentoRepository(DocumentoRepository):
 
         # Cantidad de días que faltan
         dias_faltantes = ultimo_dia - today.day
+
+        if Decimal(str(creditos['total'])) < 0:
+            creditos['total'] = Decimal(str(creditos['total'])) * -1
 
         
         return ResumenCobranzas(
@@ -285,7 +287,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
         )
         
         creditos = base_query.filter(
-            tipo='CREDITO'
+            tipo__in = ['N/CR','ADEL'],
         ).aggregate(
             total=Sum('monto', default=0)
         )
@@ -293,7 +295,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
         return ResumenCobranzas(
             total_vencido=Money(Decimal(str(vencidos['total']))),
             total_por_vencer=Money(Decimal(str(por_vencer['total']))),
-            total_creditos=Money(Decimal(str(-abs(creditos['total'])))),
+            total_creditos=Money(Decimal(str(abs(creditos['total'])))),
             cantidad_vencidos=vencidos['cantidad'],
             cantidad_por_vencer=por_vencer['cantidad'],
             dias_promedio_vencimiento=0  # Calcular si es necesario

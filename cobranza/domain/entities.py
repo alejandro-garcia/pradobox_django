@@ -71,7 +71,7 @@ class ResumenCobranzas:
     
     @property
     def total_neto(self) -> Money:
-        return self.total_vencido + self.total_por_vencer + self.total_creditos
+        return self.total_vencido + self.total_por_vencer - self.total_creditos
     
 @dataclass
 class Evento:
@@ -87,8 +87,10 @@ class Evento:
     descripcion: Optional[str] = None
     
     @property
-    def dias_vencimiento(self) -> int:
+    def dias_vencimiento(self) -> int | None:
         """Calcula los días de vencimiento (positivo si está vencido)"""
+        if self.fecha_vencimiento is None:
+            return None
         
         if type(self.fecha_vencimiento).__name__ == 'datetime':
             delta = date.today() - self.fecha_vencimiento.date()

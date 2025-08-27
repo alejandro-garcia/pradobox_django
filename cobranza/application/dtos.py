@@ -62,3 +62,4 @@ class EventoResponse:
     monto: Decimal
     saldo: Decimal
     descripcion: Optional[str]
+    dias_vencimiento: Optional[int] = None

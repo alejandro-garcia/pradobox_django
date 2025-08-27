@@ -196,5 +196,6 @@ class EventosClienteUseCase(UseCase[str, List[EventoResponse]]):
             fecha_vencimiento=evento.fecha_vencimiento,
             monto=evento.monto.amount,
             saldo=evento.saldo.amount,
-            descripcion=evento.descripcion
+            descripcion=evento.descripcion,
+            dias_vencimiento=evento.dias_vencimiento
         )

@@ -401,10 +401,10 @@ class CobranzasApp {
             document.getElementById('totalVencido').textContent = this.formatCurrency(data.situacion.total_vencido);
             document.getElementById('cantidadVencido').textContent = data.situacion.cantidad_documentos_vencidos;
             document.getElementById('diasVencido').textContent = data.situacion.dias_promedio_vencimiento;
-            document.getElementById('totalGeneral').textContent = this.formatCurrency(data.situacion.total_neto);
+            document.getElementById('totalGeneral').textContent =    this.formatCurrency(data.situacion.total_neto);
             document.getElementById('cantidadTotal').textContent = data.situacion.cantidad_documentos_vencidos + data.situacion.cantidad_documentos_por_vencer;
             document.getElementById('diasTotal').textContent = data.situacion.dias_promedio_vencimiento;
-            document.getElementById('totalNeto').textContent = this.formatCurrency(data.situacion.total_neto);
+            document.getElementById('totalNeto').textContent =  this.formatCurrency(data.situacion.total_vencido + data.situacion.total_por_vencer);
             document.getElementById('totalCreditos').textContent = this.formatCurrency(Math.abs(data.situacion.total_creditos));
 
             // Create charts only if they don't exist
@@ -767,7 +767,7 @@ class CobranzasApp {
                             <span class="text-gray-600">V</span>
                             <span class="text-gray-900">${this.formatDate(doc.fecha_vencimiento)}</span>
                         </div>
-                        <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${Math.abs(diasVencido)}d</span>
+                        <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${diasVencido}d</span>
                         <div class="text-right">
                             <span class="text-xs text-gray-500">falta</span>
                             <span class="text-red-500 font-medium">${this.formatCurrency(doc.monto)}</span>
@@ -1035,7 +1035,7 @@ class CobranzasApp {
                 debugger;
                 this.currentClientId = clienteId;
                 this.LoadClientPendingDocs(clienteId);
-                this.showView('docs-pdtes-cliente');
+                //this.showView('docs-pdtes-cliente');
             };
 
         } catch (error) {
@@ -1095,10 +1095,10 @@ class CobranzasApp {
                     <!-- Fila 3: Fecha vencimiento, Días vencido, Saldo -->
                     <div class="flex justify-between items-center text-sm">
                         <div class="flex items-center space-x-1">
-                            <span class="text-gray-600">V </span>
-                            <span class="text-gray-900">${this.formatDate(doc.fecha_vencimiento)}</span>
+                            <span class="text-gray-600">${(doc.fecha_vencimiento) ? "V ": ""} </span>
+                            <span class="text-gray-900">${(doc.fecha_vencimiento) ? this.formatDate(doc.fecha_vencimiento): ""}</span>
                         </div>
-                        <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${Math.abs(diasVencido)}d</span>
+                        <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${!isNaN(diasVencido) ? diasCredito.toString() + "d": ""}</span>
                         <div class="text-right">
                             <span class="text-xs text-gray-500">falta</span>
                             <span class="text-red-500 font-medium">${this.formatCurrency(doc.monto)}</span>
@@ -1292,7 +1292,7 @@ class CobranzasApp {
         this.charts.ventas = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: data.map(item => item.mes),
+                labels: data.map(item => item.mes + ' (' + (item.monto / 1000).toFixed(0) + 'k)'),
                 datasets: [{
                     data: data.map(item => item.monto),
                     backgroundColor: '#3B82F6',

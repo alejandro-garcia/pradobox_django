@@ -403,7 +403,7 @@ class CobranzasApp {
             document.getElementById('diasVencido').textContent = data.situacion.dias_promedio_vencimiento;
             document.getElementById('totalGeneral').textContent =    this.formatCurrency(data.situacion.total_neto);
             document.getElementById('cantidadTotal').textContent = data.situacion.cantidad_documentos_vencidos + data.situacion.cantidad_documentos_por_vencer;
-            document.getElementById('diasTotal').textContent = data.situacion.dias_promedio_vencimiento;
+            document.getElementById('diasTotal').textContent = data.situacion.dias_promedio_vencimiento_todos;
             document.getElementById('totalNeto').textContent =  this.formatCurrency(data.situacion.total_vencido + data.situacion.total_por_vencer);
             document.getElementById('totalCreditos').textContent = this.formatCurrency(Math.abs(data.situacion.total_creditos));
 
@@ -646,7 +646,7 @@ class CobranzasApp {
         
         document.getElementById('resumenTotal').textContent = this.formatCurrency(totalGeneral);
         document.getElementById('resumenCantidadTotal').textContent = cantidadTotal;
-        document.getElementById('resumenDiasTotal').textContent = data.resumen.dias_promedio_vencimiento;
+        document.getElementById('resumenDiasTotal').textContent = data.resumen.dias_promedio_vencimiento_todos;
         
         document.getElementById('resumenNeto').textContent = this.formatCurrency(data.resumen.total_neto);
         document.getElementById('resumenCreditos').textContent = this.formatCurrency(data.resumen.total_creditos);

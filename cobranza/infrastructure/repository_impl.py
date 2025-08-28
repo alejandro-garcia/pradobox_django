@@ -80,7 +80,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
         vencidos = DocumentoModel.objects.filter(
             fecha_vencimiento__lte=today,
             anulado=False
-        )
+        ).exclude(tipo='N/CR')
 
         if seller_id.value != "-1":
             vencidos  = vencidos.filter(co_ven=seller_id.value) 
@@ -88,20 +88,28 @@ class DjangoDocumentoRepository(DocumentoRepository):
         
         vencidos = vencidos.aggregate(
             total=Sum('saldo', default=0),
-            cantidad=Count('id')
+            cantidad=Count('id'),
+            dias_vencidos=Sum(DateDiff(
+                            F("fecha_vencimiento"),
+                            Func(function="GETDATE")   
+                        ))
         )
         
         por_vencer = DocumentoModel.objects.filter(
             fecha_vencimiento__gt=today,
-            saldo__gt=0,
-            anulado=False)
+            anulado=False).exclude(tipo='N/CR')  # saldo__gt=0,
         
         if seller_id.value != "-1":
             por_vencer  = por_vencer.filter(co_ven=seller_id.value) 
         
         por_vencer = por_vencer.aggregate(
             total=Sum('saldo', default=0),
-            cantidad=Count('id')
+            cantidad=Count('id'),
+            dias_vencidos=Sum(DateDiff(
+                            F("fecha_vencimiento"),
+                            Func(function="GETDATE")   
+                        ))
+
         )
         
         creditos = DocumentoModel.objects.filter(
@@ -116,130 +124,31 @@ class DjangoDocumentoRepository(DocumentoRepository):
         creditos = creditos.aggregate(
             total=Sum('saldo', default=0)
         )
-        
-        # # Promedio de días de vencimiento
-        # dias_promedio = DocumentoModel.objects.filter(
-        #     fecha_vencimiento__lt=today,
-        #     saldo__gt=0,
-        #     anulado=False
-        # ).extra(
-        #     select={'dias_vencido': 'julianday("now") - julianday(fecha_vencimiento)'}
-        # ).aggregate(
-        #     promedio=Avg('dias_vencido')
-        # )['promedio'] or 0
 
-        # Promedio de días de vencimiento (SQLite-specific)
-        today = timezone.now().date()
-        # dias_promedio = DocumentoModel.objects.filter(
-        #     fecha_vencimiento__lt=today,
-        #     saldo__gt=0,
-        #     anulado=False
-        # )
-
-        # if seller_id.value != "-1":
-        #     dias_promedio  = dias_promedio.filter(co_ven=seller_id.value)
-        
-        # dias_promedio = dias_promedio.annotate(
-        #     dias_vencido=ExpressionWrapper(
-        #         Cast(Now(), output_field=models.DateField()) - F('fecha_vencimiento'),
-        #         output_field=IntegerField()
-        #     )
-        # ).aggregate(
-        #     promedio=Avg('dias_vencido')
-        # )['promedio'] or 0
-
-        # PRUEBA 2
-        # dias_promedio_query = DocumentoModel.objects.filter(
-        #     anulado=False,
-        #     fecha_vencimiento__lte=today,
-        #     fecha_vencimiento__gte='1900-01-01'  # Restricción para evitar fechas muy antiguas
-        # ).exclude(
-        #     saldo=0,
-        #     tipo='N/CR'
-        # )
-
-        # if seller_id.value != "-1":
-        #     dias_promedio_query = dias_promedio_query.filter(co_ven=seller_id.value)
-
-        # dias_promedio = dias_promedio_query.annotate(
-        #     saldo_ajustado=Case(
-        #         When(tipo='ADEL', then=-F('saldo')),
-        #         default=F('saldo'),
-        #         output_field=DecimalField(max_digits=12, decimal_places=2)
-        #     )
-        # ).values('cliente').annotate(
-        #     total_saldo=Sum('saldo_ajustado'),
-        #     dias_vcto=Max(
-        #         Case(
-        #             When(tipo='ADEL', then=Value(0)),
-        #             default=Cast(
-        #                 Cast(timezone.now(), output_field=models.DateField()) - F('fecha_vencimiento'),
-        #                 output_field=BigIntegerField()
-        #             ),
-        #             output_field=BigIntegerField()
-        #         )
-        #     )
-        # ).exclude(
-        #     total_saldo=0
-        # ).aggregate(
-        #     promedio=Avg('dias_vcto')
-        # )['promedio']
-
-        # Round to integer if needed
-        #if dias_promedio is not None:
-         #   dias_promedio = round(dias_promedio)
-
-
-        dias_promedio_query = DocumentoModel.objects.filter(
-                anulado=False,
-                fecha_vencimiento__lte=today
-            ).exclude(
-                tipo="N/CR",
-                saldo=0
-            )
+        sin_vencimiento = DocumentoModel.objects.filter(
+            anulado=False,
+            tipo='N/CR'
+        )
 
         if seller_id.value != "-1":
-            dias_promedio_query  = dias_promedio_query.filter(co_ven=seller_id.value)
+            sin_vencimiento  = sin_vencimiento.filter(co_ven=seller_id.value)
 
-        subquery = (
-            dias_promedio_query.values("cliente")  # equivale a group by co_cli
-            .annotate(
-                dias_vcto=Max(
-                    Case(
-                        When(tipo="ADEL", then=Value(0)),
-                        default=DateDiff(
+        sin_vencimiento = sin_vencimiento.aggregate(
+            total=Sum('saldo', default=0),
+            cantidad=Count('id'),
+            dias_vencidos=Sum(DateDiff(
                             F("fecha_vencimiento"),
                             Func(function="GETDATE")   
-                        ),
-                        output_field=IntegerField(),
-                    )
-                ),
-                saldo_sum=Sum(
-                    Case(
-                        When(tipo="ADEL", then=F("saldo")),  # * -1
-                        default=F("saldo"),
-                        output_field=DecimalField(),
-                    )
-                ),
-            )
-            .exclude(saldo_sum=0)  # having SUM(...) <> 0
-            .values("dias_vcto")
+                        ))
         )
+        
+        today = timezone.now().date()
 
-        # Query final con AVG
-        dias_promedio = (
-            subquery.aggregate(
-                dias=Round(Avg("dias_vcto"), 0)
-            )
-        )
+        dias_promedio = round(vencidos["dias_vencidos"] / vencidos["cantidad"]) if vencidos["cantidad"] > 0 else 0
 
-        promedio_vencimiento = 0 
-
-        if dias_promedio:
-            promedio_vencimiento = dias_promedio['dias']
-
-        # TODO: falta definir 
-        promedio_ultima_factura = 0 
+        dias_vencidos_total = (vencidos["dias_vencidos"] or 0) + (por_vencer["dias_vencidos"] or 0) + (sin_vencimiento["dias_vencidos"] or 0)
+        cantidad_total = vencidos["cantidad"] + por_vencer["cantidad"] + (sin_vencimiento["cantidad"] or 0) 
+        promedio_vcto_todos = round(dias_vencidos_total / cantidad_total) if cantidad_total > 0 else 0
 
         dias_transcurridos = today.day
         
@@ -256,10 +165,11 @@ class DjangoDocumentoRepository(DocumentoRepository):
             total_vencido=Money(Decimal(str(vencidos['total']))),
             total_por_vencer=Money(Decimal(str(por_vencer['total']))),
             total_creditos=Money(Decimal(str(creditos['total']))),  # Los créditos son negativos
+            total_sinvencimiento=Money(Decimal(str(abs(sin_vencimiento['total'])))),
             cantidad_vencidos=vencidos['cantidad'],
             cantidad_por_vencer=por_vencer['cantidad'],
-            dias_promedio_vencimiento=int(promedio_vencimiento),
-            dias_promedio_ultima_factura=int(promedio_ultima_factura),
+            dias_promedio_vencimiento=dias_promedio,
+            dias_promedio_vencimiento_todos=int(promedio_vcto_todos),
             dias_transcurridos= dias_transcurridos,
             dias_faltantes=dias_faltantes 
         )

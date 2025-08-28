@@ -88,7 +88,7 @@ class ObtenerDashboardUseCase(UseCase[SellerId, DashboardResponse]):
             cantidad_documentos_vencidos=resumen.cantidad_vencidos,
             cantidad_documentos_por_vencer=resumen.cantidad_por_vencer,
             dias_promedio_vencimiento=resumen.dias_promedio_vencimiento,
-            dias_promedio_ultima_factura=resumen.dias_promedio_ultima_factura,
+            dias_promedio_vencimiento_todos=resumen.dias_promedio_vencimiento_todos,
             dias_transcurridos=resumen.dias_transcurridos,
             dias_faltantes=resumen.dias_faltantes
         )

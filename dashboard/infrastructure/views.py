@@ -21,7 +21,7 @@ def get_dashboard(seller_id: SellerId):
             'cantidad_documentos_vencidos': dashboard_data.situacion.cantidad_documentos_vencidos,
             'cantidad_documentos_por_vencer': dashboard_data.situacion.cantidad_documentos_por_vencer,
             'dias_promedio_vencimiento': dashboard_data.situacion.dias_promedio_vencimiento,
-            'dias_promedio_ultima_factura': dashboard_data.situacion.dias_promedio_ultima_factura,
+            'dias_promedio_vencimiento_todos': dashboard_data.situacion.dias_promedio_vencimiento_todos,
             'dias_transcurridos': dashboard_data.situacion.dias_transcurridos, 
             'dias_faltantes': dashboard_data.situacion.dias_faltantes
         },

@@ -62,16 +62,17 @@ class ResumenCobranzas:
     total_vencido: Money
     total_por_vencer: Money
     total_creditos: Money
+    total_sinvencimiento: Money
     cantidad_vencidos: int
     cantidad_por_vencer: int
     dias_promedio_vencimiento: int
-    dias_promedio_ultima_factura: int 
+    dias_promedio_vencimiento_todos: int 
     dias_transcurridos: int 
     dias_faltantes: int
     
     @property
     def total_neto(self) -> Money:
-        return self.total_vencido + self.total_por_vencer - self.total_creditos
+        return self.total_vencido + self.total_por_vencer + self.total_creditos  - self.total_sinvencimiento
     
 @dataclass
 class Evento:

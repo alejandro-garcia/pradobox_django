@@ -117,3 +117,8 @@ CSRF_TRUSTED_ORIGINS = ['http://localhost:8001', 'http://127.0.0.1:8001']
 
 # Custom User Model
 AUTH_USER_MODEL = 'authentication.UsuarioModel'
+
+# Ensure Django uses our custom user model for admin and other apps
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]

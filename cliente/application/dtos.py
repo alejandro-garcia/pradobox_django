@@ -20,7 +20,10 @@ class ClienteResponse:
     telefono: Optional[str]
     email: Optional[str]
     direccion: Optional[str]
-
+    dias_ult_fact: Optional[int] = None
+    vencido: Optional[Decimal] = Decimal('0')
+    total: Optional[Decimal] = Decimal('0')
+    ventas_ultimo_trimestre: Optional[Decimal] = Decimal('0')
 
 @dataclass
 class ResumenClienteResponse:

@@ -12,6 +12,9 @@ class SituacionGeneralResponse:
     cantidad_documentos_vencidos: int
     cantidad_documentos_por_vencer: int
     dias_promedio_vencimiento: int
+    dias_promedio_vencimiento_todos: int
+    dias_transcurridos: int 
+    dias_faltantes: int 
 
 
 @dataclass

@@ -8,6 +8,7 @@ class CobranzasApp {
             cobros: null
         };
         this.dashboardLoaded = false;
+        this.loadingDashboard = false;
         this.sqlConfig = null;
 
         // Escuchar cambios de autenticación
@@ -79,14 +80,31 @@ class CobranzasApp {
             }
         });
 
+        // Documentos Pendientes click
+        const documentosPendientesBtn = document.querySelector('[data-view="documentos-pendientes"]');
+        if (documentosPendientesBtn) {
+            documentosPendientesBtn.addEventListener('click', () => {
+                this.navigateTo('documentos-pendientes');
+            });
+        }
+
+        const pendingDocsCard = document.getElementById('pendingDocsCard');
+        if (pendingDocsCard) {
+            pendingDocsCard.addEventListener('click', () => {
+                this.navigateTo('documentos-pendientes');
+            });
+        }
+
         // Import/Sync functionality
         this.setupImportEventListeners();
+        
+        // Client search functionality
+        this.setupClientSearchEventListeners();
     }
 
     setupImportEventListeners() {
         // Start import button
         document.getElementById('startImportBtn').addEventListener('click', async () => {
-            debugger;
             await this.startImport();
         });
 
@@ -119,8 +137,49 @@ class CobranzasApp {
         this.offlineMode = savedOfflineMode;
     }
 
+    setupClientSearchEventListeners() {
+        const searchInput = document.getElementById('clienteSearchInput');
+        const clearBtn = document.getElementById('clearSearchBtn');
+        let searchTimeout;
+
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.trim();
+                
+                // Show/hide clear button
+                if (searchTerm.length > 0) {
+                    clearBtn.classList.remove('hidden');
+                } else {
+                    clearBtn.classList.add('hidden');
+                }
+
+                // Clear previous timeout
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+
+                // Set new timeout for search
+                searchTimeout = setTimeout(() => {
+                    if (searchTerm.length >= 3 || searchTerm.length === 0) {
+                        this.searchClientes(searchTerm);
+                    }
+                }, 300); // 300ms delay for better UX
+            });
+        }
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                clearBtn.classList.add('hidden');
+                this.searchClientes('');
+            });
+        }
+    }
+
     navigateTo(view) {
         // Update navigation state
+        debugger;
+
         document.querySelectorAll('.nav-item').forEach(item => {
             item.classList.remove('active', 'text-primary');
             item.classList.add('text-gray-600');
@@ -133,8 +192,8 @@ class CobranzasApp {
         }
 
         // Hide all views
-        document.querySelectorAll('[id$="-view"]').forEach(view => {
-            view.classList.add('hidden');
+        document.querySelectorAll('[id$="-view"]').forEach(viewElement => {
+            viewElement.classList.add('hidden');
         });
 
         // Show current view
@@ -147,9 +206,11 @@ class CobranzasApp {
         const titles = {
             'dashboard': 'Situación',
             'clientes': 'Clientes',
+            'documentos-pendientes': 'Cobrables',
             'tareas': 'Tareas',
             'eventos': 'Eventos',
-            'mas': 'Más'
+            'mas': 'Más',
+            'docs-pdtes-cliente': 'Cobrables'
         };
 
         document.getElementById('pageTitle').textContent = titles[view] || 'Cobranzas';
@@ -177,6 +238,13 @@ class CobranzasApp {
             case 'clientes':
                 this.loadClientes();
                 break;
+            case 'documentos-pendientes':
+                this.loadDocumentosPendientes();
+                break;
+            case 'docs-pdtes-cliente':
+                // Handled when opening from client detail
+                this.LoadClientPendingDocs(this.currentClientId);
+                break;
             case 'mas':
                 this.updateStorageInfo();
                 break;
@@ -196,6 +264,65 @@ class CobranzasApp {
         await this.loadDashboard();
     }
 
+    getTipoColor(tipo) {
+        const colors = {
+            'FACT': 'bg-blue-500',
+            'N/DB': 'bg-orange-500',
+            'N/CR': 'bg-green-500',
+            'ADEL': 'bg-purple-500',
+            'AJPM': 'bg-indigo-500',
+            'AJMN': 'bg-red-500',
+            'DEV': 'bg-red-500',
+            'PAGO': 'bg-green-500'
+        };
+        return colors[tipo] || 'bg-gray-500';
+    }
+
+    getTipoAbreviacion(tipo) {
+        const abrev = {
+            'FACT': 'F',
+            'N/DB': 'D',
+            'N/CR': 'C',
+            'ADEL': 'A',
+            'AJPM': 'P',
+            'AJMN': 'M',
+            'DEV': 'D',
+            'PAGO': 'P'
+        };
+        return abrev[tipo] || 'D';
+    }
+
+    getTimeAgo(fecha) {
+        const now = new Date();
+        const date = new Date(fecha);
+        const diffTime = Math.abs(now - date);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays < 30) {
+            return `${diffDays} día${diffDays !== 1 ? 's' : ''}`;
+        } else if (diffDays < 365) {
+            const months = Math.floor(diffDays / 30);
+            return months === 1 ? 'un mes' : `${months} meses`;
+        } else {
+            const years = Math.floor(diffDays / 365);
+            return years === 1 ? 'un año' : `${years} años`;
+        }
+    }
+
+    calculateCreditDays(fechaEmision, fechaVencimiento) {
+        const emision = new Date(fechaEmision);
+        const vencimiento = new Date(fechaVencimiento);
+        const diffTime = vencimiento - emision;
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    calculateDaysOverdue(fechaVencimiento) {
+        const now = new Date();
+        const vencimiento = new Date(fechaVencimiento);
+        const diffTime = now - vencimiento;
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
     async loadDashboard() {
         try {
             // Evitar múltiples cargas simultáneas y cargas innecesarias
@@ -211,7 +338,6 @@ class CobranzasApp {
                 debugger;
                 data = await this.loadDashboardFromIndexedDB();
             } else {
-                debugger;
                 const user = window.authService.getCurrentUser();
                 const seller_code = user.codigo_vendedor_profit; 
 
@@ -229,13 +355,56 @@ class CobranzasApp {
             }
 
             // Update dashboard data
+
+            let currentSales = 0;
+            if (data.ventas_por_mes.length == 3){
+                let correntSalesNum = data.ventas_por_mes[2].monto / 1000
+
+                //verificar el mayor de los ultimos 2 meses 
+                let topSales = 0;
+                let topSalesMonth = ""; 
+                let lessSales = 0;
+                let lessSalesMonth = "";
+                let lessSalesIndex = 1;
+
+                let topSalesIndex = 0;
+                
+                if  (data.ventas_por_mes[0].monto < data.ventas_por_mes[1].monto) {
+                    topSalesIndex = 1
+                    lessSalesIndex = 0;
+                }
+                
+                topSales = data.ventas_por_mes[topSalesIndex].monto / 1000;
+                let remainingSales  = Math.round((topSales - correntSalesNum),1)
+
+                topSalesMonth = data.ventas_por_mes[topSalesIndex].mes;
+
+                lessSales = (data.ventas_por_mes[lessSalesIndex].monto / 1000).toString().split(".")[0] + "K";
+                lessSalesMonth = data.ventas_por_mes[lessSalesIndex].mes;
+
+                let salesPercentage = (topSales !== 0) ? correntSalesNum * 100 / topSales: 0; 
+
+                let currentSales = (data.ventas_por_mes[2].monto / 1000).toString().split(".")[0] + "K";
+
+                document.getElementById('currentSales').textContent = currentSales;
+                document.getElementById('lessSales').textContent = lessSales + " " + lessSalesMonth;
+                document.getElementById('topSales').textContent = topSales.toString().split(".")[0] + "K" + " " + topSalesMonth;
+                document.getElementById('remainingSales').textContent = remainingSales.toString().split(".")[0] + "K";
+                document.getElementById('salesPercentage').style= `width:${salesPercentage}%`;
+            }
+
+            document.getElementById('currentDay').textContent = data.situacion.dias_transcurridos.toString() + 'd';
+            document.getElementById('remainingDays').textContent = data.situacion.dias_faltantes.toString() + 'd';
+            let percentageDays = data.situacion.dias_transcurridos * 100 / (data.situacion.dias_faltantes + data.situacion.dias_transcurridos);
+            document.getElementById('daysPercentage').style= `width:${percentageDays}%`;
+
             document.getElementById('totalVencido').textContent = this.formatCurrency(data.situacion.total_vencido);
             document.getElementById('cantidadVencido').textContent = data.situacion.cantidad_documentos_vencidos;
             document.getElementById('diasVencido').textContent = data.situacion.dias_promedio_vencimiento;
-            document.getElementById('totalGeneral').textContent = this.formatCurrency(data.situacion.total_neto);
+            document.getElementById('totalGeneral').textContent =    this.formatCurrency(data.situacion.total_neto);
             document.getElementById('cantidadTotal').textContent = data.situacion.cantidad_documentos_vencidos + data.situacion.cantidad_documentos_por_vencer;
-            document.getElementById('diasTotal').textContent = data.situacion.dias_promedio_vencimiento;
-            document.getElementById('totalNeto').textContent = this.formatCurrency(data.situacion.total_neto);
+            document.getElementById('diasTotal').textContent = data.situacion.dias_promedio_vencimiento_todos;
+            document.getElementById('totalNeto').textContent =  this.formatCurrency(data.situacion.total_vencido + data.situacion.total_por_vencer);
             document.getElementById('totalCreditos').textContent = this.formatCurrency(Math.abs(data.situacion.total_creditos));
 
             // Create charts only if they don't exist
@@ -262,11 +431,14 @@ class CobranzasApp {
         return {
             situacion: {
                 total_vencido: resumen.total_vencido,
+                total_por_vencer: resumen.total_por_vencer,
+                total_creditos: resumen.total_creditos,
+                total_neto: resumen.total_vencido + resumen.total_por_vencer - resumen.total_creditos,
                 cantidad_documentos_vencidos: resumen.cantidad_vencidos,
-                dias_promedio_vencimiento: resumen.dias_promedio_vencimiento,
-                total_neto: resumen.total_vencido + resumen.total_por_vencer + resumen.total_creditos,
                 cantidad_documentos_por_vencer: resumen.cantidad_por_vencer,
-                total_creditos: resumen.total_creditos
+                dias_promedio_vencimiento: resumen.dias_promedio_vencimiento,
+                dias_transcurridos: new Date().getDate(),
+                dias_faltantes: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate()
             },
             ventas_por_mes: [
                 { mes: 'may', monto: 155000 },
@@ -282,6 +454,8 @@ class CobranzasApp {
     }
 
     async loadClientes() {
+        this.showClientesLoading(true);
+        
         try {
             let clientes;
             
@@ -297,7 +471,10 @@ class CobranzasApp {
                     direccion: cliente.direccion
                 }));
             } else {
-                const response = await fetch(`${this.apiBaseUrl}/clientes/`, {
+                const user = window.authService.getCurrentUser();
+                const sellerCode = user.codigo_vendedor_profit; 
+
+                const response = await fetch(`${this.apiBaseUrl}/clientes/vendedor/${sellerCode}`, {
                     headers: window.authService.getAuthHeaders()
                 });
                 
@@ -309,17 +486,396 @@ class CobranzasApp {
                 clientes = await response.json();
             }
 
-            const clientesList = document.getElementById('clientesList');
-            clientesList.innerHTML = '';
-
-            clientes.forEach(cliente => {
-                const clienteCard = this.createClienteCard(cliente);
-                clientesList.appendChild(clienteCard);
-            });
+            this.displayClientes(clientes);
+            this.updateSearchResults(clientes.length, '');
 
         } catch (error) {
             console.error('Error loading clientes:', error);
             this.showError('Error cargando los clientes');
+            this.displayClientes([]);
+        } finally {
+            this.showClientesLoading(false);
+        }
+    }
+
+    showDocumentosPendientesLoading(show) {
+        const loading = document.getElementById('documentosPendientesLoading');
+        const list = document.getElementById('documentosPendientesList');
+        const empty = document.getElementById('documentosPendientesEmpty');
+        
+        if (show) {
+            loading.classList.remove('hidden');
+            list.innerHTML = '';
+            empty.classList.add('hidden');
+        } else {
+            loading.classList.add('hidden');
+        }
+    }
+
+    showClientDocsPendingLoading(show) {
+        const loading = document.getElementById('clientDocsPendingLoading');
+        const list = document.getElementById('clientDocsPendingList');
+        const empty = document.getElementById('documentosPendientesEmpty');
+        
+        if (show) {
+            loading.classList.remove('hidden');
+            list.innerHTML = '';
+            empty.classList.add('hidden');
+        } else {
+            loading.classList.add('hidden');
+        }
+    }
+
+    async loadDocumentosPendientes() {
+        this.showDocumentosPendientesLoading(true);
+        
+        try {
+            let data;
+            
+            if (this.offlineMode) {
+                // Load from IndexedDB
+                const documentos = await window.indexedDBService.getDocumentos();
+                const resumen = await window.indexedDBService.getResumenCobranzas();
+                
+                data = {
+                    documentos: documentos.map(doc => ({
+                        ...doc,
+                        cliente_nombre: 'Cliente Local', // En IndexedDB necesitaríamos hacer join
+                        dias_vencimiento: this.calculateDaysOverdue(doc.fec_venc),
+                        esta_vencido: new Date(doc.fec_venc) < new Date()
+                    })),
+                    resumen: resumen
+                };
+            } else {
+                // Load from API
+                const [documentosResponse, resumenResponse] = await Promise.all([
+                    fetch(`${this.apiBaseUrl}/cobranzas/pendientes/`, {
+                        headers: window.authService.getAuthHeaders()
+                    }),
+                    fetch(`${this.apiBaseUrl}/dashboard/`, {
+                        headers: window.authService.getAuthHeaders()
+                    })
+                ]);
+                
+                if (documentosResponse.status === 401 || resumenResponse.status === 401) {
+                    window.authService.logout();
+                    return;
+                }
+                
+                const documentos = await documentosResponse.json();
+                const dashboardData = await resumenResponse.json();
+                
+                data = {
+                    documentos: documentos,
+                    resumen: dashboardData.situacion
+                };
+            }
+            
+            this.displayDocumentosPendientes(data);
+            
+        } catch (error) {
+            console.error('Error loading documentos pendientes:', error);
+            this.showError('Error cargando documentos pendientes');
+        } finally {
+            this.showDocumentosPendientesLoading(false);
+        }
+    }
+    async LoadClientPendingDocs(clientId) {
+        this.showClientDocsPendingLoading(true);
+        
+        try {
+            let data;
+            
+            if (this.offlineMode) {
+                // Load from IndexedDB
+                const documentos = await window.indexedDBService.getDocumentos();
+                const resumen = await window.indexedDBService.getResumenCobranzas();
+                
+                data = {
+                    documentos: documentos.map(doc => ({
+                        ...doc,
+                        cliente_nombre: 'Cliente Local', // En IndexedDB necesitaríamos hacer join
+                        dias_vencimiento: this.calculateDaysOverdue(doc.fec_venc),
+                        esta_vencido: new Date(doc.fec_venc) < new Date()
+                    })),
+                    resumen: resumen
+                };
+            } else {
+                // Load from API
+                const [documentosResponse, resumenResponse] = await Promise.all([
+                    fetch(`${this.apiBaseUrl}/cobranzas/pendientes/${clientId}`, {
+                        headers: window.authService.getAuthHeaders()
+                    }),
+                    fetch(`${this.apiBaseUrl}/dashboard/`, {
+                        headers: window.authService.getAuthHeaders()
+                    })
+                ]);
+                
+                if (documentosResponse.status === 401 || resumenResponse.status === 401) {
+                    window.authService.logout();
+                    return;
+                }
+                
+                const documentos = await documentosResponse.json();
+                const dashboardData = await resumenResponse.json();
+                
+                data = {
+                    documentos: documentos,
+                    resumen: dashboardData.situacion
+                };
+            }
+            
+            this.displayClientDocsPending(data);
+            
+        } catch (error) {
+            console.error('Error loading documentos pendientes:', error);
+            this.showError('Error cargando documentos pendientes');
+        } finally {
+            this.showClientDocsPendingLoading(false);
+        }
+    }
+
+    displayDocumentosPendientes(data) {
+        // Update resumen
+        document.getElementById('resumenVencido').textContent = this.formatCurrency(data.resumen.total_vencido);
+        document.getElementById('resumenCantidadVencido').textContent = data.resumen.cantidad_documentos_vencidos;
+        document.getElementById('resumenDiasVencido').textContent = data.resumen.dias_promedio_vencimiento;
+        
+        const totalGeneral = data.resumen.total_vencido + data.resumen.total_por_vencer;
+        const cantidadTotal = data.resumen.cantidad_documentos_vencidos + data.resumen.cantidad_documentos_por_vencer;
+        
+        document.getElementById('resumenTotal').textContent = this.formatCurrency(totalGeneral);
+        document.getElementById('resumenCantidadTotal').textContent = cantidadTotal;
+        document.getElementById('resumenDiasTotal').textContent = data.resumen.dias_promedio_vencimiento_todos;
+        
+        document.getElementById('resumenNeto').textContent = this.formatCurrency(data.resumen.total_neto);
+        document.getElementById('resumenCreditos').textContent = this.formatCurrency(data.resumen.total_creditos);
+
+        // Display documentos
+        const documentosList = document.getElementById('documentosPendientesList');
+        const documentosEmpty = document.getElementById('documentosPendientesEmpty');
+        
+        if (data.documentos.length === 0) {
+            documentosList.innerHTML = '';
+            documentosEmpty.classList.remove('hidden');
+            return;
+        }
+        
+        documentosEmpty.classList.add('hidden');
+        
+        documentosList.innerHTML = data.documentos.map(doc => {
+            const tipoColor = this.getTipoColor(doc.tipo);
+            const tipoAbrev = this.getTipoAbreviacion(doc.tipo);
+            const timeAgo = this.getTimeAgo(doc.fecha_emision);
+            const diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
+            const diasVencido = doc.dias_vencimiento;
+            const isOverdue = doc.esta_vencido;
+            
+            return `
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                    <!-- Fila 1: Tipo, Cliente, Tiempo -->
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full ${tipoColor} flex items-center justify-center">
+                                <span class="text-white text-xs font-bold">${tipoAbrev}</span>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 text-sm">${doc.cliente_nombre}</p>
+                                <p class="text-xs text-gray-500">${doc.numero}</p>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-500">${timeAgo}</span>
+                    </div>
+                    
+                    <!-- Fila 2: Fecha emisión, Días crédito, Monto -->
+                    <div class="flex justify-between items-center mb-2 text-sm">
+                        <div class="flex items-center space-x-1">
+                            <span class="text-gray-600">E</span>
+                            <span class="text-gray-900">${this.formatDate(doc.fecha_emision)}</span>
+                        </div>
+                        <span class="text-gray-600">${diasCredito}d</span>
+                        <span class="text-gray-900 font-medium">${this.formatCurrency(doc.monto)}</span>
+                    </div>
+                    
+                    <!-- Fila 3: Fecha vencimiento, Días vencido, Saldo -->
+                    <div class="flex justify-between items-center text-sm">
+                        <div class="flex items-center space-x-1">
+                            <span class="text-gray-600">V</span>
+                            <span class="text-gray-900">${this.formatDate(doc.fecha_vencimiento)}</span>
+                        </div>
+                        <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${Math.abs(diasVencido)}d</span>
+                        <div class="text-right">
+                            <span class="text-xs text-gray-500">falta</span>
+                            <span class="text-red-500 font-medium">${this.formatCurrency(doc.monto)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    displayClientDocsPending(data) {
+        // Display documentos
+        const documentosList = document.getElementById('clientDocsPendingList');
+        //const documentosEmpty = document.getElementById('documentosPendientesEmpty');
+        
+        if (data.documentos.length === 0) {
+            documentosList.innerHTML = '';
+            //documentosEmpty.classList.remove('hidden');
+            return;
+        }
+        
+        //documentosEmpty.classList.add('hidden');
+        
+        documentosList.innerHTML = data.documentos.map(doc => {
+            const tipoColor = this.getTipoColor(doc.tipo);
+            const tipoAbrev = this.getTipoAbreviacion(doc.tipo);
+            const timeAgo = this.getTimeAgo(doc.fecha_emision);
+            const diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
+            const diasVencido = doc.dias_vencimiento;
+            const isOverdue = doc.esta_vencido;
+            
+            return `
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                    <!-- Fila 1: Tipo, Cliente, Tiempo -->
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full ${tipoColor} flex items-center justify-center">
+                                <span class="text-white text-xs font-bold">${tipoAbrev}</span>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 text-sm">${doc.cliente_nombre}</p>
+                                <p class="text-xs text-gray-500">${doc.numero}</p>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-500">${timeAgo}</span>
+                    </div>
+                    
+                    <!-- Fila 2: Fecha emisión, Días crédito, Monto -->
+                    <div class="flex justify-between items-center mb-2 text-sm">
+                        <div class="flex items-center space-x-1">
+                            <span class="text-gray-600">E</span>
+                            <span class="text-gray-900">${this.formatDate(doc.fecha_emision)}</span>
+                        </div>
+                        <span class="text-gray-600">${diasCredito}d</span>
+                        <span class="text-gray-900 font-medium">${this.formatCurrency(doc.monto)}</span>
+                    </div>
+                    
+                    <!-- Fila 3: Fecha vencimiento, Días vencido, Saldo -->
+                    <div class="flex justify-between items-center text-sm">
+                        <div class="flex items-center space-x-1">
+                            <span class="text-gray-600">V</span>
+                            <span class="text-gray-900">${this.formatDate(doc.fecha_vencimiento)}</span>
+                        </div>
+                        <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${diasVencido}d</span>
+                        <div class="text-right">
+                            <span class="text-xs text-gray-500">falta</span>
+                            <span class="text-red-500 font-medium">${this.formatCurrency(doc.monto)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async searchClientes(searchTerm) {
+        this.showClientesLoading(true);
+        
+        try {
+            let clientes;
+            
+            if (this.offlineMode) {
+                clientes = await window.indexedDBService.getClientes();
+                // Transform and filter locally
+                clientes = clientes
+                    .map(cliente => ({
+                        id: cliente.co_cli,
+                        nombre: cliente.cli_des,
+                        rif: cliente.rif,
+                        telefono: cliente.telefonos,
+                        email: cliente.email,
+                        direccion: cliente.direccion
+                    }))
+                    .filter(cliente => 
+                        searchTerm === '' || 
+                        cliente.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+                    );
+            } else {
+                const user = window.authService.getCurrentUser();
+                const seller_code = user.codigo_vendedor_profit; 
+
+                const url = searchTerm 
+                    ? `${this.apiBaseUrl}/clientes/vendedor/${seller_code}?search=${encodeURIComponent(searchTerm)}`
+                    : `${this.apiBaseUrl}/clientes/vendedor/${seller_code}`;
+                    
+                const response = await fetch(url, {
+                    headers: window.authService.getAuthHeaders()
+                });
+                
+                if (response.status === 401) {
+                    window.authService.logout();
+                    return;
+                }
+                
+                clientes = await response.json();
+            }
+
+            this.displayClientes(clientes);
+            this.updateSearchResults(clientes.length, searchTerm);
+
+        } catch (error) {
+            console.error('Error searching clientes:', error);
+            this.showError('Error buscando clientes');
+            this.displayClientes([]);
+        } finally {
+            this.showClientesLoading(false);
+        }
+    }
+
+    displayClientes(clientes) {
+        const clientesList = document.getElementById('clientesList');
+        const clientesEmpty = document.getElementById('clientesEmpty');
+        
+        clientesList.innerHTML = '';
+        
+        if (clientes.length === 0) {
+            clientesEmpty.classList.remove('hidden');
+        } else {
+            clientesEmpty.classList.add('hidden');
+            clientes.forEach(cliente => {
+                const clienteCard = this.createClienteCard(cliente);
+                clientesList.appendChild(clienteCard);
+            });
+        }
+    }
+
+    showClientesLoading(show) {
+        const loadingDiv = document.getElementById('clientesLoading');
+        const clientesList = document.getElementById('clientesList');
+        const clientesEmpty = document.getElementById('clientesEmpty');
+        
+        if (show) {
+            loadingDiv.classList.remove('hidden');
+            clientesList.classList.add('hidden');
+            clientesEmpty.classList.add('hidden');
+        } else {
+            loadingDiv.classList.add('hidden');
+            clientesList.classList.remove('hidden');
+        }
+    }
+
+    updateSearchResults(count, searchTerm) {
+        const searchResults = document.getElementById('searchResults');
+        const searchResultsText = document.getElementById('searchResultsText');
+        
+        if (searchTerm && searchTerm.length >= 3) {
+            searchResults.classList.remove('hidden');
+            searchResultsText.textContent = `${count} cliente${count !== 1 ? 's' : ''} encontrado${count !== 1 ? 's' : ''} para "${searchTerm}"`;
+        } else if (searchTerm && searchTerm.length > 0 && searchTerm.length < 3) {
+            searchResults.classList.remove('hidden');
+            searchResultsText.textContent = 'Ingresa al menos 3 caracteres para buscar';
+        } else {
+            searchResults.classList.add('hidden');
         }
     }
 
@@ -380,23 +936,52 @@ class CobranzasApp {
         }
     }
 
+    parseAmountToMilesK(amount) {
+        let addSuffix = false;
+        let result = amount;
+        
+        if (amount >= 1000) {
+            addSuffix = true;
+            result = result / 1000;
+        }
+
+        if (addSuffix) 
+            return result.toFixed(0) + 'k';
+        else
+            return result.toFixed(0);   
+    } 
+
     createClienteCard(cliente) {
         const card = document.createElement('div');
         card.className = 'bg-gray-50 rounded-lg p-4 cursor-pointer hover:bg-gray-100 transition-colors';
         card.onclick = () => this.showClienteDetail(cliente.id);
 
-        card.innerHTML = `
+        let expiredAmountText = this.parseAmountToMilesK(cliente.vencido || 0);
+        let totalAmountText = this.parseAmountToMilesK(cliente.total || 0);
+        let lastQuarterSalesText = this.parseAmountToMilesK(cliente.ventas_ultimo_trimestre || 0);
+        
+        card.innerHTML += `
             <div class="flex justify-between items-start">
                 <div class="flex-1">
-                    <h3 class="font-semibold text-gray-800">${cliente.nombre}</h3>
-                    <p class="text-sm text-gray-600">${cliente.rif}</p>
-                    ${cliente.telefono ? `<p class="text-sm text-gray-500">${cliente.telefono}</p>` : ''}
+                    <div class="grid grid-cols-1 gap-1">
+                        <h3 class="font-semibold text-gray-800 break-words" >${cliente.nombre}</h3>
+                    </div>
                 </div>
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
+                <div class="flex flex-col items-end space-y-1">
+                    <div class="flex space-x-2">
+                        <span class="text-sm ${cliente.vencido ? 'text-red-500' : 'text-gray-500'}">${expiredAmountText}</span>
+                        <span class="text-sm text-gray-500">${cliente.dias_ult_fact  || 'N/A'}</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <span class="text-sm text-orange-500">${totalAmountText}</span>
+                        <span class="text-sm text-gray-500">${lastQuarterSalesText}</span>
+                    </div>
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </div>
             </div>
-        `;  
+        `;
 
         return card;
     }
@@ -404,25 +989,39 @@ class CobranzasApp {
     async showClienteDetail(clienteId) {
         try {
             debugger;
-            const [clienteResponse, resumenResponse] = await Promise.all([
+
+            /*
+                fetch(`${this.apiBaseUrl}/cobranzas/pendientes/${clienteId}`, {
+                    headers: window.authService.getAuthHeaders()
+                })
+            */
+            const [clienteResponse, resumenResponse, eventsResponse] = await Promise.all([
                 fetch(`${this.apiBaseUrl}/clientes/${clienteId}/`, {
                     headers: window.authService.getAuthHeaders()
                 }),
                 fetch(`${this.apiBaseUrl}/clientes/${clienteId}/resumen/`, {
                     headers: window.authService.getAuthHeaders()
+                }),
+                fetch(`${this.apiBaseUrl}/cobranzas/eventos/${clienteId}`, {
+                    headers: window.authService.getAuthHeaders()
                 })
             ]);
 
-            if (clienteResponse.status === 401 || resumenResponse.status === 401) {
+            if (clienteResponse.status === 401 || resumenResponse.status === 401 || eventsResponse.status === 401) {
                 window.authService.logout();
                 return;
             }
 
             const cliente = await clienteResponse.json();
             const resumen = await resumenResponse.json();
+            const eventos = await eventsResponse.json();
 
             const detailView = document.getElementById('cliente-detail-view');
             detailView.innerHTML = this.createClienteDetailHTML(cliente, resumen);
+
+            if (eventos.length !== 0) {
+                 this.createClienteEventsHTML(eventos);
+            }
             
             // Hide clientes view and show detail view
             document.getElementById('clientes-view').classList.add('hidden');
@@ -431,10 +1030,149 @@ class CobranzasApp {
             // Update header
             document.getElementById('pageTitle').textContent = cliente.nombre;
 
+            // set pending document listener 
+            document.getElementById('clientPendingDocs').onclick = () => {
+                debugger;
+                this.currentClientId = clienteId;
+                this.LoadClientPendingDocs(clienteId);
+                //this.showView('docs-pdtes-cliente');
+            };
+
         } catch (error) {
             console.error('Error loading cliente detail:', error);
             this.showError('Error cargando los detalles del cliente');
         }
+    }
+
+    createClienteEventsHTML(docs){
+        debugger; 
+        const detailView = document.getElementById('cliente-detail-view');
+        const documentosList = detailView.querySelector('#eventList');
+
+        if (docs.length === 0) {
+            documentosList.innerHTML = `
+                <div class="text-center text-gray-500">
+                    <p class="text-lg font-medium">No hay eventos los ultimos 90 dias</p>
+                    <p class="text-sm">Este cliente no tiene eventos los ultimos 3 meses</p>
+                </div>
+            `;
+            return;
+        }
+
+        documentosList.innerHTML = docs.map(doc => {
+            const tipoColor = this.getTipoColor(doc.tipo);
+            const tipoAbrev = this.getTipoAbreviacion(doc.tipo);
+            const timeAgo = this.getTimeAgo(doc.fecha_emision);
+            const diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
+            const diasVencido = doc.dias_vencimiento;
+            const isOverdue = doc.esta_vencido;
+            
+            return `
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                    <!-- Fila 1: Tipo, Cliente, Tiempo -->
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full ${tipoColor} flex items-center justify-center">
+                                <span class="text-white text-xs font-bold">${tipoAbrev}</span>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 text-sm">${doc.numero}</p>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-500">${timeAgo}</span>
+                    </div>
+                    
+                    <!-- Fila 2: Fecha emisión, Días crédito, Monto -->
+                    <div class="flex justify-between items-center mb-2 text-sm">
+                        <div class="flex items-center space-x-1">
+                            <span class="text-gray-600">E </span>
+                            <span class="text-gray-900">${this.formatDate(doc.fecha_emision)}</span>
+                        </div>
+                        <span class="text-gray-600">${diasCredito}d</span>
+                        <span class="text-gray-900 font-medium">${this.formatCurrency(doc.monto)}</span>
+                    </div>
+                    
+                    <!-- Fila 3: Fecha vencimiento, Días vencido, Saldo -->
+                    <div class="flex justify-between items-center text-sm">
+                        <div class="flex items-center space-x-1">
+                            <span class="text-gray-600">${(doc.fecha_vencimiento) ? "V ": ""} </span>
+                            <span class="text-gray-900">${(doc.fecha_vencimiento) ? this.formatDate(doc.fecha_vencimiento): ""}</span>
+                        </div>
+                        <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${!isNaN(diasVencido) ? diasCredito.toString() + "d": ""}</span>
+                        <div class="text-right">
+                            <span class="text-xs text-gray-500">falta</span>
+                            <span class="text-red-500 font-medium">${this.formatCurrency(doc.monto)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    createClientePendingDocsHTML(docs){
+    
+        const detailView = document.getElementById('cliente-detail-view');
+        const documentosList = detailView.querySelector('#documentosPendientes');
+
+        if (docs.length === 0) {
+            documentosList.innerHTML = `
+                <div class="text-center text-gray-500">
+                    <p class="text-lg font-medium">No hay documentos pendientes</p>
+                    <p class="text-sm">Este cliente no tiene documentos pendientes de cobro.</p>
+                </div>
+            `;
+            return;
+        }
+
+        documentosList.innerHTML = docs.map(doc => {
+            const tipoColor = this.getTipoColor(doc.tipo);
+            const tipoAbrev = this.getTipoAbreviacion(doc.tipo);
+            const timeAgo = this.getTimeAgo(doc.fecha_emision);
+            const diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
+            const diasVencido = doc.dias_vencimiento;
+            const isOverdue = doc.esta_vencido;
+            
+            return `
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                    <!-- Fila 1: Tipo, Cliente, Tiempo -->
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full ${tipoColor} flex items-center justify-center">
+                                <span class="text-white text-xs font-bold">${tipoAbrev}</span>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 text-sm">${doc.cliente_nombre}</p>
+                                <p class="text-xs text-gray-500">${doc.numero}</p>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-500">${timeAgo}</span>
+                    </div>
+                    
+                    <!-- Fila 2: Fecha emisión, Días crédito, Monto -->
+                    <div class="flex justify-between items-center mb-2 text-sm">
+                        <div class="flex items-center space-x-1">
+                            <span class="text-gray-600">E</span>
+                            <span class="text-gray-900">${this.formatDate(doc.fecha_emision)}</span>
+                        </div>
+                        <span class="text-gray-600">${diasCredito}d</span>
+                        <span class="text-gray-900 font-medium">${this.formatCurrency(doc.monto)}</span>
+                    </div>
+                    
+                    <!-- Fila 3: Fecha vencimiento, Días vencido, Saldo -->
+                    <div class="flex justify-between items-center text-sm">
+                        <div class="flex items-center space-x-1">
+                            <span class="text-gray-600">V</span>
+                            <span class="text-gray-900">${this.formatDate(doc.fecha_vencimiento)}</span>
+                        </div>
+                        <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${Math.abs(diasVencido)}d</span>
+                        <div class="text-right">
+                            <span class="text-xs text-gray-500">falta</span>
+                            <span class="text-red-500 font-medium">${this.formatCurrency(doc.monto)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
     createClienteDetailHTML(cliente, resumen) {
@@ -444,11 +1182,7 @@ class CobranzasApp {
                 <div class="bg-primary text-white rounded-lg p-6">
                     <h2 class="text-lg font-bold">${cliente.nombre}</h2>
                     <p class="text-sm opacity-90">Compañía</p>
-                    <div class="grid grid-cols-2 gap-4 mt-4 text-sm">
-                        <div>
-                            <p class="opacity-75">RIF</p>
-                            <p class="font-medium">${cliente.rif}</p>
-                        </div>
+                    <div class="grid grid-cols-1 gap-4 mt-4 text-sm">
                         <div>
                             <p class="opacity-75">RIF</p>
                             <p class="font-medium">${cliente.rif}</p>
@@ -500,10 +1234,22 @@ class CobranzasApp {
                 </div>
 
                 <!-- Documentos Pendientes -->
-                <div class="bg-white rounded-lg shadow-md p-6">
+                <div id="clientPendingDocs" class="bg-white rounded-lg shadow-md p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">DOCUMENTOS PENDIENTES</h3>
-                    <div id="documentosPendientes">
+                    <div id="clientDocsPendingLoading" class="hidden text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <p class="mt-2 text-gray-600">Cargando documentos...</p>
+                    </div>
+                    <div id="clientDocsPendingList">
                         <!-- Documents will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Eventos -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">EVENTOS</h3>
+                    <div id="eventList">
+                        <!-- Events will be loaded here -->
                     </div>
                 </div>
             </div>
@@ -546,7 +1292,7 @@ class CobranzasApp {
         this.charts.ventas = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: data.map(item => item.mes),
+                labels: data.map(item => item.mes + ' (' + (item.monto / 1000).toFixed(0) + 'k)'),
                 datasets: [{
                     data: data.map(item => item.monto),
                     backgroundColor: '#3B82F6',
@@ -644,6 +1390,15 @@ class CobranzasApp {
         if (user) {
             document.getElementById('userInfo').textContent = user.nombre_completo || user.username;
         }
+    }
+
+    formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('es-VE', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
     }
 
     formatCurrency(amount) {

@@ -28,6 +28,8 @@ class DocumentoResponse:
     dias_vencimiento: int
     esta_vencido: bool
     descripcion: Optional[str]
+    cliente_nombre: Optional[str] = None
+    co_ven: Optional[str] = None
 
 
 @dataclass
@@ -47,3 +49,17 @@ class FiltroDocumentosRequest:
     estado: Optional[str] = None
     fecha_desde: Optional[date] = None
     fecha_hasta: Optional[date] = None
+
+@dataclass
+class EventoResponse:
+    id: str
+    cliente_id: str
+    company_id: int 
+    tipo: str
+    numero: str
+    fecha_emision: date
+    fecha_vencimiento: date
+    monto: Decimal
+    saldo: Decimal
+    descripcion: Optional[str]
+    dias_vencimiento: Optional[int] = None

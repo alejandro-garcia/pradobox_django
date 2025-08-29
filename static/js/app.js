@@ -38,11 +38,14 @@ class CobranzasApp {
         if (this.initialized) return;
         this.initialized = true;
         
-        this.initializeIndexedDB();
-        this.setupEventListeners();
-        this.loadDashboard();
-        this.updateStorageInfo();
-        this.updateUserInfo();
+        this.initializeIndexedDB().then(() => {
+            this.setupEventListeners();
+            this.loadDashboard();
+            this.updateStorageInfo();
+            this.updateUserInfo();
+        }).catch(error => {
+            console.error('Error initializing IndexedDB:', error);
+        });
     }
 
     async initializeIndexedDB() {
@@ -178,8 +181,6 @@ class CobranzasApp {
 
     navigateTo(view) {
         // Update navigation state
-        debugger;
-
         document.querySelectorAll('.nav-item').forEach(item => {
             item.classList.remove('active', 'text-primary');
             item.classList.add('text-gray-600');
@@ -337,7 +338,7 @@ class CobranzasApp {
                 // Load from IndexedDB
                 debugger;
                 // TODO: get current user from IndexedDB
-                const user = await this.indexedDBService.getCurrentUser();
+                const user = await window.indexedDBService.getCurrentUser();
                 const seller_code = user.codigo_vendedor_profit; 
 
                 data = await this.loadDashboardFromIndexedDB(seller_code);
@@ -898,7 +899,8 @@ class CobranzasApp {
         progressDiv.classList.remove('hidden');
         
         try {
-            const result = await window.importService.importFromMSSQL();
+            const user = window.authService.getCurrentUser();
+            const result = await window.importService.importFromMSSQL(user);
             
             this.showSuccess(`Importación completada: ${result.clientes_imported} clientes, ${result.documentos_imported} documentos`);
             await this.updateStorageInfo();
@@ -998,7 +1000,6 @@ class CobranzasApp {
 
     async showClienteDetail(clienteId) {
         try {
-            debugger;
 
             /*
                 fetch(`${this.apiBaseUrl}/cobranzas/pendientes/${clienteId}`, {
@@ -1042,7 +1043,6 @@ class CobranzasApp {
 
             // set pending document listener 
             document.getElementById('clientPendingDocs').onclick = () => {
-                debugger;
                 this.currentClientId = clienteId;
                 this.LoadClientPendingDocs(clienteId);
                 //this.showView('docs-pdtes-cliente');

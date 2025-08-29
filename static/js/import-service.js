@@ -22,7 +22,7 @@ class ImportService {
         return this.getCookie('csrftoken');
     }
 
-    async importFromMSSQL() {
+    async importFromMSSQL(userInfo) {
         if (this.isImporting) {
             throw new Error('Ya hay una importación en progreso');
         }
@@ -37,7 +37,7 @@ class ImportService {
 
             // Paso 1: Obtener documentos de MSSQL
             this.updateProgress('Obteniendo documentos...', 0, 100);
-            const documentos = await this.fetchDocumentosFromMSSQL();
+            const documentos = await this.fetchDocumentosFromMSSQL(userInfo.codigo_vendedor_profit);
             
             // Paso 2: Obtener clientes relacionados
             this.updateProgress('Obteniendo clientes...', 25, 100);
@@ -61,6 +61,9 @@ class ImportService {
             await window.indexedDBService.setSyncMetadata('last_sync', new Date().toISOString());
             await window.indexedDBService.setSyncMetadata('total_clientes', clientes.length);
             await window.indexedDBService.setSyncMetadata('total_documentos', documentos.length);
+            await window.indexedDBService.setSyncMetadata('user_name', userInfo.username); 
+            await window.indexedDBService.setSyncMetadata('nombre_completo', userInfo.nombre_completo);
+            await window.indexedDBService.setSyncMetadata('codigo_vendedor_profit', userInfo.codigo_vendedor_profit);
 
             this.updateProgress('Importación completada', 100, 100);
 
@@ -79,14 +82,14 @@ class ImportService {
         }
     }
 
-    async fetchDocumentosFromMSSQL() {
+    async fetchDocumentosFromMSSQL(sellerCode) {
         const response = await fetch(`${this.apiBaseUrl}/import/documentos/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': this.getCsrfToken() || ''
             },
-            body: JSON.stringify({})
+            body: JSON.stringify({'sellerCode': sellerCode })
         });
 
         if (!response.ok) {

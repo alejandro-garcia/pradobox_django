@@ -129,19 +129,25 @@ class IndexedDBService {
             
             if (doc.tipo_doc === 'N/C' || doc.tipo_doc == "ADEL") {
                 resumen.total_creditos += Math.abs(saldo);
-            } else if (doc.fec_venc < today) {
-                resumen.total_vencido += saldo;
-                resumen.cantidad_vencidos++;
-                
-                // Calcular días de vencimiento
-                const fechaVenc = new Date(doc.fec_venc);
-                const hoy = new Date();
-                const diasVencimiento = Math.floor((hoy - fechaVenc) / (1000 * 60 * 60 * 24));
-                totalDiasVencimiento += diasVencimiento;
-                documentosVencidos++;
+            }
+
+            if (doc.fec_venc <= today) {
+                if (doc.tipo_doc !== 'N/C') {
+                    resumen.total_vencido += saldo;
+                    resumen.cantidad_vencidos++;
+                    
+                    // Calcular días de vencimiento
+                    const fechaVenc = new Date(doc.fec_venc);
+                    const hoy = new Date();
+                    const diasVencimiento = Math.floor((hoy - fechaVenc) / (1000 * 60 * 60 * 24));
+                    totalDiasVencimiento += diasVencimiento;
+                    documentosVencidos++;
+                }
             } else {
-                resumen.total_por_vencer += saldo;
-                resumen.cantidad_por_vencer++;
+                if (doc.tipo_doc !== 'N/C') {
+                    resumen.total_por_vencer += saldo;
+                    resumen.cantidad_por_vencer++;
+                }
             }
         });
 
@@ -206,13 +212,15 @@ class IndexedDBService {
     }
 
     async getCurrentUser() {
-        const transaction = this.db.transaction(['clientes'], 'readonly');
-        const store = transaction.objectStore('clientes');
-        return new Promise((resolve, reject) => {
-            const request = store.get(1);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
+        const userName = await this.getSyncMetadata('user_name');
+        const fullName = await this.getSyncMetadata('nombre_completo');
+        const sellerCode = await this.getSyncMetadata('codigo_vendedor_profit');
+
+        return {
+            user_name: userName,
+            nombre_completo: fullName,
+            codigo_vendedor_profit: sellerCode
+        }
     }
 }
 

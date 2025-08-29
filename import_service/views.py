@@ -29,9 +29,12 @@ def get_sql_config_view():
 @api_view(['POST'])
 def import_documentos_view(request):
     """Importa documentos desde SQL Server"""
+
+    seller_code = request.data.get('sellerCode', None)
+
     try:
         with MSSQLConnector() as connector:
-            documentos = connector.get_documentos_cc()
+            documentos = connector.get_documentos_cc(seller_code)
             
             return Response(documentos)
 

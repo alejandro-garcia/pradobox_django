@@ -11,7 +11,8 @@ from ..application.use_cases import (
     ObtenerDocumentosVencidosUseCase,
     VerDocumentosPendientesUseCase,
     VerDocumentosPendientesClienteUseCase,
-    EventosClienteUseCase
+    EventosClienteUseCase,
+    VerDetalleDocumentoClienteUseCase
 )
 from ..application.dtos import CrearDocumentoRequest, FiltroDocumentosRequest
 from .repository_impl import DjangoDocumentoRepository, DjangoEventoRepository
@@ -176,6 +177,42 @@ def documentos_pendientes_cliente_view(request, client_id):
         'descripcion': doc.descripcion,
         'co_ven': doc.co_ven
     } for doc in documentos])
+
+@api_view(['GET'])
+def documento_detalle_view(request, documento_id):
+    repository = get_documento_repository()
+    
+    try:
+        use_case = VerDetalleDocumentoClienteUseCase(repository)
+        documento = use_case.execute(documento_id)
+        
+        return Response({
+            'id': documento.id,
+            'cliente_id': documento.cliente_id,
+            'cliente_nombre': documento.cliente_nombre,
+            'numero': documento.numero,
+            'tipo': documento.tipo,
+            'monto': float(documento.monto),
+            'fecha_emision': documento.fecha_emision,
+            'fecha_vencimiento': documento.fecha_vencimiento,
+            'estado': documento.estado,
+            'dias_vencimiento': documento.dias_vencimiento,
+            'esta_vencido': documento.esta_vencido,
+            'descripcion': documento.descripcion,
+            'co_ven': documento.co_ven,
+            'vendedor_nombre': documento.vendedor_nombre,
+            'productos': documento.productos,
+            'subtotal': float(documento.subtotal) if documento.subtotal else 0,
+            'descuentos': float(documento.descuentos) if documento.descuentos else 0,
+            'impuestos': float(documento.impuestos) if documento.impuestos else 0,
+            'total': float(documento.total) if documento.total else 0,
+            'saldo': float(documento.saldo) if documento.saldo else 0,
+            'comentarios': documento.comentarios
+        })
+        
+    except EntityNotFoundException as e:
+        return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)
+
 
 @api_view(['GET'])
 def eventos_cliente_view(request, client_id):

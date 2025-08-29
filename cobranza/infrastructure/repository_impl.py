@@ -222,7 +222,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
         if seller_id != "-1":
             query = query.filter(co_ven=seller_id)
         
-        query = query.order_by('-fecha_vencimiento')
+        query = query.order_by('fecha_vencimiento')
         
         documentos = []
         for model in query:

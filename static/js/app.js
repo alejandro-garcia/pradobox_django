@@ -208,6 +208,7 @@ class CobranzasApp {
             'dashboard': 'Situación',
             'clientes': 'Clientes',
             'documentos-pendientes': 'Cobrables',
+            'documento-detalle': 'Detalle',
             'tareas': 'Tareas',
             'eventos': 'Eventos',
             'mas': 'Más',
@@ -241,6 +242,10 @@ class CobranzasApp {
                 break;
             case 'documentos-pendientes':
                 this.loadDocumentosPendientes();
+                break;
+            case 'documento-detalle':
+                // No load here, will be loaded when navigating with document ID
+                debugger;
                 break;
             case 'docs-pdtes-cliente':
                 // Handled when opening from client detail
@@ -419,9 +424,9 @@ class CobranzasApp {
             if (!this.charts.ventas) {
                 this.createVentasChart(data.ventas_por_mes);
             }
-            if (!this.charts.cobros) {
-                this.createCobrosChart(data.cobros_por_mes);
-            }
+            // if (!this.charts.cobros) {
+            //     this.createCobrosChart(data.cobros_por_mes);
+            // }
 
             this.dashboardLoaded = true;
 
@@ -480,7 +485,7 @@ class CobranzasApp {
                 }));
             } else {
                 const user = window.authService.getCurrentUser();
-                const sellerCode = user.codigo_vendedor_profit; 
+                const sellerCode = user.codigo_vendedor_profit || '-1'; 
 
                 const response = await fetch(`${this.apiBaseUrl}/clientes/vendedor/${sellerCode}`, {
                     headers: window.authService.getAuthHeaders()
@@ -653,14 +658,13 @@ class CobranzasApp {
         document.getElementById('resumenDiasVencido').textContent = data.resumen.dias_promedio_vencimiento;
         
         const totalGeneral = data.resumen.total_vencido + data.resumen.total_por_vencer;
-        const cantidadTotal = data.resumen.cantidad_documentos_vencidos + data.resumen.cantidad_documentos_por_vencer;
         
         document.getElementById('resumenTotal').textContent = this.formatCurrency(totalGeneral);
-        document.getElementById('resumenCantidadTotal').textContent = cantidadTotal;
+        document.getElementById('resumenCantidadTotal').textContent = data.resumen.cantidad_documentos_total;
         document.getElementById('resumenDiasTotal').textContent = data.resumen.dias_promedio_vencimiento_todos;
         
         document.getElementById('resumenNeto').textContent = this.formatCurrency(data.resumen.total_neto);
-        document.getElementById('resumenCreditos').textContent = this.formatCurrency(data.resumen.total_creditos);
+        document.getElementById('resumenCreditos').textContent = this.formatCurrency(data.resumen.total_creditos * -1);
 
         // Display documentos
         const documentosList = document.getElementById('documentosPendientesList');
@@ -675,15 +679,18 @@ class CobranzasApp {
         documentosEmpty.classList.add('hidden');
         
         documentosList.innerHTML = data.documentos.map(doc => {
+            debugger;
             const tipoColor = this.getTipoColor(doc.tipo);
             const tipoAbrev = this.getTipoAbreviacion(doc.tipo);
             const timeAgo = this.getTimeAgo(doc.fecha_emision);
             const diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
             const diasVencido = doc.dias_vencimiento;
             const isOverdue = doc.esta_vencido;
-            
+            //<div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+
             return `
-                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors" 
+                     onclick="cobranzasApp.viewDocumentoDetail('${doc.id}')">
                     <!-- Fila 1: Tipo, Cliente, Tiempo -->
                     <div class="flex items-center justify-between mb-2">
                         <div class="flex items-center space-x-3">
@@ -947,6 +954,208 @@ class CobranzasApp {
             this.showError('Error eliminando datos locales: ' + error.message);
         }
     }
+
+    async viewDocumentoDetail(documentoId) {
+        try {
+            this.showDocumentoDetailLoading(true);
+            
+            let documento;
+            
+            if (this.offlineMode) {
+                // En modo offline, obtener de IndexedDB (funcionalidad limitada)
+                const documentos = await window.indexedDBService.getDocumentos();
+                documento = documentos.find(doc => doc.id === documentoId);
+                if (documento) {
+                    // Simular estructura completa para modo offline
+                    documento = {
+                        ...documento,
+                        cliente_nombre: 'Cliente Local',
+                        vendedor_nombre: 'Vendedor Local',
+                        productos: [],
+                        subtotal: documento.saldo,
+                        descuentos: 0,
+                        impuestos: 0,
+                        total: documento.saldo,
+                        comentarios: documento.observa || ''
+                    };
+                }
+            } else {
+                // Obtener desde API
+                const response = await fetch(`${this.apiBaseUrl}/cobranzas/detalle/${documentoId}/`, {
+                    headers: window.authService.getAuthHeaders()
+                });
+                
+                if (response.status === 401) {
+                    window.authService.logout();
+                    return;
+                }
+                
+                if (response.status === 404) {
+                    this.showError('Documento no encontrado');
+                    return;
+                }
+                
+                documento = await response.json();
+            }
+            
+            this.displayDocumentoDetail(documento);
+            this.navigateTo('documento-detalle');
+            
+        } catch (error) {
+            console.error('Error loading documento detail:', error);
+            this.showError('Error cargando detalle del documento');
+        } finally {
+            this.showDocumentoDetailLoading(false);
+        }
+    }
+
+    displayDocumentoDetail(documento) {
+        const tipoColor = this.getTipoColor(documento.tipo);
+        const tipoNombre = this.getTipoNombre(documento.tipo);
+        const diasCredito = this.calculateCreditDays(documento.fecha_emision, documento.fecha_vencimiento);
+        const diasDesdeEmision = this.calculateDaysSince(documento.fecha_emision);
+        const fechaEmisionFormatted = this.formatDateWithDay(documento.fecha_emision);
+        const isOverdue = documento.esta_vencido;
+        
+        const content = `
+            <!-- Encabezado (fondo azul) -->
+            <div class="${tipoColor} text-white p-6 rounded-t-lg">
+                <!-- Línea 1: Tipo y número -->
+                <h1 class="text-xl font-bold mb-2">${tipoNombre} ${documento.numero}</h1>
+                
+                <!-- Línea 2: Nombre del cliente -->
+                <h2 class="text-lg font-medium mb-1">${documento.cliente_nombre}</h2>
+                
+                <!-- Línea 3: Vendedor -->
+                <p class="text-sm opacity-90 mb-1">Vendido por ${documento.vendedor_nombre}</p>
+                
+                <!-- Línea 4: Fecha y días -->
+                <div class="flex justify-between items-center">
+                    <span class="text-sm">${fechaEmisionFormatted}</span>
+                    <span class="text-sm font-medium">${diasDesdeEmision} días</span>
+                </div>
+            </div>
+
+            <!-- Sección Info -->
+            <div class="bg-white p-6 border-l border-r border-gray-200">
+                <div class="space-y-3">
+                    <!-- Emisión -->
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Emisión</span>
+                        <span class="font-medium">${this.formatDate(documento.fecha_emision)}</span>
+                    </div>
+                    
+                    <!-- Vencimiento -->
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Vencimiento</span>
+                        <span class="font-medium">${this.formatDate(documento.fecha_vencimiento)}</span>
+                    </div>
+                    
+                    <!-- Días de crédito -->
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Días de crédito</span>
+                        <span class="font-medium">${diasCredito}d</span>
+                    </div>
+                    
+                    <!-- Días vencido -->
+                    <div class="flex justify-between">
+                        <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">Días vencido</span>
+                        <span class="${isOverdue ? 'text-red-500 font-medium' : 'font-medium'}">${Math.abs(documento.dias_vencimiento)}d</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección Productos -->
+            <div class="bg-gray-100 p-4">
+                <h3 class="text-sm font-medium text-gray-600 mb-3">PRODUCTOS</h3>
+                <div class="space-y-3">
+                    ${documento.productos && documento.productos.length > 0 
+                        ? documento.productos.map(producto => `
+                            <div class="bg-white p-4 rounded">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-900">${producto.descripcion}</p>
+                                        <p class="text-sm text-gray-600">${producto.codigo}</p>
+                                        <p class="text-sm text-gray-500">${producto.cantidad} x ${this.formatCurrency(producto.precio_unitario)}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="font-medium">${this.formatCurrency(producto.subtotal)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')
+                        : `
+                            <div class="bg-white p-4 rounded text-center text-gray-500">
+                                <p>No hay productos disponibles</p>
+                            </div>
+                        `
+                    }
+                </div>
+            </div>
+
+            <!-- Sección Comentarios -->
+            ${documento.comentarios ? `
+                <div class="bg-gray-100 p-4">
+                    <h3 class="text-sm font-medium text-gray-600 mb-3">COMENTARIOS</h3>
+                    <div class="bg-white p-4 rounded">
+                        <p class="text-gray-700">${documento.comentarios}</p>
+                    </div>
+                </div>
+            ` : ''}
+
+            <!-- Sección Totales -->
+            <div class="bg-white p-6 rounded-b-lg border-l border-r border-b border-gray-200">
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Subtotal</span>
+                        <span class="font-medium">${this.formatCurrency(documento.subtotal || 0)}</span>
+                    </div>
+                    
+                    ${documento.descuentos && documento.descuentos > 0 ? `
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Descuentos</span>
+                            <span class="font-medium text-red-500">-${this.formatCurrency(documento.descuentos)}</span>
+                        </div>
+                    ` : ''}
+                    
+                    ${documento.impuestos && documento.impuestos > 0 ? `
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Impuestos</span>
+                            <span class="font-medium">${this.formatCurrency(documento.impuestos)}</span>
+                        </div>
+                    ` : ''}
+                    
+                    <hr class="border-gray-200">
+                    
+                    <div class="flex justify-between">
+                        <span class="text-gray-900 font-medium">Total</span>
+                        <span class="font-bold text-lg">${this.formatCurrency(documento.total || documento.monto)}</span>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                        <span class="text-red-600 font-medium">Pendiente</span>
+                        <span class="font-bold text-lg text-red-600">${this.formatCurrency(documento.saldo || documento.monto)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('documentoDetalleContent').innerHTML = content;
+    }
+
+    showDocumentoDetailLoading(show) {
+        const content = document.getElementById('documentoDetalleContent');
+        
+        if (show) {
+            content.innerHTML = `
+                <div class="text-center py-8">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <p class="mt-2 text-gray-600">Cargando detalle...</p>
+                </div>
+            `;
+        }
+    }
+
 
     parseAmountToMilesK(amount) {
         let addSuffix = false;
@@ -1302,7 +1511,7 @@ class CobranzasApp {
         this.charts.ventas = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: data.map(item => item.mes + ' (' + (item.monto / 1000).toFixed(0) + 'k)'),
+                labels: data.map(item => item.mes),  //+ ' (' + (item.monto / 1000).toFixed(0) + 'k)'
                 datasets: [{
                     data: data.map(item => item.monto),
                     backgroundColor: '#3B82F6',
@@ -1315,6 +1524,18 @@ class CobranzasApp {
                 plugins: {
                     legend: {
                         display: false
+                    },
+                    datalabels: {
+                        anchor: 'center',       // posición
+                        align: 'center',        // encima de la barra
+                        color: '#FFFFFF',       // color del texto
+                        font: {
+                            weight: 'bold',
+                            size: 12
+                        },
+                        formatter: function(value) {
+                            return (value / 1000).toFixed(0) + 'k';
+                        }
                     }
                 },
                 scales: {
@@ -1444,4 +1665,6 @@ class CobranzasApp {
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.cobranzasApp = new CobranzasApp();
+    debugger;
+    Chart.register(ChartDataLabels);
 });

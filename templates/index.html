@@ -15,6 +15,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
     <script src="/static/js/auth-service.js"></script>
     <script src="/static/js/indexdb-service.js"></script>
     <script src="/static/js/import-service.js"></script>
@@ -38,7 +39,7 @@
     <style>
         .chart-parent{
             position: relative;
-            width: 58.7vw;
+            /*width: 58.7vw;*/
             height: 30vh;
         }
     </style>
@@ -113,39 +114,39 @@
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Vencido</p>
-                            <p class="text-xl font-semibold text-primary" id="totalVencido">82,224.59</p>
+                            <p class="text-lg font-semibold text-red-500" id="totalVencido">82,224.59</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Cantidad</p>
-                            <p class="text-xl font-semibold text-red-500" id="cantidadVencido">87</p>
+                            <p class="text-lg font-semibold text-red-500" id="cantidadVencido">87</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Días</p>
-                            <p class="text-xl font-semibold text-red-500" id="diasVencido">38</p>
+                            <p class="text-lg font-semibold text-red-500" id="diasVencido">38</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Total</p>
-                            <p class="text-xl font-semibold text-gray-700" id="totalGeneral">104,949.48</p>
+                            <p class="text-lg font-semibold text-gray-700" id="totalGeneral">104,949.48</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Cantidad</p>
-                            <p class="text-xl font-semibold text-gray-700" id="cantidadTotal">129</p>
+                            <p class="text-lg font-semibold text-gray-700" id="cantidadTotal">129</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Días</p>
-                            <p class="text-xl font-semibold text-gray-700" id="diasTotal">29</p>
+                            <p class="text-lg font-semibold text-gray-700" id="diasTotal">29</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Neto</p>
-                            <p class="text-xl font-semibold text-gray-700" id="totalNeto">100,771.82</p>
+                            <p class="text-lg font-semibold text-gray-700" id="totalNeto">100,771.82</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Créditos</p>
-                            <p class="text-xl font-semibold text-success" id="totalCreditos">4,177.66</p>
+                            <p class="text-lg font-semibold text-red-500" id="totalCreditos">4,177.66</p>
                         </div>
                     </div>
                 </div>
@@ -166,11 +167,12 @@
                         <h2 class="text-lg font-semibold text-gray-800 mb-4">VENTAS</h2>
                         <canvas id="ventasChart"></canvas>
                     </div>
+                    <br/>
 
-                    <div class="bg-white rounded-lg shadow-md p-6 chart-parent">
+                    <!-- <div class="bg-white rounded-lg shadow-md p-6 chart-parent">
                         <h2 class="text-lg font-semibold text-gray-800 mb-4">COBROS</h2>
                         <canvas id="cobrosChart"></canvas>
-                    </div>
+                    </div> -->
                 </div>
             </div>
 
@@ -236,11 +238,11 @@
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Cantidad</p>
-                            <p class="text-lg font-semibold text-orange-500" id="resumenCantidadVencido">0</p>
+                            <p class="text-lg font-semibold text-red-500" id="resumenCantidadVencido">0</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Días</p>
-                            <p class="text-lg font-semibold text-orange-500" id="resumenDiasVencido">0</p>
+                            <p class="text-lg font-semibold text-red-500" id="resumenDiasVencido">0</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-3 gap-4 mb-3">
@@ -264,7 +266,7 @@
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Créditos</p>
-                            <p class="text-lg font-semibold text-green-500" id="resumenCreditos">0</p>
+                            <p class="text-lg font-semibold text-red-500" id="resumenCreditos">0</p>
                         </div>
                     </div>
                 </div>
@@ -285,6 +287,13 @@
                     <div id="documentosPendientesList" class="space-y-3">
                         <!-- Documentos will be loaded here -->
                     </div>
+                </div>
+            </div>
+
+            <!-- Documento Detail View -->
+            <div id="documento-detalle-view" class="hidden">
+                <div id="documentoDetalleContent">
+                    <!-- Content will be loaded dynamically -->
                 </div>
             </div>
 

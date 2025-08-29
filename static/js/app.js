@@ -336,7 +336,11 @@ class CobranzasApp {
             if (this.offlineMode) {
                 // Load from IndexedDB
                 debugger;
-                data = await this.loadDashboardFromIndexedDB();
+                // TODO: get current user from IndexedDB
+                const user = await this.indexedDBService.getCurrentUser();
+                const seller_code = user.codigo_vendedor_profit; 
+
+                data = await this.loadDashboardFromIndexedDB(seller_code);
             } else {
                 const user = window.authService.getCurrentUser();
                 const seller_code = user.codigo_vendedor_profit; 
@@ -425,8 +429,8 @@ class CobranzasApp {
         }
     }
 
-    async loadDashboardFromIndexedDB() {
-        const resumen = await window.indexedDBService.getResumenCobranzas();
+    async loadDashboardFromIndexedDB(seller_code) {
+        const resumen = await window.indexedDBService.getResumenCobranzas(seller_code);
         
         return {
             situacion: {
@@ -533,9 +537,12 @@ class CobranzasApp {
             let data;
             
             if (this.offlineMode) {
+
+                const user = await this.indexedDBService.getCurrentUser();
+                const seller_code = user.codigo_vendedor_profit;                 
                 // Load from IndexedDB
-                const documentos = await window.indexedDBService.getDocumentos();
-                const resumen = await window.indexedDBService.getResumenCobranzas();
+                const documentos = await window.indexedDBService.getDocumentos({ co_ven: seller_code });
+                const resumen = await window.indexedDBService.getResumenCobranzas(seller_code);
                 
                 data = {
                     documentos: documentos.map(doc => ({

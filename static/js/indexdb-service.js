@@ -92,6 +92,11 @@ class IndexedDBService {
                 if (filtros.co_cli) {
                     documentos = documentos.filter(doc => doc.co_cli === filtros.co_cli);
                 }
+
+                if (filtros.co_ven) {
+                    documentos = documentos.filter(doc => doc.co_ven === filtros.co_ven);
+                }
+
                 if (filtros.vencidos) {
                     const today = new Date().toISOString().split('T')[0];
                     documentos = documentos.filter(doc => doc.fec_venc < today);
@@ -103,8 +108,8 @@ class IndexedDBService {
         });
     }
 
-    async getResumenCobranzas() {
-        const documentos = await this.getDocumentos();
+    async getResumenCobranzas(seller_code) {
+        const documentos = await this.getDocumentos({ co_ven: seller_code });
         const today = new Date().toISOString().split('T')[0];
 
         const resumen = {
@@ -122,7 +127,7 @@ class IndexedDBService {
         documentos.forEach(doc => {
             const saldo = parseFloat(doc.saldo);
             
-            if (doc.tipo_doc === 'N/C') {
+            if (doc.tipo_doc === 'N/C' || doc.tipo_doc == "ADEL") {
                 resumen.total_creditos += Math.abs(saldo);
             } else if (doc.fec_venc < today) {
                 resumen.total_vencido += saldo;
@@ -198,6 +203,16 @@ class IndexedDBService {
             };
         }
         return null;
+    }
+
+    async getCurrentUser() {
+        const transaction = this.db.transaction(['clientes'], 'readonly');
+        const store = transaction.objectStore('clientes');
+        return new Promise((resolve, reject) => {
+            const request = store.get(1);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
     }
 }
 

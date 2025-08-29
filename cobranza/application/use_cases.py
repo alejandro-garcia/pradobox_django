@@ -200,3 +200,40 @@ class EventosClienteUseCase(UseCase[str, List[EventoResponse]]):
             descripcion=evento.descripcion,
             dias_vencimiento=evento.dias_vencimiento
         )
+    
+class VerDetalleDocumentoClienteUseCase(UseCase[str, DocumentoResponse]):
+    
+    def __init__(self, documento_repository: DocumentoRepository):
+        self.documento_repository = documento_repository
+    
+    def execute(self, documento_id: str) -> DocumentoResponse:
+        documento = self.documento_repository.get_detalle_documento(documento_id)
+        if not documento:
+            raise EntityNotFoundException(f"Documento con ID {documento_id} no encontrado")
+        
+        return self._to_response(documento)
+    
+    def _to_response(self, documento: Documento) -> DocumentoResponse:
+        return DocumentoResponse(
+            id=documento.id.value,
+            cliente_id=documento.cliente_id.value,
+            numero=documento.numero,
+            tipo=documento.tipo.value,
+            monto=documento.monto.amount,
+            fecha_emision=documento.fecha_emision,
+            fecha_vencimiento=documento.fecha_vencimiento,
+            estado=documento.estado.value,
+            dias_vencimiento=documento.dias_vencimiento,
+            esta_vencido=documento.esta_vencido,
+            descripcion=documento.descripcion,
+            cliente_nombre=getattr(documento, 'cliente_nombre', ''),
+            co_ven=documento.co_ven,
+            vendedor_nombre=getattr(documento, 'vendedor_nombre', ''),
+            productos=getattr(documento, 'productos', []),
+            subtotal=getattr(documento, 'subtotal', documento.monto.amount),
+            descuentos=getattr(documento, 'descuentos', 0),
+            impuestos=getattr(documento, 'impuestos', 0),
+            total=getattr(documento, 'total', documento.monto.amount),
+            saldo=getattr(documento, 'saldo', documento.monto.amount),
+            comentarios=getattr(documento, 'comentarios', '')
+        )

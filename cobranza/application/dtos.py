@@ -30,6 +30,14 @@ class DocumentoResponse:
     descripcion: Optional[str]
     cliente_nombre: Optional[str] = None
     co_ven: Optional[str] = None
+    vendedor_nombre: Optional[str] = None
+    productos: Optional[list] = None
+    subtotal: Optional[Decimal] = None
+    descuentos: Optional[Decimal] = None
+    impuestos: Optional[Decimal] = None
+    total: Optional[Decimal] = None
+    saldo: Optional[Decimal] = None
+    comentarios: Optional[str] = None
 
 
 @dataclass

@@ -298,6 +298,85 @@ class DjangoDocumentoRepository(DocumentoRepository):
             payments_list.append({"mes": mes_nombre, "amount": row["amount"]})
 
         return payments_list
+    
+    def get_detalle_documento(self, documento_id: str) -> Optional[Documento]:
+        """Obtiene el detalle completo de un documento incluyendo productos y vendedor"""
+        try:
+            model = DocumentoModel.objects.select_related('cliente').get(id=documento_id)
+            documento = self._to_domain(model)
+            
+            # Agregar información adicional
+            documento.cliente_nombre = model.cliente.nombre
+            documento.vendedor_nombre = self._get_vendedor_nombre(model.co_ven)
+            documento.productos = self._get_productos_documento(documento_id)
+            documento.subtotal = model.monto
+            documento.descuentos = Decimal('0')  # TODO: obtener de tabla de descuentos
+            documento.impuestos = Decimal('0')   # TODO: obtener de tabla de impuestos
+            documento.total = model.monto
+            documento.saldo = model.saldo
+            documento.comentarios = model.descripcion or ''
+            
+            return documento
+            
+        except DocumentoModel.DoesNotExist:
+            return None
+    
+    def _get_vendedor_nombre(self, co_ven: str) -> str:
+        """Obtiene el nombre del vendedor desde la base de datos"""
+        if not co_ven:
+            return "Sin asignar"
+        
+        try:
+            from django.db import connection
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT ven_des FROM vendedor WHERE co_ven = %s", [co_ven])
+                row = cursor.fetchone()
+                return row[0] if row else f"Vendedor {co_ven}"
+        except Exception:
+            return f"Vendedor {co_ven}"
+    
+    def _get_productos_documento(self, documento_id: str) -> List[dict]:
+        """Obtiene los productos asociados al documento"""
+        try:
+            from django.db import connection
+            with connection.cursor() as cursor:
+                # Extraer tipo_doc y nro_doc del documento_id
+                parts = documento_id.split('_', 1)
+                if len(parts) == 2:
+                    tipo_doc, nro_doc = parts
+                else:
+                    return []
+                
+                #tipo_doc = %s AND nro_doc = %s
+                
+                cursor.execute("""
+                    SELECT 
+                        art_des,
+                        co_art,
+                        total_art,
+                        prec_vta,
+                        (total_art * prec_vta) as subtotal
+                    FROM reng_fac 
+                    WHERE tipo_doc = %s AND nro_doc = %s
+                    ORDER BY reng_num
+                """, [tipo_doc, nro_doc])
+                
+                productos = []
+                for row in cursor.fetchall():
+                    productos.append({
+                        'descripcion': row[0],
+                        'codigo': row[1],
+                        'cantidad': float(row[2]),
+                        'precio_unitario': float(row[3]),
+                        'subtotal': float(row[4])
+                    })
+                
+                return productos
+                
+        except Exception as e:
+            print(f"Error obteniendo productos: {e}")
+            return []
+
 
     def _to_domain(self, model: DocumentoModel) -> Documento:
         return Documento(
@@ -311,6 +390,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
             estado=EstadoDocumento(model.estado),
             descripcion=model.descripcion
         )
+    
     
 class DjangoEventoRepository(EventoRepository):
     def find_all(self) -> List[Documento]:

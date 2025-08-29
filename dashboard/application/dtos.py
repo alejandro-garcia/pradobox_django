@@ -8,9 +8,10 @@ class SituacionGeneralResponse:
     total_vencido: Decimal
     total_por_vencer: Decimal
     total_creditos: Decimal
+    total_sinvencimiento: Decimal
     total_neto: Decimal
     cantidad_documentos_vencidos: int
-    cantidad_documentos_por_vencer: int
+    cantidad_documentos_total: int
     dias_promedio_vencimiento: int
     dias_promedio_vencimiento_todos: int
     dias_transcurridos: int 

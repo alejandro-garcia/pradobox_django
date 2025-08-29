@@ -99,9 +99,10 @@ def resumen_cobranzas_view(request):
         'total_vencido': float(resumen.total_vencido),
         'total_por_vencer': float(resumen.total_por_vencer),
         'total_creditos': float(resumen.total_creditos),
+        'total_sinvencimiento': float(resumen.total_sinvencimiento),
         'total_neto': float(resumen.total_neto),
         'cantidad_vencidos': resumen.cantidad_vencidos,
-        'cantidad_por_vencer': resumen.cantidad_por_vencer,
+        'cantidad_total': resumen.cantidad_total,
         'dias_promedio_vencimiento': resumen.dias_promedio_vencimiento
     })
 

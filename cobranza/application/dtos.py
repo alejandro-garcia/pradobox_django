@@ -37,9 +37,10 @@ class ResumenCobranzasResponse:
     total_vencido: Decimal
     total_por_vencer: Decimal
     total_creditos: Decimal
+    total_sinvencimiento: Decimal
     total_neto: Decimal
     cantidad_vencidos: int
-    cantidad_por_vencer: int
+    cantidad_total: int
     dias_promedio_vencimiento: int
 
 

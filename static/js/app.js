@@ -388,6 +388,8 @@ class CobranzasApp {
 
                 let salesPercentage = (topSales !== 0) ? correntSalesNum * 100 / topSales: 0; 
 
+                if (salesPercentage > 100) salesPercentage = 100;
+
                 let currentSales = (data.ventas_por_mes[2].monto / 1000).toString().split(".")[0] + "K";
 
                 document.getElementById('currentSales').textContent = currentSales;
@@ -405,11 +407,12 @@ class CobranzasApp {
             document.getElementById('totalVencido').textContent = this.formatCurrency(data.situacion.total_vencido);
             document.getElementById('cantidadVencido').textContent = data.situacion.cantidad_documentos_vencidos;
             document.getElementById('diasVencido').textContent = data.situacion.dias_promedio_vencimiento;
-            document.getElementById('totalGeneral').textContent =    this.formatCurrency(data.situacion.total_neto);
-            document.getElementById('cantidadTotal').textContent = data.situacion.cantidad_documentos_vencidos + data.situacion.cantidad_documentos_por_vencer;
+            document.getElementById('totalGeneral').textContent =  this.formatCurrency(data.situacion.total_vencido + data.situacion.total_por_vencer - data.situacion.total_sinvencimiento); ;   
+            debugger;
+            document.getElementById('cantidadTotal').textContent = data.situacion.cantidad_documentos_total;
             document.getElementById('diasTotal').textContent = data.situacion.dias_promedio_vencimiento_todos;
-            document.getElementById('totalNeto').textContent =  this.formatCurrency(data.situacion.total_vencido + data.situacion.total_por_vencer);
-            document.getElementById('totalCreditos').textContent = this.formatCurrency(Math.abs(data.situacion.total_creditos));
+            document.getElementById('totalNeto').textContent =  this.formatCurrency(data.situacion.total_neto);
+            document.getElementById('totalCreditos').textContent = this.formatCurrency(data.situacion.total_creditos * -1);
 
             // Create charts only if they don't exist
             if (!this.charts.ventas) {

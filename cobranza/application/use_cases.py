@@ -85,9 +85,10 @@ class ObtenerResumenCobranzasUseCase(UseCase[str, ResumenCobranzasResponse]):
             total_vencido=resumen.total_vencido.amount,
             total_por_vencer=resumen.total_por_vencer.amount,
             total_creditos=resumen.total_creditos.amount,
+            total_sinvencimiento=resumen.total_sinvencimiento.amount,
             total_neto=resumen.total_neto.amount,
             cantidad_vencidos=resumen.cantidad_vencidos,
-            cantidad_por_vencer=resumen.cantidad_por_vencer,
+            cantidad_total=resumen.cantidad_total,
             dias_promedio_vencimiento=resumen.dias_promedio_vencimiento
         )
 

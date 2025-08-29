@@ -167,7 +167,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
             total_creditos=Money(Decimal(str(creditos['total']))),  # Los créditos son negativos
             total_sinvencimiento=Money(Decimal(str(abs(sin_vencimiento['total'])))),
             cantidad_vencidos=vencidos['cantidad'],
-            cantidad_por_vencer=por_vencer['cantidad'],
+            cantidad_total=cantidad_total,
             dias_promedio_vencimiento=dias_promedio,
             dias_promedio_vencimiento_todos=int(promedio_vcto_todos),
             dias_transcurridos= dias_transcurridos,

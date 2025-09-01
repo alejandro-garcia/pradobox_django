@@ -820,7 +820,7 @@ class CobranzasApp {
                     );
             } else {
                 const user = window.authService.getCurrentUser();
-                const seller_code = user.codigo_vendedor_profit; 
+                const seller_code = user.codigo_vendedor_profit || '-1'; 
 
                 const url = searchTerm 
                     ? `${this.apiBaseUrl}/clientes/vendedor/${seller_code}?search=${encodeURIComponent(searchTerm)}`

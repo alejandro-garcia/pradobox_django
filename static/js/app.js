@@ -279,7 +279,7 @@ class CobranzasApp {
             'AJPM': 'bg-indigo-500',
             'AJMN': 'bg-red-500',
             'DEV': 'bg-red-500',
-            'PAGO': 'bg-green-500'
+            'COB': 'bg-green-500'
         };
         return colors[tipo] || 'bg-gray-500';
     }
@@ -293,9 +293,22 @@ class CobranzasApp {
             'AJPM': 'P',
             'AJMN': 'M',
             'DEV': 'D',
-            'PAGO': 'P'
+            'COB': 'P'
         };
         return abrev[tipo] || 'D';
+    }
+    getTipoNombre(tipo) {
+        const abrev = {
+            'FACT': 'Factura',
+            'N/DB': 'Nota de Débito',
+            'N/CR': 'Nota de Crédito',
+            'ADEL': 'Adelanto',
+            'AJPM': 'Ajuste Positivo Manual',
+            'AJMN': 'Ajuste Negativo Manual',
+            'DEV': 'Devolución',
+            'COB': 'Pago'
+        };
+        return abrev[tipo] || 'Factura';
     }
 
     getTimeAgo(fecha) {
@@ -313,6 +326,32 @@ class CobranzasApp {
             const years = Math.floor(diffDays / 365);
             return years === 1 ? 'un año' : `${years} años`;
         }
+    }
+
+    dateDiffInDays(date1, date2) {
+        const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+        // Normalizar quitando horas/minutos/segundos para evitar desfases por zona horaria
+        const utc1 = Date.UTC(date1.getFullYear(), date1.getMonth(), date1.getDate());
+        const utc2 = Date.UTC(date2.getFullYear(), date2.getMonth(), date2.getDate());
+
+        return Math.floor((utc2 - utc1) / MS_PER_DAY);
+    }
+
+    formatDateWithDay(date) {
+        const options = { weekday: 'long' }; // Día de la semana completo
+        const locale = 'es-ES'; // Español de España (puedes adaptar si necesitas otro)
+
+        const weekday = date.toLocaleDateString(locale, options); // e.g. "lunes"
+
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+
+        // Capitalizar la primera letra del día de la semana
+        const weekdayCapitalized = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+
+        return `${weekdayCapitalized}, ${day}-${month}-${year}`;
     }
 
     calculateCreditDays(fechaEmision, fechaVencimiento) {
@@ -563,9 +602,11 @@ class CobranzasApp {
                     resumen: resumen
                 };
             } else {
+                const user = window.authService.getCurrentUser();
+                const seller_code = user.codigo_vendedor_profit; 
                 // Load from API
                 const [documentosResponse, resumenResponse] = await Promise.all([
-                    fetch(`${this.apiBaseUrl}/cobranzas/pendientes/`, {
+                    fetch(`${this.apiBaseUrl}/cobranzas/pendientes/vendedor/${seller_code}`, {
                         headers: window.authService.getAuthHeaders()
                     }),
                     fetch(`${this.apiBaseUrl}/dashboard/`, {
@@ -679,12 +720,21 @@ class CobranzasApp {
         documentosEmpty.classList.add('hidden');
         
         documentosList.innerHTML = data.documentos.map(doc => {
-            debugger;
             const tipoColor = this.getTipoColor(doc.tipo);
             const tipoAbrev = this.getTipoAbreviacion(doc.tipo);
             const timeAgo = this.getTimeAgo(doc.fecha_emision);
-            const diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
-            const diasVencido = doc.dias_vencimiento;
+
+            let diasCredito =  ''; 
+            let diasVencido = ''; 
+
+            if (doc.tipo != 'COB') {
+                diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
+                diasCredito = diasCredito != null? diasCredito.toString() + 'd': '';
+
+                diasVencido = doc.dias_vencimiento;
+                diasVencido = diasVencido != null? Math.abs(diasVencido).toString() + 'd': '';
+            } 
+
             const isOverdue = doc.esta_vencido;
             //<div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
 
@@ -711,7 +761,7 @@ class CobranzasApp {
                             <span class="text-gray-600">E</span>
                             <span class="text-gray-900">${this.formatDate(doc.fecha_emision)}</span>
                         </div>
-                        <span class="text-gray-600">${diasCredito}d</span>
+                        <span class="text-gray-600">${diasCredito}</span>
                         <span class="text-gray-900 font-medium">${this.formatCurrency(doc.monto)}</span>
                     </div>
                     
@@ -721,7 +771,7 @@ class CobranzasApp {
                             <span class="text-gray-600">V</span>
                             <span class="text-gray-900">${this.formatDate(doc.fecha_vencimiento)}</span>
                         </div>
-                        <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${Math.abs(diasVencido)}d</span>
+                        <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${diasVencido}</span>
                         <div class="text-right">
                             <span class="text-xs text-gray-500">falta</span>
                             <span class="text-red-500 font-medium">${this.formatCurrency(doc.monto)}</span>
@@ -1013,8 +1063,8 @@ class CobranzasApp {
         const tipoColor = this.getTipoColor(documento.tipo);
         const tipoNombre = this.getTipoNombre(documento.tipo);
         const diasCredito = this.calculateCreditDays(documento.fecha_emision, documento.fecha_vencimiento);
-        const diasDesdeEmision = this.calculateDaysSince(documento.fecha_emision);
-        const fechaEmisionFormatted = this.formatDateWithDay(documento.fecha_emision);
+        const diasDesdeEmision = this.dateDiffInDays(new Date(documento.fecha_emision), new Date());
+        const fechaEmisionFormatted = this.formatDateWithDay(new Date(documento.fecha_emision));
         const isOverdue = documento.esta_vencido;
         
         const content = `
@@ -1282,8 +1332,17 @@ class CobranzasApp {
             const tipoColor = this.getTipoColor(doc.tipo);
             const tipoAbrev = this.getTipoAbreviacion(doc.tipo);
             const timeAgo = this.getTimeAgo(doc.fecha_emision);
-            const diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
-            const diasVencido = doc.dias_vencimiento;
+            
+            let diasCredito =  '';
+            let diasVencido = '';
+
+            if (doc.tipo != 'COB') {
+                diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
+                diasCredito = diasCredito != null? diasCredito.toString() + 'd': '';
+
+                diasVencido = doc.dias_vencimiento;
+                diasVencido = diasVencido != null? Math.abs(diasVencido).toString() + 'd': '';
+            }
             const isOverdue = doc.esta_vencido;
             
             return `
@@ -1307,7 +1366,7 @@ class CobranzasApp {
                             <span class="text-gray-600">E </span>
                             <span class="text-gray-900">${this.formatDate(doc.fecha_emision)}</span>
                         </div>
-                        <span class="text-gray-600">${diasCredito}d</span>
+                        <span class="text-gray-600">${diasCredito}</span>
                         <span class="text-gray-900 font-medium">${this.formatCurrency(doc.monto)}</span>
                     </div>
                     
@@ -1317,7 +1376,7 @@ class CobranzasApp {
                             <span class="text-gray-600">${(doc.fecha_vencimiento) ? "V ": ""} </span>
                             <span class="text-gray-900">${(doc.fecha_vencimiento) ? this.formatDate(doc.fecha_vencimiento): ""}</span>
                         </div>
-                        <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${!isNaN(diasVencido) ? diasCredito.toString() + "d": ""}</span>
+                        <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${diasVencido}</span>
                         <div class="text-right">
                             <span class="text-xs text-gray-500">falta</span>
                             <span class="text-red-500 font-medium">${this.formatCurrency(doc.monto)}</span>

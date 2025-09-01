@@ -30,6 +30,7 @@ class DocumentoResponse:
     descripcion: Optional[str]
     cliente_nombre: Optional[str] = None
     co_ven: Optional[str] = None
+    empresa: Optional[int] = None
     vendedor_nombre: Optional[str] = None
     productos: Optional[list] = None
     subtotal: Optional[Decimal] = None

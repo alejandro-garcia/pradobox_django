@@ -219,7 +219,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
             anulado=False
         )
         
-        if seller_id != "-1":
+        if seller_id != '' and seller_id != "-1":
             query = query.filter(co_ven=seller_id)
         
         query = query.order_by('fecha_vencimiento')
@@ -342,8 +342,8 @@ class DjangoDocumentoRepository(DocumentoRepository):
             with connection.cursor() as cursor:
                 # Extraer tipo_doc y nro_doc del documento_id
                 parts = documento_id.split('_', 1)
-                if len(parts) == 2:
-                    tipo_doc, nro_doc = parts
+                if len(parts) == 3:
+                    empresa, tipo_doc, nro_doc = parts
                 else:
                     return []
                 
@@ -356,10 +356,10 @@ class DjangoDocumentoRepository(DocumentoRepository):
                         total_art,
                         prec_vta,
                         (total_art * prec_vta) as subtotal
-                    FROM reng_fac 
-                    WHERE tipo_doc = %s AND nro_doc = %s
+                    FROM vw_renglones_documento 
+                    WHERE empresa = %s AND tipo_doc = %s AND nro_doc = %s
                     ORDER BY reng_num
-                """, [tipo_doc, nro_doc])
+                """, [empresa, tipo_doc, nro_doc])
                 
                 productos = []
                 for row in cursor.fetchall():
@@ -388,7 +388,8 @@ class DjangoDocumentoRepository(DocumentoRepository):
             fecha_emision=model.fecha_emision,
             fecha_vencimiento=model.fecha_vencimiento,
             estado=EstadoDocumento(model.estado),
-            descripcion=model.descripcion
+            descripcion=model.descripcion,
+            empresa=model.empresa
         )
     
     

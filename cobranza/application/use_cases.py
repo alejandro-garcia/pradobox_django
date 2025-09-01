@@ -69,7 +69,8 @@ class ObtenerDocumentosUseCase(UseCase[FiltroDocumentosRequest, List[DocumentoRe
             estado=documento.estado.value,
             dias_vencimiento=documento.dias_vencimiento,
             esta_vencido=documento.esta_vencido,
-            descripcion=documento.descripcion
+            descripcion=documento.descripcion,
+            empresa=documento.empresa
         )
 
 
@@ -115,7 +116,8 @@ class ObtenerDocumentosVencidosUseCase(UseCase[None, List[DocumentoResponse]]):
             estado=documento.estado.value,
             dias_vencimiento=documento.dias_vencimiento,
             esta_vencido=documento.esta_vencido,
-            descripcion=documento.descripcion
+            descripcion=documento.descripcion,
+            empresa=documento.empresa
         )
 
 
@@ -144,7 +146,8 @@ class VerDocumentosPendientesUseCase(UseCase[str, List[DocumentoResponse]]):
             esta_vencido=documento.esta_vencido,
             descripcion=documento.descripcion,
             cliente_nombre=getattr(documento, 'cliente_nombre', ''),
-            co_ven=documento.co_ven
+            co_ven=documento.co_ven,
+            empresa=documento.empresa
         )
     
 class VerDocumentosPendientesClienteUseCase(UseCase[str, List[DocumentoResponse]]):
@@ -172,7 +175,8 @@ class VerDocumentosPendientesClienteUseCase(UseCase[str, List[DocumentoResponse]
             esta_vencido=documento.esta_vencido,
             descripcion=documento.descripcion,
             cliente_nombre=getattr(documento, 'cliente_nombre', ''),
-            co_ven=documento.co_ven
+            co_ven=documento.co_ven,
+            empresa=documento.empresa
         )
     
 class EventosClienteUseCase(UseCase[str, List[EventoResponse]]):
@@ -235,5 +239,6 @@ class VerDetalleDocumentoClienteUseCase(UseCase[str, DocumentoResponse]):
             impuestos=getattr(documento, 'impuestos', 0),
             total=getattr(documento, 'total', documento.monto.amount),
             saldo=getattr(documento, 'saldo', documento.monto.amount),
-            comentarios=getattr(documento, 'comentarios', '')
+            comentarios=getattr(documento, 'comentarios', ''),
+            empresa=documento.empresa
         )

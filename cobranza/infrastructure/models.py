@@ -33,6 +33,7 @@ class DocumentoModel(models.Model):
 
     anulado = models.BooleanField(db_column='anulado', default=False)
     descripcion = models.TextField(db_column='observa', blank=True, null=True)
+    empresa = models.IntegerField(db_column='empresa', blank=True, null=True)
     #created_at = models.DateTimeField(db_column='fe_us_in', auto_now_add=True)
     #updated_at = models.DateTimeField(db_column='fe_us_mo', auto_now=True)
     

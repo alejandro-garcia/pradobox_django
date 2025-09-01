@@ -131,13 +131,13 @@ def documentos_vencidos_view(request):
 
 
 @api_view(['GET'])
-def documentos_pendientes_view(request):
+def documentos_pendientes_view(request, seller_id):
     repository = get_documento_repository()
     
-    seller_id = request.user.codigo_vendedor_profit if hasattr(request.user, 'codigo_vendedor_profit') else "-1"
+    #seller_id = request.user.codigo_vendedor_profit if hasattr(request.user, 'codigo_vendedor_profit') else "-1"
     
     use_case = VerDocumentosPendientesUseCase(repository)
-    documentos = use_case.execute(seller_id)
+    documentos = use_case.execute(seller_id or "-1")
     
     return Response([{
         'id': doc.id,
@@ -152,7 +152,8 @@ def documentos_pendientes_view(request):
         'dias_vencimiento': doc.dias_vencimiento,
         'esta_vencido': doc.esta_vencido,
         'descripcion': doc.descripcion,
-        'co_ven': doc.co_ven
+        'co_ven': doc.co_ven,
+        'empresa': doc.empresa
     } for doc in documentos])
 
 @api_view(['GET'])
@@ -175,7 +176,8 @@ def documentos_pendientes_cliente_view(request, client_id):
         'dias_vencimiento': doc.dias_vencimiento,
         'esta_vencido': doc.esta_vencido,
         'descripcion': doc.descripcion,
-        'co_ven': doc.co_ven
+        'co_ven': doc.co_ven,
+        'empresa': doc.empresa
     } for doc in documentos])
 
 @api_view(['GET'])

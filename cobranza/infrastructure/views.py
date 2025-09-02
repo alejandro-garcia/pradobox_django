@@ -12,10 +12,12 @@ from ..application.use_cases import (
     VerDocumentosPendientesUseCase,
     VerDocumentosPendientesClienteUseCase,
     EventosClienteUseCase,
-    VerDetalleDocumentoClienteUseCase
+    VerDetalleDocumentoClienteUseCase,
+    CreateDocumentPdfUseCase
 )
 from ..application.dtos import CrearDocumentoRequest, FiltroDocumentosRequest
 from .repository_impl import DjangoDocumentoRepository, DjangoEventoRepository
+from django.http import HttpResponse
 
 
 def get_documento_repository():
@@ -209,7 +211,8 @@ def documento_detalle_view(request, documento_id):
             'impuestos': float(documento.impuestos) if documento.impuestos else 0,
             'total': float(documento.total) if documento.total else 0,
             'saldo': float(documento.saldo) if documento.saldo else 0,
-            'comentarios': documento.comentarios
+            'comentarios': documento.comentarios, 
+            'empresa': documento.empresa
         })
         
     except EntityNotFoundException as e:
@@ -237,3 +240,16 @@ def eventos_cliente_view(request, client_id):
         'descripcion': doc.descripcion, 
         'dias_vencimiento': doc.dias_vencimiento
     } for doc in documentos])
+
+
+@api_view(['GET'])
+def documento_pdf_view(request, documento_id):
+    repository = get_documento_repository()
+    try:
+        use_case = CreateDocumentPdfUseCase(repository)
+        pdf_bytes = use_case.execute(documento_id)
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="documento_{documento_id}.pdf"'
+        return response
+    except EntityNotFoundException as e:
+        return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)

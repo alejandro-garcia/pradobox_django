@@ -1193,6 +1193,82 @@ class CobranzasApp {
         `;
         
         document.getElementById('documentoDetalleContent').innerHTML = content;
+
+        // Floating Share Button for PDF
+        try {
+            const container = document.getElementById('documento-detalle-view') || document.body;
+            const existingFab = document.getElementById('fabSharePdf');
+            if (existingFab) existingFab.remove();
+
+            const hasKeys = (documento.empresa !== undefined) && (documento.tipo) && (documento.numero !== undefined);
+            if (!this.offlineMode && hasKeys) {
+                const documentoKey = `${documento.empresa}_${documento.tipo}_${documento.numero}`;
+                const fab = document.createElement('button');
+                fab.id = 'fabSharePdf';
+                fab.type = 'button';
+                fab.title = 'Compartir factura';
+                fab.className = 'fixed bottom-20 right-6 w-14 h-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center focus:outline-none z-40';
+                fab.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4m0 0L8 6m4-4v14" />
+                    </svg>`;
+
+                container.appendChild(fab);
+
+                const setLoading = (loading) => {
+                    if (loading) {
+                        fab.disabled = true;
+                        fab.innerHTML = '<span class="animate-spin inline-block w-6 h-6 border-2 border-white border-t-transparent rounded-full"></span>';
+                    } else {
+                        fab.disabled = false;
+                        fab.innerHTML = `
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4m0 0L8 6m4-4v14" />
+                            </svg>`;
+                    }
+                };
+
+                fab.addEventListener('click', async () => {
+                    const filename = `Factura_${documento.numero}.pdf`;
+                    const url = `${this.apiBaseUrl}/cobranzas/documento/${documentoKey}/pdf/`;
+                    setLoading(true);
+                    try {
+                        const response = await fetch(url, { headers: window.authService.getAuthHeaders() });
+                        if (!response.ok) throw new Error(`Error ${response.status}`);
+                        const blob = await response.blob();
+
+                        // Web Share API with files (Android Chrome)
+                        const file = new File([blob], filename, { type: 'application/pdf' });
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                            await navigator.share({ title: filename, text: `Compartiendo ${filename}`, files: [file] });
+                        } else if (navigator.share) {
+                            await navigator.share({ title: filename, text: 'Factura generada. Descárguela a continuación.' });
+                            const link = document.createElement('a');
+                            link.href = URL.createObjectURL(blob);
+                            link.download = filename;
+                            document.body.appendChild(link);
+                            link.click();
+                            link.remove();
+                        } else {
+                            const link = document.createElement('a');
+                            link.href = URL.createObjectURL(blob);
+                            link.download = filename;
+                            document.body.appendChild(link);
+                            link.click();
+                            link.remove();
+                            if (this.showNotification) this.showNotification('Tu dispositivo no soporta compartir. Se descargó el PDF.', 'success');
+                        }
+                    } catch (err) {
+                        console.error('Error al generar/compartir PDF:', err);
+                        if (this.showNotification) this.showNotification('No se pudo generar o compartir el PDF', 'error');
+                    } finally {
+                        setLoading(false);
+                    }
+                });
+            }
+        } catch (e) {
+            console.warn('No se pudo crear el botón flotante de compartir:', e);
+        }
     }
 
     showDocumentoDetailLoading(show) {
@@ -1207,7 +1283,6 @@ class CobranzasApp {
             `;
         }
     }
-
 
     parseAmountToMilesK(amount) {
         let addSuffix = false;

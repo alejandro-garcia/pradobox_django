@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentos de CXC por Cliente</title>
+    <style>
+		@page {
+            size: letter;
+            margin: 0;
+        }
+		.header2 {
+		  display: -webkit-box; 
+		  -webkit-box-pack: center;  
+		  -webkit-box-orient: vertical;
+		  display: flex; 
+		  justify-content: space-between;
+		  /*flex-direction: column;*/
+		  border-bottom: 2px solid #02113F;
+		  /*background-color: magenta;*/
+		}
+		
+		.td-logo {
+            width: 23%;
+            padding: 0px;
+        }
+		
+		.span-title {
+			font-size: 15px;
+			color: #02113F;
+			text-align: center;
+		}
+		
+		.span-date {
+		    font-size: 14px;
+			color: #777;
+			padding-top: 10px;
+            text-align: right;
+		}
+		
+		h2 {
+            color: #02113F; /* Cambiado a azul */
+            font-size: 18px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        table th, table td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #02113F; /* Cambiado a azul */
+            color: #fff;
+        }
+		
+		body {
+			font-family: Montserrat, 'Arial', sans-serif;
+            color: #333;
+            background-color: #f4f4f4;
+			-webkit-print-color-adjust: exact;
+		}
+        .container {
+            position: relative;
+            height: 297mm;
+            width: 210mm;
+			
+	        max-width: 800px;
+            margin: 0 auto;
+            /*background-color: #fff;*/
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            position: relative;
+            z-index: 2; /* Para asegurar que el contenido quede por encima de la marca de agua */
+        }
+		
+        .watermark-container {
+            position: relative;
+            /* height: 297mm;
+            width: 210mm; */
+			
+	        max-width: 800px;
+            margin: 0 auto;
+            /*background-color: #fff;*/
+            /* border-radius: 8px; */
+            /* box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); */
+            padding: 10px;
+            position: relative;
+            z-index: 2; /* Para asegurar que el contenido quede por encima de la marca de agua */
+        }	
+        .watermark {
+            position: absolute;
+            /* top: 33%; */
+            top: 17%; 
+            left: 26%;
+            height: 242px; /*366px;*/
+            width: 380px; /*450px;*/
+            background: url('https://i.imgur.com/tWzqJA3.png') no-repeat center center;
+            background-size: cover;
+            /*opacity: 0.5;*/
+            z-index: -1;
+        }
+        .content {
+            position: relative;
+            z-index: 1;
+            padding: 5mm;
+        }
+		.info-box {
+            /* background-color: #f9f9f9; */
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);
+        }
+		.footer {
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+		.align-right {
+			text-align:right;
+		}
+	    .negativo {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container"> <!--  -->
+
+    <!-- Contenido principal -->
+    <div class="content">
+        <div class="header2">
+            <table style="margin-bottom: 0px;">
+                <tr>
+                    <td class="td-logo"><img src="https://i.imgur.com/IFSFyZf.png" alt="Logo de la Empresa"></td>
+                    <td>
+						<table style="margin-bottom: 0px;">
+                           <tr>
+                                <td style="border-bottom: 0px;padding: 0px; text-align: right;"><span class="span-date">Fecha de Emisión: {{ fecha }}</span></td>
+                           </tr>
+						   <tr>
+						      <td style="border-bottom: 0px;padding: 0px;">
+							     <span class="span-title"><strong>DOCUMENTOS DE CXC POR CLIENTE CONSOLIDADO</strong></span>
+							  </td>
+						   </tr>
+						   <!-- <tr>
+						      <td style="border-bottom: 0px;padding: 0px;">
+							     <span class="span-title" style="padding-left:45px;"><strong>por Cliente</strong></span>
+							  </td>
+						   </tr> -->
+						</table>
+					</td>
+                    
+                </tr>
+            </table>
+           <!-- <div class="logo"><img src="https://i.imgur.com/IFSFyZf.png" alt="Logo de la Empresa"></div>
+			<div class="head-title"><span class="span-title"><strong>Documentos de CXC por Cliente</strong></span></div>
+            <div class="date"><span class="span-date">Fecha de Emisión: {{ fecha }}</span></div> -->
+        </div>
+
+        <div class="client-info">
+            <div class="info-box">
+                <h2>Información del Cliente</h2>
+                <p><strong>Cliente:</strong>{{ cliente }}</p>
+                <p><strong>Vendedor:</strong> {{ vendedor }}</p>
+            </div>
+
+            <!-- <div class="info-box"> -->
+                <!-- <h2>Información de la Factura</h2> -->
+                <!-- <p><strong>Número de Factura:</strong> {{ nro_factura }}</p> -->
+                <!-- <p><strong>Fecha de Vencimiento:</strong> {{ fecha_vencimiento }}</p> -->
+                <!-- <p><strong>Moneda:</strong> {{ moneda }}</p> -->
+            <!-- </div> -->
+        </div>
+        <div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tipo Doc.</th>
+                        <th>Nro.Doc</th>
+                        <th>Fec. Emis</th>
+                        <th>Fec. Vcto</th>
+                        <th>Días Vcto</th>
+                        <th>Total Neto</th>
+                        <th>Cobrado</th>
+                        <th>Saldo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in documentos %}
+                    <tr>
+                        <td>{{ doc.tipo_doc }}</td>
+                        <td>{{ doc.nro_doc }}</td>
+                        <td>{{ doc.fec_emis.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ doc.fec_vcto.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ doc.dias_vcto }}</td>
+                        <td class="align-right">{{ doc.tot_neto }}</td>
+                        <td class="align-right">{{ doc.cobrado }}</td>
+                        <td class="align-right {% if doc.dias_vcto > 0 %} negativo {% endif %}">{{ doc.saldo }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+         <br/>
+        <div class="watermark-container">
+            <!-- Marca de agua (logo en el fondo) -->
+	        <div class="watermark"></div>
+            <table>
+                    <thead>
+                        <tr>
+                            <th>Estado deudor</th>
+                            <th>Saldo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for estado in estado_deudor %}
+                        <tr>
+                            <td>{{ estado.esta }}</td>
+                            <td class="align-right">{{ estado.saldo }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>	
+        </div>
+        <div class="footer">
+            <p>Generado por: {{ cobrador }}</p>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factura</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        .container {
+            width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #02113F;
+        }
+        .header, .footer {
+            background-color: #02113F;
+            color: #fff;
+            padding: 20px;
+            -webkit-box-pack: center; /* wkhtmltopdf uses this one */
+            text-align: center;
+        }
+        .header h1, .footer p {
+            margin: 0;
+        }
+        .company-details, .invoice-details {
+            display: -webkit-box;
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+        .date-details {
+            display: -webkit-box;
+            display: flex;
+            justify-content: space-between;     
+        }
+        .section-title {
+            color: #02113F;
+            font-weight: bold;
+            border-bottom: 2px solid #02113F;
+            padding-bottom: 5px;
+            margin-top: 20px;
+            margin-bottom: 5px;
+        }
+        .invoice-table {
+            width:100%;
+            overflow-y: scroll; 
+            height: 55vh;
+            display: table;
+        }
+        /*table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }*/
+
+        .invoice-table thead {
+            width: 100%;
+        } 
+
+        .invoice-table tbody {
+            width: 100%;
+        } 
+
+        .invoice-table tr{
+            width: 100%;
+        }
+
+        .invoice-table th{
+            /* width: 25%; */
+            color: #fff;
+            background-color: #02113F;
+            padding: 1vh;
+            font-size: 2vh;
+            /* border-bottom: 1px solid grey; */
+            font-weight: bold;
+            position: sticky; 
+            top: 0;
+        /*background-color: white;*/
+        }
+
+
+        .invoice-table td{
+            /* width: 25%;
+            font-size: 2.5vh;
+            text-align: center;
+            padding: 2vh;
+            color: grey; */
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        /* table th {
+            background-color: #02113F;
+            color: #fff;
+            padding: 10px;
+            text-align: left;
+        }
+        table td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        } */
+        .total-row {
+            font-weight: bold;
+            background-color: #f0f0f0;
+        }
+        .right-align {
+            text-align: right;
+        }
+        .page-break {
+            page-break-after: always;
+        }
+        .logo{
+            -webkit-box-pack: left; /* wkhtmltopdf uses this one */
+            text-align: left;
+            width: 68%;
+        }
+    </style>
+</head>
+<body>
+    {% for factura in facturas %}
+    <div class="container">
+        <div class="company-details">
+            <div class="logo"><img src="https://i.imgur.com/tfKW0tl.png" alt="Logo de la Empresa"></div>
+            <div>
+                <div class="date-details">
+                    <div style="width: 68%;">Fecha de Emisión:</div><div>{{ factura.fechaEmision }}</div>
+                </div>
+                <div class="date-details">
+                    <div style="padding-right: 8px;">Fecha de Vencimiento:</div><div>{{ factura.fechaVencimiento }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="header">
+            <h1>Factura {{ factura.factura }}</h1>
+        </div>
+
+        <!-- <div class="company-details">
+            <div style="width:540px;">
+                <p></p>
+            </div>
+            <div>
+           </div>
+        </div> -->
+
+        <div class="invoice-details">
+            <div style="width:63%;">
+                <p><strong>Cliente:</strong> {{ factura.cliente }}</p>
+                <p><strong>RIF:</strong> {{ factura.rif }}</p>
+                <p><strong>Vendedor:</strong> {{ factura.vendedor }}</p>
+            </div>
+            <div>
+                <p><strong>Condición de Pago:</strong> {{ factura.condicion }}</p>
+                <p><strong>Moneda:</strong> {{ factura.moneda }}</p>
+                <p><strong>Saldo Pendiente:</strong> ${{ factura.saldo }}</p>
+            </div>
+        </div>
+
+        <div class="section-title">Detalles de Productos</div>
+        <table class="invoice-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Descripción</th>
+                    <th>Cantidad</th>
+                    <th>Unidad</th>
+                    <th>Precio Unitario</th>
+                    <th>Total</th>
+                    <!-- <th>Tipo Impuesto</th> -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for renglon in factura.renglones %}
+                {% if renglon.art_des != "placeholder" %}
+                <tr>
+                    <td>{{ renglon.reng_num }}</td>
+                    <td>{{ renglon.art_des }}</td>
+                    <td>{{ renglon.cantidad }}</td>
+                    <td>{{ renglon.uni_venta }}</td>
+                    <td class="right-align">${{ renglon.precioUnit }}</td>
+                    <td class="right-align">${{ renglon.subtotal }}</td>
+                    <!-- <td>{{ renglon.tipoImpuesto }}</td> -->
+                </tr>
+                {% else %}
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="5" class="right-align">Subtotal</td>
+                    <td class="right-align">${{ factura.tot_bruto }}</td>
+                    <!-- <td></td> -->
+                </tr>
+                <tr class="total-row">
+                    <td colspan="5" class="right-align">IVA</td>
+                    <td class="right-align">${{ factura.iva }}</td>
+                    <!-- <td></td> -->
+                </tr>
+                <tr class="total-row">
+                    <td colspan="5" class="right-align">Total Neto</td>
+                    <td class="right-align">${{ factura.tot_neto }}</td>
+                    <!-- <td></td> -->
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="footer">
+            <p>Gracias por su compra</p>
+        </div>
+    </div>
+    <div class="page-break"></div>
+    {% endfor %}
+</body>
+</html>

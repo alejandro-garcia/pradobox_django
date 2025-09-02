@@ -1,4 +1,7 @@
 from typing import List
+from django.template.loader import render_to_string
+import pdfkit
+
 from shared.application.use_case import UseCase
 from shared.domain.value_objects import DocumentId, ClientId, Money, SellerId
 from shared.domain.exceptions import EntityNotFoundException
@@ -149,7 +152,8 @@ class VerDocumentosPendientesUseCase(UseCase[str, List[DocumentoResponse]]):
             co_ven=documento.co_ven,
             empresa=documento.empresa
         )
-    
+
+
 class VerDocumentosPendientesClienteUseCase(UseCase[str, List[DocumentoResponse]]):
     
     def __init__(self, documento_repository: DocumentoRepository):
@@ -178,7 +182,8 @@ class VerDocumentosPendientesClienteUseCase(UseCase[str, List[DocumentoResponse]
             co_ven=documento.co_ven,
             empresa=documento.empresa
         )
-    
+
+
 class EventosClienteUseCase(UseCase[str, List[EventoResponse]]):
     
     def __init__(self, evento_repository: EventoRepository):
@@ -204,7 +209,8 @@ class EventosClienteUseCase(UseCase[str, List[EventoResponse]]):
             descripcion=evento.descripcion,
             dias_vencimiento=evento.dias_vencimiento
         )
-    
+
+
 class VerDetalleDocumentoClienteUseCase(UseCase[str, DocumentoResponse]):
     
     def __init__(self, documento_repository: DocumentoRepository):
@@ -242,3 +248,62 @@ class VerDetalleDocumentoClienteUseCase(UseCase[str, DocumentoResponse]):
             comentarios=getattr(documento, 'comentarios', ''),
             empresa=documento.empresa
         )
+
+
+class CreateDocumentPdfUseCase(UseCase[str, bytes]):
+    """Genera un PDF de una factura/documento usando la plantilla invoices.html"""
+
+    def __init__(self, documento_repository: DocumentoRepository):
+        self.documento_repository = documento_repository
+
+    def execute(self, documento_id: str) -> bytes:
+        documento = self.documento_repository.get_detalle_documento(documento_id)
+        if not documento:
+            raise EntityNotFoundException(f"Documento con ID {documento_id} no encontrado")
+
+        # Adaptar datos al contexto esperado por templates/invoices.html
+        productos = getattr(documento, 'productos', []) or []
+
+        renglones = []
+        for idx, prod in enumerate(productos, start=1):
+            renglones.append({
+                'reng_num': idx,
+                'art_des': prod.get('descripcion') or prod.get('art_des', ''),
+                'cantidad': prod.get('cantidad', 0),
+                'uni_venta': prod.get('unidad') or prod.get('uni_venta', ''),
+                'precioUnit': prod.get('precio_unitario') or prod.get('precio', 0),
+                'subtotal': prod.get('subtotal', 0),
+                'tipoImpuesto': prod.get('tipo_impuesto', '')
+            })
+
+        factura_ctx = {
+            'factura': documento.numero,
+            'cliente': getattr(documento, 'cliente_nombre', ''),
+            'rif': getattr(documento, 'cliente_rif', ''),
+            'vendedor': getattr(documento, 'vendedor_nombre', ''),
+            'condicion': '',
+            'moneda': 'USD',
+            'saldo': float(getattr(documento, 'saldo', documento.monto.amount) or 0),
+            'fechaEmision': documento.fecha_emision.strftime('%d/%m/%Y'),
+            'fechaVencimiento': documento.fecha_vencimiento.strftime('%d/%m/%Y'),
+            'renglones': renglones,
+            'tot_bruto': float(getattr(documento, 'subtotal', documento.monto.amount) or 0),
+            'iva': float(getattr(documento, 'impuestos', 0) or 0),
+            'tot_neto': float(getattr(documento, 'total', documento.monto.amount) or 0),
+        }
+
+        context = {
+            'facturas': [factura_ctx]
+        }
+
+        html = render_to_string('invoices.html', context)
+
+        # Opciones básicas para wkhtmltopdf/pdfkit
+        options = {
+            'encoding': 'UTF-8',
+            'enable-local-file-access': None,
+            'quiet': ''
+        }
+
+        pdf_bytes = pdfkit.from_string(html, False, options=options)
+        return pdf_bytes

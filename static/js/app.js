@@ -740,7 +740,7 @@ class CobranzasApp {
 
             return `
                 <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors" 
-                     onclick="cobranzasApp.viewDocumentoDetail('${doc.id}')">
+                     onclick="cobranzasApp.viewDocumentoDetail(${doc.empresa}, '${doc.tipo}', ${doc.numero})">
                     <!-- Fila 1: Tipo, Cliente, Tiempo -->
                     <div class="flex items-center justify-between mb-2">
                         <div class="flex items-center space-x-3">
@@ -1005,7 +1005,7 @@ class CobranzasApp {
         }
     }
 
-    async viewDocumentoDetail(documentoId) {
+    async viewDocumentoDetail(empresa, tipo, documentoId) {
         try {
             this.showDocumentoDetailLoading(true);
             
@@ -1031,7 +1031,9 @@ class CobranzasApp {
                 }
             } else {
                 // Obtener desde API
-                const response = await fetch(`${this.apiBaseUrl}/cobranzas/detalle/${documentoId}/`, {
+                let documentoKey = `${empresa}_${tipo}_${documentoId}`;
+
+                const response = await fetch(`${this.apiBaseUrl}/cobranzas/detalle/${documentoKey}/`, {
                     headers: window.authService.getAuthHeaders()
                 });
                 
@@ -1116,7 +1118,7 @@ class CobranzasApp {
             </div>
 
             <!-- Sección Productos -->
-            <div class="bg-gray-100 p-4">
+            <div class="bg-gray-100 p-4 ${'FACT|DEV'.indexOf(documento.tipo) == -1 ? 'hidden': ''}" id="productsContainer">
                 <h3 class="text-sm font-medium text-gray-600 mb-3">PRODUCTOS</h3>
                 <div class="space-y-3">
                     ${documento.productos && documento.productos.length > 0 

@@ -302,13 +302,15 @@ class DjangoDocumentoRepository(DocumentoRepository):
     def get_detalle_documento(self, documento_id: str) -> Optional[Documento]:
         """Obtiene el detalle completo de un documento incluyendo productos y vendedor"""
         try:
-            model = DocumentoModel.objects.select_related('cliente').get(id=documento_id)
+            empresa, tipo, doc_id = documento_id.split('_')
+
+            model = DocumentoModel.objects.select_related('cliente').get(empresa=empresa, tipo=tipo, numero=doc_id)
             documento = self._to_domain(model)
             
             # Agregar información adicional
             documento.cliente_nombre = model.cliente.nombre
             documento.vendedor_nombre = self._get_vendedor_nombre(model.co_ven)
-            documento.productos = self._get_productos_documento(documento_id)
+            documento.productos = self._get_productos_documento(empresa, tipo, doc_id)
             documento.subtotal = model.monto
             documento.descuentos = Decimal('0')  # TODO: obtener de tabla de descuentos
             documento.impuestos = Decimal('0')   # TODO: obtener de tabla de impuestos
@@ -335,20 +337,11 @@ class DjangoDocumentoRepository(DocumentoRepository):
         except Exception:
             return f"Vendedor {co_ven}"
     
-    def _get_productos_documento(self, documento_id: str) -> List[dict]:
+    def _get_productos_documento(self, empresa: int, tipo: str, documento_id: int) -> List[dict]:
         """Obtiene los productos asociados al documento"""
         try:
             from django.db import connection
-            with connection.cursor() as cursor:
-                # Extraer tipo_doc y nro_doc del documento_id
-                parts = documento_id.split('_', 1)
-                if len(parts) == 3:
-                    empresa, tipo_doc, nro_doc = parts
-                else:
-                    return []
-                
-                #tipo_doc = %s AND nro_doc = %s
-                
+            with connection.cursor() as cursor:               
                 cursor.execute("""
                     SELECT 
                         art_des,
@@ -359,7 +352,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
                     FROM vw_renglones_documento 
                     WHERE empresa = %s AND tipo_doc = %s AND nro_doc = %s
                     ORDER BY reng_num
-                """, [empresa, tipo_doc, nro_doc])
+                """, [empresa, tipo, documento_id])
                 
                 productos = []
                 for row in cursor.fetchall():

@@ -11,6 +11,8 @@ from ..domain.repository import DocumentoRepository, EventoRepository
 from .models import CobroMes, DocumentoModel, VentaMes, EventoModel
 from shared.domain.constants import MESES_ES 
 import calendar
+from shared.infrastructure.logging_impl import get_logger
+logger = get_logger(__name__)
 
 class DateDiff(Func):
     function = "DATEDIFF"
@@ -367,6 +369,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
                 return productos
                 
         except Exception as e:
+            logger.error(f"Error obteniendo productos: {str(e)}")
             print(f"Error obteniendo productos: {e}")
             return []
 

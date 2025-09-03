@@ -6,6 +6,8 @@ from django.views.decorators.csrf import csrf_exempt
 from ..application.use_cases import LoginUseCase, ValidateTokenUseCase
 from ..application.dtos import LoginRequest
 from .repository_impl import DjangoUsuarioRepository
+from shared.infrastructure.logging_impl import get_logger
+logger = get_logger(__name__)
 
 
 def get_usuario_repository():
@@ -42,6 +44,7 @@ def login_view(request):
             }, status=status.HTTP_401_UNAUTHORIZED)
             
     except Exception as e:
+        logger.error(f"Error al iniciar sesión: {str(e)}")
         return Response({
             'success': False,
             'message': 'Error interno del servidor'
@@ -57,6 +60,7 @@ def validate_token_view(request):
     
     token = request.data.get('token', '')
     if not token:
+        logger.warning("Token requerido")
         return Response({
             'valid': False,
             'message': 'Token requerido'

@@ -7,6 +7,7 @@ from decouple import config
 
 import os
 from dotenv import load_dotenv
+from .logging_settings import LOGGING, LOG_LEVEL
 
 # Cargar variables de entorno
 load_dotenv()
@@ -47,6 +48,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'shared.infrastructure.middleware.RequestIdMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]

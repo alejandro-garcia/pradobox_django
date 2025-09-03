@@ -15,7 +15,7 @@ def get_database_config():
         }
     }
 
-    print('os.getenv', os.getenv('DATABASE_NAME'))
+    #print('os.getenv', os.getenv('DATABASE_NAME'))
     
     if not all([
         os.getenv('DATABASE_NAME'),
@@ -39,7 +39,7 @@ def get_database_config():
         }
     }
 
-    print("*** valor de mssql_config ***")
-    print(mssql_config)
+    #print("*** valor de mssql_config ***")
+    #print(mssql_config)
 
     return mssql_config

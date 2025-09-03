@@ -1,5 +1,6 @@
 from django.db import models
 from cliente.infrastructure.models import ClienteModel
+from vendedor.infrastructure.models import VendedorModel
 
 
 class DocumentoModel(models.Model):
@@ -28,12 +29,14 @@ class DocumentoModel(models.Model):
     saldo = models.DecimalField(db_column='saldo', max_digits=12, decimal_places=2)
     fecha_emision = models.DateField(db_column='fec_emis')
     fecha_vencimiento = models.DateField(db_column='fec_venc')
-    co_ven = models.CharField(db_column='co_ven', max_length=6, blank=True, null=True)
+    #co_ven = models.CharField(db_column='co_ven', max_length=6, blank=True, null=True)
     estado = models.CharField(db_column='estado', max_length=20, choices=ESTADO_CHOICES, default='PENDIENTE')
 
     anulado = models.BooleanField(db_column='anulado', default=False)
     descripcion = models.TextField(db_column='observa', blank=True, null=True)
     empresa = models.IntegerField(db_column='empresa', blank=True, null=True)
+    vendedor = models.ForeignKey(VendedorModel, db_column='co_ven',on_delete=models.CASCADE, related_name='documentos_vendedor', blank=True, null=True)
+    forma_pag = models.CharField(db_column='forma_pag', max_length=6, blank=True, null=True)
     #created_at = models.DateTimeField(db_column='fe_us_in', auto_now_add=True)
     #updated_at = models.DateTimeField(db_column='fe_us_mo', auto_now=True)
     

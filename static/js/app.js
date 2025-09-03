@@ -1061,6 +1061,15 @@ class CobranzasApp {
         }
     }
 
+    legacyDownload(filename, blob) {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    }
+
     displayDocumentoDetail(documento) {
         const tipoColor = this.getTipoColor(documento.tipo);
         const tipoNombre = this.getTipoNombre(documento.tipo);
@@ -1240,7 +1249,14 @@ class CobranzasApp {
                         // Web Share API with files (Android Chrome)
                         const file = new File([blob], filename, { type: 'application/pdf' });
                         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                            await navigator.share({ title: filename, text: `Compartiendo ${filename}`, files: [file] });
+                            try {
+                                await navigator.share({ title: filename, text: `Compartiendo ${filename}`, files: [file] });
+                            } catch (err) {
+                                console.error('Error compartiendo archivo:', err);
+                                this.legacyDownload(filename, blob);
+                                if (this.showNotification) this.showNotification('Tu dispositivo no soporta compartir. Se descargó el PDF.', 'success');
+                            }
+
                         } else if (navigator.share) {
                             await navigator.share({ title: filename, text: 'Factura generada. Descárguela a continuación.' });
                             const link = document.createElement('a');
@@ -1250,12 +1266,8 @@ class CobranzasApp {
                             link.click();
                             link.remove();
                         } else {
-                            const link = document.createElement('a');
-                            link.href = URL.createObjectURL(blob);
-                            link.download = filename;
-                            document.body.appendChild(link);
-                            link.click();
-                            link.remove();
+                            this.legacyDownload(filename, blob);
+
                             if (this.showNotification) this.showNotification('Tu dispositivo no soporta compartir. Se descargó el PDF.', 'success');
                         }
                     } catch (err) {

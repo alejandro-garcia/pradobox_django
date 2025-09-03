@@ -38,8 +38,11 @@ INSTALLED_APPS = [
     'cobranza',
     'dashboard',
     'import_service',
-    'authentication'
+    'authentication',
+    'vendedor'
 ]
+
+# 'shared.infrastructure.middleware.RequestIdMiddleware',
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -48,9 +51,9 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'shared.infrastructure.middleware.RequestIdMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'shared.infrastructure.middleware.RequestIdMiddleware'
 ]
 
 ROOT_URLCONF = 'cobranzas_app.urls'

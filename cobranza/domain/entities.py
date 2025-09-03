@@ -38,8 +38,9 @@ class Documento:
     fecha_vencimiento: date
     estado: EstadoDocumento
     descripcion: Optional[str] = None
-    co_ven: Optional[str] = None
+    vendedor_id: Optional[str] = None
     empresa: Optional[int] = None
+    forma_pag: Optional[str] = None
     
     @property
     def dias_vencimiento(self) -> int:

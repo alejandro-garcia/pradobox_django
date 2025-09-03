@@ -149,7 +149,7 @@ class VerDocumentosPendientesUseCase(UseCase[str, List[DocumentoResponse]]):
             esta_vencido=documento.esta_vencido,
             descripcion=documento.descripcion,
             cliente_nombre=getattr(documento, 'cliente_nombre', ''),
-            co_ven=documento.co_ven,
+            vendedor_id=documento.vendedor_id.value,
             empresa=documento.empresa
         )
 
@@ -179,7 +179,7 @@ class VerDocumentosPendientesClienteUseCase(UseCase[str, List[DocumentoResponse]
             esta_vencido=documento.esta_vencido,
             descripcion=documento.descripcion,
             cliente_nombre=getattr(documento, 'cliente_nombre', ''),
-            co_ven=documento.co_ven,
+            vendedor_id=documento.vendedor_id.value,
             empresa=documento.empresa
         )
 
@@ -237,7 +237,7 @@ class VerDetalleDocumentoClienteUseCase(UseCase[str, DocumentoResponse]):
             esta_vencido=documento.esta_vencido,
             descripcion=documento.descripcion,
             cliente_nombre=getattr(documento, 'cliente_nombre', ''),
-            co_ven=documento.co_ven,
+            vendedor_id=documento.vendedor_id.value,
             vendedor_nombre=getattr(documento, 'vendedor_nombre', ''),
             productos=getattr(documento, 'productos', []),
             subtotal=getattr(documento, 'subtotal', documento.monto.amount),
@@ -290,6 +290,7 @@ class CreateDocumentPdfUseCase(UseCase[str, bytes]):
             'tot_bruto': float(getattr(documento, 'subtotal', documento.monto.amount) or 0),
             'iva': float(getattr(documento, 'impuestos', 0) or 0),
             'tot_neto': float(getattr(documento, 'total', documento.monto.amount) or 0),
+            'forma_pag': getattr(documento, 'forma_pag', ''),
         }
 
         context = {

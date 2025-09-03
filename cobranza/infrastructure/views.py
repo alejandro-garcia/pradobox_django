@@ -154,7 +154,7 @@ def documentos_pendientes_view(request, seller_id):
         'dias_vencimiento': doc.dias_vencimiento,
         'esta_vencido': doc.esta_vencido,
         'descripcion': doc.descripcion,
-        'co_ven': doc.co_ven,
+        'vendedor_id': doc.vendedor_id,
         'empresa': doc.empresa
     } for doc in documentos])
 
@@ -203,7 +203,7 @@ def documento_detalle_view(request, documento_id):
             'dias_vencimiento': documento.dias_vencimiento,
             'esta_vencido': documento.esta_vencido,
             'descripcion': documento.descripcion,
-            'co_ven': documento.co_ven,
+            'vendedor_id': documento.vendedor_id,
             'vendedor_nombre': documento.vendedor_nombre,
             'productos': documento.productos,
             'subtotal': float(documento.subtotal) if documento.subtotal else 0,

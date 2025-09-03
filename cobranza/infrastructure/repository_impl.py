@@ -85,7 +85,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
         ).exclude(tipo='N/CR')
 
         if seller_id.value != "-1":
-            vencidos  = vencidos.filter(co_ven=seller_id.value) 
+            vencidos  = vencidos.filter(vendedor_id=seller_id.value) 
         
         
         vencidos = vencidos.aggregate(
@@ -102,7 +102,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
             anulado=False).exclude(tipo='N/CR')  # saldo__gt=0,
         
         if seller_id.value != "-1":
-            por_vencer  = por_vencer.filter(co_ven=seller_id.value) 
+            por_vencer  = por_vencer.filter(vendedor_id=seller_id.value) 
         
         por_vencer = por_vencer.aggregate(
             total=Sum('saldo', default=0),
@@ -121,7 +121,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
         )
         
         if seller_id.value != "-1":
-            creditos  = creditos.filter(co_ven=seller_id.value)
+            creditos  = creditos.filter(vendedor_id=seller_id.value)
 
         creditos = creditos.aggregate(
             total=Sum('saldo', default=0)
@@ -133,7 +133,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
         )
 
         if seller_id.value != "-1":
-            sin_vencimiento  = sin_vencimiento.filter(co_ven=seller_id.value)
+            sin_vencimiento  = sin_vencimiento.filter(vendedor_id=seller_id.value)
 
         sin_vencimiento = sin_vencimiento.aggregate(
             total=Sum('saldo', default=0),
@@ -222,7 +222,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
         )
         
         if seller_id != '' and seller_id != "-1":
-            query = query.filter(co_ven=seller_id)
+            query = query.filter(vendedor_id=seller_id)
         
         query = query.order_by('fecha_vencimiento')
         
@@ -311,7 +311,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
             
             # Agregar información adicional
             documento.cliente_nombre = model.cliente.nombre
-            documento.vendedor_nombre = self._get_vendedor_nombre(model.co_ven)
+            documento.vendedor_nombre = model.vendedor.nombre  #self._get_vendedor_nombre(model.co_ven)
             documento.productos = self._get_productos_documento(empresa, tipo, doc_id)
             documento.subtotal = model.monto
             documento.descuentos = Decimal('0')  # TODO: obtener de tabla de descuentos
@@ -319,6 +319,8 @@ class DjangoDocumentoRepository(DocumentoRepository):
             documento.total = model.monto
             documento.saldo = model.saldo
             documento.comentarios = model.descripcion or ''
+            documento.cliente_rif = model.cliente.rif or ''
+            documento.condicion_pago = self._get_condicion_pago(model.forma_pag) 
             
             return documento
             
@@ -338,6 +340,20 @@ class DjangoDocumentoRepository(DocumentoRepository):
                 return row[0] if row else f"Vendedor {co_ven}"
         except Exception:
             return f"Vendedor {co_ven}"
+        
+    def _get_condicion_pago(self, co_cond: str) -> str:
+        """Obtiene la descripcion de la condición de pago desde la base de datos"""
+        if not co_cond:
+            return "Sin asignar"
+        
+        try:
+            from django.db import connection
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT ltrim(rtrim(cond.cond_des)) FROM condicio WHERE co_cond = %s", [co_cond])
+                row = cursor.fetchone()
+                return row[0] if row else f"Cond.Pago: {co_cond}"
+        except Exception:
+            return f"Cond.Pago: {co_cond}"
     
     def _get_productos_documento(self, empresa: int, tipo: str, documento_id: int) -> List[dict]:
         """Obtiene los productos asociados al documento"""
@@ -385,7 +401,9 @@ class DjangoDocumentoRepository(DocumentoRepository):
             fecha_vencimiento=model.fecha_vencimiento,
             estado=EstadoDocumento(model.estado),
             descripcion=model.descripcion,
-            empresa=model.empresa
+            empresa=model.empresa,
+            vendedor_id=SellerId(model.vendedor_id) if model.vendedor_id else None,
+            forma_pag=model.forma_pag
         )
     
     

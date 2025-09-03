@@ -15,6 +15,11 @@ LOG_BACKUP_COUNT = int(config('LOG_BACKUP_COUNT', default=14))  # number of days
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'filters': {
+        'context': {
+            '()': 'shared.infrastructure.logging_impl.ContextFilter',
+        },
+    },
     'formatters': {
         'console': {
             'format': '[%(asctime)s] %(levelname)s %(name)s | req=%(request_id)s user=%(user_id)s | %(message)s',
@@ -29,6 +34,7 @@ LOGGING = {
         'console': {
             'class': 'logging.StreamHandler',
             'formatter': 'console',
+            'filters': ['context'],
         },
         'file': {
             'class': 'logging.handlers.TimedRotatingFileHandler',
@@ -38,6 +44,7 @@ LOGGING = {
             'interval': 1,
             'backupCount': LOG_BACKUP_COUNT,
             'encoding': 'utf-8',
+            'filters': ['context'],
         },
     },
     'root': {

@@ -270,7 +270,7 @@ class CreateDocumentPdfUseCase(UseCase[str, bytes]):
                 'reng_num': idx,
                 'art_des': prod.get('descripcion') or prod.get('art_des', ''),
                 'cantidad': prod.get('cantidad', 0),
-                'uni_venta': prod.get('unidad') or prod.get('uni_venta', ''),
+                'uni_venta': prod.get('unidad'),
                 'precioUnit': prod.get('precio_unitario') or prod.get('precio', 0),
                 'subtotal': prod.get('subtotal', 0),
                 'tipoImpuesto': prod.get('tipo_impuesto', '')
@@ -281,7 +281,7 @@ class CreateDocumentPdfUseCase(UseCase[str, bytes]):
             'cliente': getattr(documento, 'cliente_nombre', ''),
             'rif': getattr(documento, 'cliente_rif', ''),
             'vendedor': getattr(documento, 'vendedor_nombre', ''),
-            'condicion': '',
+            'condicion_pago': getattr(documento, 'condicion_pago', ''),
             'moneda': 'USD',
             'saldo': float(getattr(documento, 'saldo', documento.monto.amount) or 0),
             'fechaEmision': documento.fecha_emision.strftime('%d/%m/%Y'),
@@ -289,8 +289,7 @@ class CreateDocumentPdfUseCase(UseCase[str, bytes]):
             'renglones': renglones,
             'tot_bruto': float(getattr(documento, 'subtotal', documento.monto.amount) or 0),
             'iva': float(getattr(documento, 'impuestos', 0) or 0),
-            'tot_neto': float(getattr(documento, 'total', documento.monto.amount) or 0),
-            'forma_pag': getattr(documento, 'forma_pag', ''),
+            'tot_neto': float(getattr(documento, 'total', documento.monto.amount) or 0)
         }
 
         context = {

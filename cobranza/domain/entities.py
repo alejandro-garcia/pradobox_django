@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date
 from enum import Enum
 from typing import Optional
-from shared.domain.value_objects import DocumentId, ClientId, Money, EventId
+from shared.domain.value_objects import DocumentId, ClientId, Money, EventId, MoneySigned
 
 
 class TipoDocumento(Enum):
@@ -58,7 +58,6 @@ class Documento:
         """Indica si el documento está vencido"""
         return self.dias_vencimiento > 0 and self.estado == EstadoDocumento.PENDIENTE
 
-
 @dataclass
 class ResumenCobranzas:
     total_vencido: Money
@@ -107,3 +106,26 @@ class Evento:
     # def esta_vencido(self) -> bool:
     #     """Indica si el documento está vencido"""
     #     return self.dias_vencimiento > 0 and self.estado == EstadoDocumento.PENDIENTE
+
+@dataclass
+class BalanceDocument:
+    tipo_doc: TipoDocumento
+    numero: str
+    fecha_emision: date
+    fecha_vencimiento: date
+    total_neto: str
+    cobrado: str
+    saldo: str
+
+@dataclass
+class BalanceFooter:
+    descripcion: str
+    amount: str
+
+@dataclass
+class Balance:
+    cliente: str
+    vendedor: str 
+    fecha: date
+    renglones: list[BalanceDocument]
+    resumen: list[BalanceFooter]

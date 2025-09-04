@@ -58,3 +58,26 @@ class SellerId:
     def __post_init__(self):
         if not self.value or len(self.value.strip()) == 0:
             raise ValueError("Seller ID cannot be empty")
+        
+
+@dataclass(frozen=True)
+class MoneySigned:
+    amount: Decimal
+    currency: str = "USD"
+    
+    def __post_init__(self):
+        # if self.amount is None:
+        #     self.amount = Decimal('0.00')
+
+        if not self.amount:
+            raise ValueError("Amount is required")
+    
+    def __add__(self, other: 'Money') -> 'Money':
+        if self.currency != other.currency:
+            raise ValueError("Cannot add different currencies")
+        return Money(self.amount + other.amount, self.currency)
+    
+    def __sub__(self, other: 'Money') -> 'Money':
+        if self.currency != other.currency:
+            raise ValueError("Cannot subtract different currencies")
+        return Money(self.amount - other.amount, self.currency)

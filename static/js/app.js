@@ -1336,6 +1336,88 @@ class CobranzasApp {
         return card;
     }
 
+    addFloatingActionButton(cliente) {
+        // Floating Share Button for PDF
+        try {
+            const container = document.getElementById('cliente-detail-view') || document.body;
+            const existingFab = document.getElementById('fabSharePdf');
+            if (existingFab) existingFab.remove();
+
+            const hasKeys = (cliente.rif !== undefined);
+
+            if (!this.offlineMode && hasKeys) {
+                const documentoKey = cliente.rif.trim();
+                const fab = document.createElement('button');
+                fab.id = 'fabSharePdf';
+                fab.type = 'button';
+                fab.title = 'Compartir Estado de Cuenta';
+                fab.className = 'fixed bottom-20 right-6 w-14 h-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center focus:outline-none z-40';
+                fab.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4m0 0L8 6m4-4v14" />
+                    </svg>`;
+
+                container.appendChild(fab);
+
+                const setLoading = (loading) => {
+                    if (loading) {
+                        fab.disabled = true;
+                        fab.innerHTML = '<span class="animate-spin inline-block w-6 h-6 border-2 border-white border-t-transparent rounded-full"></span>';
+                    } else {
+                        fab.disabled = false;
+                        fab.innerHTML = `
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4m0 0L8 6m4-4v14" />
+                            </svg>`;
+                    }
+                };
+
+                fab.addEventListener('click', async () => {
+                    const filename = `EstadoCuenta_${documentoKey}.pdf`;
+                    const url = `${this.apiBaseUrl}/cobranzas/balance/${documentoKey}/pdf/`;
+                    setLoading(true);
+                    try {
+                        const response = await fetch(url, { headers: window.authService.getAuthHeaders() });
+                        if (!response.ok) throw new Error(`Error ${response.status}`);
+                        const blob = await response.blob();
+
+                        // Web Share API with files (Android Chrome)
+                        const file = new File([blob], filename, { type: 'application/pdf' });
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                            try {
+                                await navigator.share({ title: filename, text: `Compartiendo ${filename}`, files: [file] });
+                            } catch (err) {
+                                console.error('Error compartiendo archivo:', err);
+                                this.legacyDownload(filename, blob);
+                                if (this.showNotification) this.showNotification('Tu dispositivo no soporta compartir. Se descargó el PDF.', 'success');
+                            }
+
+                        } else if (navigator.share) {
+                            await navigator.share({ title: filename, text: 'Estado de cuenta generado. Descárguelo a continuación.' });
+                            const link = document.createElement('a');
+                            link.href = URL.createObjectURL(blob);
+                            link.download = filename;
+                            document.body.appendChild(link);
+                            link.click();
+                            link.remove();
+                        } else {
+                            this.legacyDownload(filename, blob);
+
+                            if (this.showNotification) this.showNotification('Tu dispositivo no soporta compartir. Se descargó el PDF.', 'success');
+                        }
+                    } catch (err) {
+                        console.error('Error al generar/compartir PDF:', err);
+                        if (this.showNotification) this.showNotification('No se pudo generar o compartir el PDF', 'error');
+                    } finally {
+                        setLoading(false);
+                    }
+                });
+            }
+        } catch (e) {
+            console.warn('No se pudo crear el botón flotante de compartir:', e);
+        }
+    }
+
     async showClienteDetail(clienteId) {
         try {
 
@@ -1379,6 +1461,9 @@ class CobranzasApp {
             // Update header
             document.getElementById('pageTitle').textContent = cliente.nombre;
 
+            // add floating action button
+            this.addFloatingActionButton(cliente);
+
             // set pending document listener 
             document.getElementById('clientPendingDocs').onclick = () => {
                 this.currentClientId = clienteId;
@@ -1393,7 +1478,6 @@ class CobranzasApp {
     }
 
     createClienteEventsHTML(docs){
-        debugger; 
         const detailView = document.getElementById('cliente-detail-view');
         const documentosList = detailView.querySelector('#eventList');
 
@@ -1610,6 +1694,7 @@ class CobranzasApp {
                     </div>
                 </div>
             </div>
+
         `;
     }
 

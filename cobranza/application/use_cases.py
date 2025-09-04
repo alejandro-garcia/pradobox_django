@@ -307,3 +307,69 @@ class CreateDocumentPdfUseCase(UseCase[str, bytes]):
 
         pdf_bytes = pdfkit.from_string(html, False, options=options)
         return pdf_bytes
+    
+class CreateBalancePdfUseCase(UseCase[str, bytes]):
+    """Genera un PDF de un balance usando la plantilla balance.html"""
+
+    def __init__(self, documento_repository: DocumentoRepository):
+        self.documento_repository = documento_repository
+
+    def execute(self, rif: str) -> bytes:
+        estado_cuenta = self.documento_repository.get_estado_cuenta(rif)
+        if not estado_cuenta:
+            raise EntityNotFoundException(f"Estado de cuenta para cliente/rif {rif} no encontrado")
+        
+        """
+            tipo=tipo,
+            numero=nro_doc,
+            fecha_emision=fec_emis,
+            fecha_vencimiento=fec_venc,
+            total_neto=Money(total_neto),
+            cobrado=Money(cobrado),
+            saldo=Money(saldo)
+
+                            <td>{{ doc.tipo_doc }}</td>
+                        <td>{{ doc.nro_doc }}</td>
+                        <td>{{ doc.fec_emis.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ doc.fec_vcto.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ doc.dias_vcto }}</td>
+                        <td class="align-right">{{ doc.tot_neto }}</td>
+                        <td class="align-right">{{ doc.cobrado }}</td>
+                        <td class="align-right {% if doc.dias_vcto > 0 %} negativo {% endif %}">{{ doc.saldo }}</td>
+        """
+
+        context = {
+            'cliente': estado_cuenta.cliente,
+            'vendedor': estado_cuenta.vendedor,
+            'fecha': estado_cuenta.fecha.strftime('%d/%m/%Y'),
+            'documentos': [
+                {
+                    'tipo_doc': doc.tipo_doc,
+                    'nro_doc': doc.numero,
+                    'fec_emis': doc.fecha_emision.strftime('%d/%m/%Y'),
+                    'fec_vcto': doc.fecha_vencimiento.strftime('%d/%m/%Y'),
+                    'tot_neto': doc.total_neto,
+                    'cobrado': doc.cobrado,
+                    'saldo': doc.saldo
+                } for doc in estado_cuenta.renglones
+            ],
+            'estado_deudor': [
+                {
+                'esta': edocta.descripcion,
+                'saldo': edocta.amount
+             
+            } for edocta in estado_cuenta.resumen ],
+            'cobrador': estado_cuenta.vendedor
+        }
+
+        html = render_to_string('balance.html', context)
+
+        # Opciones básicas para wkhtmltopdf/pdfkit
+        options = {
+            'encoding': 'UTF-8',
+            'enable-local-file-access': None,
+            'quiet': ''
+        }
+
+        pdf_bytes = pdfkit.from_string(html, False, options=options)
+        return pdf_bytes

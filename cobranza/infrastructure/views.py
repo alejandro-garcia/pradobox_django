@@ -13,7 +13,8 @@ from ..application.use_cases import (
     VerDocumentosPendientesClienteUseCase,
     EventosClienteUseCase,
     VerDetalleDocumentoClienteUseCase,
-    CreateDocumentPdfUseCase
+    CreateDocumentPdfUseCase,
+    CreateBalancePdfUseCase
 )
 from ..application.dtos import CrearDocumentoRequest, FiltroDocumentosRequest
 from .repository_impl import DjangoDocumentoRepository, DjangoEventoRepository
@@ -250,6 +251,18 @@ def documento_pdf_view(request, documento_id):
         pdf_bytes = use_case.execute(documento_id)
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="documento_{documento_id}.pdf"'
+        return response
+    except EntityNotFoundException as e:
+        return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)
+    
+@api_view(['GET'])
+def balance_pdf_view(request, rif):
+    repository = get_documento_repository()
+    try:
+        use_case = CreateBalancePdfUseCase(repository)
+        pdf_bytes = use_case.execute(rif)
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="documento_{rif}.pdf"'
         return response
     except EntityNotFoundException as e:
         return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)

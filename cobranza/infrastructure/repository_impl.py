@@ -6,7 +6,7 @@ from django.db.models import Sum, Count, Q, Avg, ExpressionWrapper, F, FloatFiel
 from django.utils import timezone
 from django.db.models.functions import Now, Cast, Round
 from shared.domain.value_objects import DocumentId, ClientId, Money, SellerId, EventId
-from ..domain.entities import Documento, TipoDocumento, EstadoDocumento, ResumenCobranzas, Evento
+from ..domain.entities import Documento, TipoDocumento, EstadoDocumento, ResumenCobranzas, Evento, Balance, BalanceDocument, BalanceFooter
 from ..domain.repository import DocumentoRepository, EventoRepository
 from .models import DocumentoModel, VentaMes, EventoModel
 from shared.domain.constants import MESES_ES 
@@ -302,6 +302,65 @@ class DjangoDocumentoRepository(DocumentoRepository):
             
         except DocumentoModel.DoesNotExist:
             return None
+        
+    def get_estado_cuenta(self, rif: str) -> Balance:
+        """Genera el estado de cuenta para un cliente identificado por su RIF"""
+        try:
+            from django.db import connection
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    EXECUTE dbo.pp_consulta_edo_cuenta_bot %s, '-1', -1 
+                """, [rif])
+                
+                documentos = []
+                cliente_nombre = ''
+                vendedor_nombre = ''
+
+                rows = cursor.fetchall()
+
+                for i, row in enumerate(rows, start=1):
+                    rif, cliente, vendedor, tipo, nro_doc, fec_emis, fec_venc, dias_ven, saldo, cobrado, total_neto = row
+                    if i == 1:
+                        cliente_nombre = cliente
+                        vendedor_nombre = vendedor
+
+                    documentos.append(BalanceDocument(
+                        tipo_doc=tipo,
+                        numero=nro_doc,
+                        fecha_emision=fec_emis,
+                        fecha_vencimiento=fec_venc,
+                        total_neto=total_neto,
+                        cobrado=cobrado,
+                        saldo=saldo
+                    ))
+                
+                cursor.nextset()
+                footers = []
+                for row in cursor.fetchall():
+                    descripcion, valor = row
+                    footers.append(BalanceFooter(descripcion=descripcion, amount=valor))
+
+                balance = Balance(
+                    cliente=cliente_nombre,
+                    vendedor=vendedor_nombre,
+                    fecha=date.today(),
+                    renglones=documentos,
+                    resumen=footers
+                )
+                
+                return balance
+                
+        except Exception as e:
+            logger.error(f"Error generando estado de cuenta: {str(e)}")
+            print(f"Error generando estado de cuenta: {e}")
+            return Balance(
+                cliente=rif,
+                vendedor='',
+                fecha=date.today(),
+                documentos=[],
+                resumen=BalanceFooter(descripcion='', amount='0.00')
+            )
+
             
     def _get_condicion_pago(self, co_cond: str) -> str:
         """Obtiene la descripcion de la condición de pago desde la base de datos"""

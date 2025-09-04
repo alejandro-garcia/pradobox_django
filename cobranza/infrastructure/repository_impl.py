@@ -311,7 +311,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
             
             # Agregar información adicional
             documento.cliente_nombre = model.cliente.nombre
-            documento.vendedor_nombre = model.vendedor.nombre  #self._get_vendedor_nombre(model.co_ven)
+            documento.vendedor_nombre = model.vendedor.nombre  
             documento.productos = self._get_productos_documento(empresa, tipo, doc_id)
             documento.subtotal = model.monto
             documento.descuentos = Decimal('0')  # TODO: obtener de tabla de descuentos
@@ -326,21 +326,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
             
         except DocumentoModel.DoesNotExist:
             return None
-    
-    def _get_vendedor_nombre(self, co_ven: str) -> str:
-        """Obtiene el nombre del vendedor desde la base de datos"""
-        if not co_ven:
-            return "Sin asignar"
-        
-        try:
-            from django.db import connection
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT ven_des FROM vendedor WHERE co_ven = %s", [co_ven])
-                row = cursor.fetchone()
-                return row[0] if row else f"Vendedor {co_ven}"
-        except Exception:
-            return f"Vendedor {co_ven}"
-        
+            
     def _get_condicion_pago(self, co_cond: str) -> str:
         """Obtiene la descripcion de la condición de pago desde la base de datos"""
         if not co_cond:
@@ -349,10 +335,11 @@ class DjangoDocumentoRepository(DocumentoRepository):
         try:
             from django.db import connection
             with connection.cursor() as cursor:
-                cursor.execute("SELECT ltrim(rtrim(cond.cond_des)) FROM condicio WHERE co_cond = %s", [co_cond])
+                cursor.execute("SELECT ltrim(rtrim(cond_des)) as cond_des FROM condicio WHERE co_cond = %s", [co_cond])
                 row = cursor.fetchone()
                 return row[0] if row else f"Cond.Pago: {co_cond}"
-        except Exception:
+        except Exception as e:
+            print(f"Error obteniendo condición de pago: {str(e)}")
             return f"Cond.Pago: {co_cond}"
     
     def _get_productos_documento(self, empresa: int, tipo: str, documento_id: int) -> List[dict]:

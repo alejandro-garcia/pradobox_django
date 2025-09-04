@@ -452,8 +452,7 @@ class CobranzasApp {
             document.getElementById('totalVencido').textContent = this.formatCurrency(data.situacion.total_vencido);
             document.getElementById('cantidadVencido').textContent = data.situacion.cantidad_documentos_vencidos;
             document.getElementById('diasVencido').textContent = data.situacion.dias_promedio_vencimiento;
-            document.getElementById('totalGeneral').textContent =  this.formatCurrency(data.situacion.total_vencido + data.situacion.total_por_vencer - data.situacion.total_sinvencimiento); ;   
-            debugger;
+            document.getElementById('totalGeneral').textContent =  this.formatCurrency(data.situacion.total_vencido + data.situacion.total_por_vencer - data.situacion.total_sinvencimiento);
             document.getElementById('cantidadTotal').textContent = data.situacion.cantidad_documentos_total;
             document.getElementById('diasTotal').textContent = data.situacion.dias_promedio_vencimiento_todos;
             document.getElementById('totalNeto').textContent =  this.formatCurrency(data.situacion.total_neto);
@@ -1813,6 +1812,5 @@ class CobranzasApp {
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.cobranzasApp = new CobranzasApp();
-    debugger;
     Chart.register(ChartDataLabels);
 });

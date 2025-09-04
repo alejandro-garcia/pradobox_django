@@ -1,7 +1,7 @@
 from shared.application.use_case import UseCase
 from cobranza.domain.repository import DocumentoRepository
 from shared.domain.value_objects import SellerId
-from .dtos import DashboardResponse, SituacionGeneralResponse, VentasMesResponse, CobrosMesResponse, IndicadoresResponse
+from .dtos import DashboardResponse, SituacionGeneralResponse, VentasMesResponse, IndicadoresResponse
 from decimal import Decimal
 
 
@@ -18,16 +18,10 @@ class ObtenerDashboardUseCase(UseCase[SellerId, DashboardResponse]):
         resumen = self.documento_repository.get_resumen_cobranzas(seller_id)
 
         ventas_por_mes_dict = self.documento_repository.get_ventas_trimestre(seller_id)
-        cobros_por_mes_dict = self.documento_repository.get_cobros_trimestre(seller_id)
-     
+        
         ventas_por_mes = [
             VentasMesResponse(mes= mes_info["mes"], monto=mes_info["amount"])
             for mes_info in ventas_por_mes_dict
-        ]
-
-        cobros_por_mes = [
-            CobrosMesResponse(mes= mes_info["mes"], monto=mes_info["amount"])
-            for mes_info in cobros_por_mes_dict
         ]
 
         # Datos simulados para ventas y cobros por mes
@@ -37,24 +31,12 @@ class ObtenerDashboardUseCase(UseCase[SellerId, DashboardResponse]):
         #     VentasMesResponse(mes="jul", monto=Decimal('69400')),
         # ]
         
-        # cobros_por_mes = [
-        #     CobrosMesResponse(mes="may", monto=Decimal('188000')),
-        #     CobrosMesResponse(mes="jun", monto=Decimal('185000')),
-        #     CobrosMesResponse(mes="jul", monto=Decimal('71400')),
-        # ]
-
-
         # El último es el mes actual
         venta_mes_actual = ventas_por_mes_dict[-1]["amount"]
 
         # El penúltimo es el mes anterior
         venta_mes_anterior = ventas_por_mes_dict[-2]["amount"]
 
-        # El último es el mes actual
-        cobros_mes_actual = cobros_por_mes_dict[-1]["amount"]
-
-        # El penúltimo es el mes anterior
-        cobros_mes_anterior = cobros_por_mes_dict[-2]["amount"]
 
         if venta_mes_anterior and venta_mes_anterior != 0:
             porcentaje_variacion_ventas = (
@@ -63,21 +45,12 @@ class ObtenerDashboardUseCase(UseCase[SellerId, DashboardResponse]):
         else:
             porcentaje_variacion_ventas = 0
             
-        if cobros_mes_anterior and cobros_mes_anterior != 0:
-            porcentaje_variacion_cobros = (
-                (cobros_mes_actual - cobros_mes_anterior) / cobros_mes_anterior
-            ) * 100
-        else:
-            porcentaje_variacion_cobros = 0
 
         # Indicadores simulados
         indicadores = IndicadoresResponse(
             ventas_mes_actual=venta_mes_actual,
             ventas_mes_anterior=venta_mes_anterior,
-            cobros_mes_actual=cobros_mes_actual,
-            cobros_mes_anterior=cobros_mes_anterior,
-            porcentaje_variacion_ventas=porcentaje_variacion_ventas,
-            porcentaje_variacion_cobros=porcentaje_variacion_cobros
+            porcentaje_variacion_ventas=porcentaje_variacion_ventas
         )
         
         situacion = SituacionGeneralResponse(
@@ -97,6 +70,5 @@ class ObtenerDashboardUseCase(UseCase[SellerId, DashboardResponse]):
         return DashboardResponse(
             situacion=situacion,
             ventas_por_mes=ventas_por_mes,
-            cobros_por_mes=cobros_por_mes,
             indicadores=indicadores
         )

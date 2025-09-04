@@ -4,8 +4,7 @@ class CobranzasApp {
         this.apiBaseUrl = '/api';
         this.offlineMode = false;
         this.charts = {
-            ventas: null,
-            cobros: null
+            ventas: null
         };
         this.dashboardLoaded = false;
         this.loadingDashboard = false;
@@ -462,9 +461,6 @@ class CobranzasApp {
             if (!this.charts.ventas) {
                 this.createVentasChart(data.ventas_por_mes);
             }
-            // if (!this.charts.cobros) {
-            //     this.createCobrosChart(data.cobros_por_mes);
-            // }
 
             this.dashboardLoaded = true;
 
@@ -495,11 +491,6 @@ class CobranzasApp {
                 { mes: 'may', monto: 155000 },
                 { mes: 'jun', monto: 144000 },
                 { mes: 'jul', monto: 69400 }
-            ],
-            cobros_por_mes: [
-                { mes: 'may', monto: 188000 },
-                { mes: 'jun', monto: 185000 },
-                { mes: 'jul', monto: 71400 }
             ]
         };
     }
@@ -1701,65 +1692,13 @@ class CobranzasApp {
         console.log("Gráfico de ventas creado exitosamente");
     }
 
-    createCobrosChart(data) {       
-        // Verificar si ya existe un gráfico
-        if (this.charts.cobros) {
-            this.charts.cobros.data.labels = data.map(item => item.mes);
-            this.charts.cobros.data.datasets[0].data = data.map(item => item.monto);
-            this.charts.cobros.update();
-            return;
-        }
-
-        const ctx = document.getElementById('cobrosChart');
-        if (!ctx) {
-            console.error('Canvas cobrosChart no encontrado');
-            return;
-        }
-
-        //responsive: true,
-        this.charts.cobros = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: data.map(item => item.mes),
-                datasets: [{
-                    data: data.map(item => item.monto),
-                    backgroundColor: '#3B82F6',
-                    borderRadius: 4,
-                    barThickness: 60
-                }]
-            },
-            options: {
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                //console.log("ejecutando callback chart cobro, value:", value);
-                                return (value / 1000).toFixed(0) + 'k';
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
     // Método para limpiar gráficos cuando sea necesario
     destroyCharts() {
         if (this.charts.ventas) {
             this.charts.ventas.destroy();
             this.charts.ventas = null;
         }
-        if (this.charts.cobros) {
-            this.charts.cobros.destroy();
-            this.charts.cobros = null;
-        }
+
         this.dashboardLoaded = false;
     }
 

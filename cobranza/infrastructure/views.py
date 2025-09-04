@@ -179,7 +179,7 @@ def documentos_pendientes_cliente_view(request, client_id):
         'dias_vencimiento': doc.dias_vencimiento,
         'esta_vencido': doc.esta_vencido,
         'descripcion': doc.descripcion,
-        'co_ven': doc.co_ven,
+        'vendedor_id': doc.vendedor_id,
         'empresa': doc.empresa
     } for doc in documentos])
 

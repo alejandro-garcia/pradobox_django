@@ -1637,15 +1637,15 @@ class CobranzasApp {
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Vencido</p>
-                            <p class="text-xl font-semibold text-primary">${this.formatCurrency(resumen.total_vencido)}</p>
+                            <p class="text-xl font-semibold text-red-500">${this.formatCurrency(resumen.total_vencido)}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Cantidad</p>
-                            <p class="text-xl font-semibold text-accent">${resumen.cantidad_documentos}</p>
+                            <p class="text-xl font-semibold text-red-500">${resumen.cantidad_documentos}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Días</p>
-                            <p class="text-xl font-semibold text-accent">${resumen.dias_promedio_vencimiento}</p>
+                            <p class="text-xl font-semibold text-red-500">${resumen.dias_promedio_vencimiento}</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-3 gap-4 mb-4">
@@ -1669,7 +1669,7 @@ class CobranzasApp {
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Créditos</p>
-                            <p class="text-xl font-semibold text-success">${this.formatCurrency(Math.abs(resumen.total_creditos))}</p>
+                            <p class="text-xl font-semibold text-red-500">${this.formatCurrency(Math.abs(resumen.total_creditos)*-1)}</p>
                         </div>
                     </div>
                 </div>

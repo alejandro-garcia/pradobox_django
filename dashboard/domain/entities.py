@@ -21,24 +21,14 @@ class VentasPorMes:
 
 
 @dataclass
-class CobrosPorMes:
-    mes: str
-    monto: Decimal
-
-
-@dataclass
 class IndicadoresVentas:
     ventas_mes_actual: Decimal
     ventas_mes_anterior: Decimal
-    cobros_mes_actual: Decimal
-    cobros_mes_anterior: Decimal
     porcentaje_variacion_ventas: float
-    porcentaje_variacion_cobros: float
 
 
 @dataclass
 class DashboardData:
     situacion: SituacionGeneral
     ventas_por_mes: List[VentasPorMes]
-    cobros_por_mes: List[CobrosPorMes]
     indicadores: IndicadoresVentas

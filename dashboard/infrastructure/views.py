@@ -33,20 +33,10 @@ def get_dashboard(seller_id: SellerId):
             }
             for venta in dashboard_data.ventas_por_mes
         ],
-        'cobros_por_mes': [
-            {
-                'mes': cobro.mes,
-                'monto': float(cobro.monto)
-            }
-            for cobro in dashboard_data.cobros_por_mes
-        ],
         'indicadores': {
             'ventas_mes_actual': float(dashboard_data.indicadores.ventas_mes_actual),
             'ventas_mes_anterior': float(dashboard_data.indicadores.ventas_mes_anterior),
-            'cobros_mes_actual': float(dashboard_data.indicadores.cobros_mes_actual),
-            'cobros_mes_anterior': float(dashboard_data.indicadores.cobros_mes_anterior),
-            'porcentaje_variacion_ventas': dashboard_data.indicadores.porcentaje_variacion_ventas,
-            'porcentaje_variacion_cobros': dashboard_data.indicadores.porcentaje_variacion_cobros
+            'porcentaje_variacion_ventas': dashboard_data.indicadores.porcentaje_variacion_ventas
         }
     })    
 

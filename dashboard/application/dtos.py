@@ -17,32 +17,19 @@ class SituacionGeneralResponse:
     dias_transcurridos: int 
     dias_faltantes: int 
 
-
 @dataclass
 class VentasMesResponse:
     mes: str
     monto: Decimal
 
-
-@dataclass
-class CobrosMesResponse:
-    mes: str
-    monto: Decimal
-
-
 @dataclass
 class IndicadoresResponse:
     ventas_mes_actual: Decimal
     ventas_mes_anterior: Decimal
-    cobros_mes_actual: Decimal
-    cobros_mes_anterior: Decimal
     porcentaje_variacion_ventas: float
-    porcentaje_variacion_cobros: float
-
 
 @dataclass
 class DashboardResponse:
     situacion: SituacionGeneralResponse
     ventas_por_mes: List[VentasMesResponse]
-    cobros_por_mes: List[CobrosMesResponse]
     indicadores: IndicadoresResponse

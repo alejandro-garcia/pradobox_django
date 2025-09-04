@@ -8,7 +8,7 @@ from django.db.models.functions import Now, Cast, Round
 from shared.domain.value_objects import DocumentId, ClientId, Money, SellerId, EventId
 from ..domain.entities import Documento, TipoDocumento, EstadoDocumento, ResumenCobranzas, Evento
 from ..domain.repository import DocumentoRepository, EventoRepository
-from .models import CobroMes, DocumentoModel, VentaMes, EventoModel
+from .models import DocumentoModel, VentaMes, EventoModel
 from shared.domain.constants import MESES_ES 
 import calendar
 from shared.infrastructure.logging_impl import get_logger
@@ -276,30 +276,6 @@ class DjangoDocumentoRepository(DocumentoRepository):
             sales_list.append({"mes": mes_nombre, "amount": row["amount"]})
 
         return sales_list
-
-    def get_cobros_trimestre(self, seller_id: SellerId) -> List[Dict]:
-        if seller_id.value != "-1":
-            qs = (
-                CobroMes.objects.filter(co_ven=seller_id.value)
-                .values("cob_date")
-                .annotate(amount=Sum("amount"))
-                .order_by("cob_date")
-            )
-        else:
-            qs = (
-                CobroMes.objects.values("cob_date")
-                .annotate(amount=Sum("amount"))
-                .order_by("cob_date")
-            )
-
-        payments_list = []
-        for row in qs:
-            year_month = row["cob_date"]  # Ej: "202505"
-            mes_num = int(year_month[4:])   # "05" → 5
-            mes_nombre = MESES_ES.get(mes_num, str(mes_num))
-            payments_list.append({"mes": mes_nombre, "amount": row["amount"]})
-
-        return payments_list
     
     def get_detalle_documento(self, documento_id: str) -> Optional[Documento]:
         """Obtiene el detalle completo de un documento incluyendo productos y vendedor"""

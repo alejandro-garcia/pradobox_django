@@ -168,9 +168,25 @@ class AuthService {
                             </div>
                             <div>
                                 <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
-                                <input id="password" name="password" type="password" required 
-                                       class="mt-1 appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" 
-                                       placeholder="Ingresa tu contraseña">
+                                <div class="mt-1 relative">
+                                    <input id="password" name="password" type="password" required 
+                                           class="appearance-none relative block w-full pr-10 pl-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" 
+                                           placeholder="Ingresa tu contraseña">
+                                    <button type="button" id="togglePassword" aria-label="Mostrar u ocultar contraseña"
+                                            class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none">
+                                        <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                        <svg id="eyeOffIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.8 21.8 0 0 1 5.06-6.94"/>
+                                            <path d="M22.94 12.94A21.8 21.8 0 0 0 19 7.06"/>
+                                            <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.86 21.86 0 0 1-3.06 4.94"/>
+                                            <line x1="1" y1="1" x2="23" y2="23"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -201,6 +217,21 @@ class AuthService {
         const loginBtnText = document.getElementById('loginBtnText');
         const loginSpinner = document.getElementById('loginSpinner');
         const loginError = document.getElementById('loginError');
+        const passwordInput = document.getElementById('password');
+        const togglePassword = document.getElementById('togglePassword');
+        const eyeIcon = document.getElementById('eyeIcon');
+        const eyeOffIcon = document.getElementById('eyeOffIcon');
+
+        // Toggle show/hide password
+        if (togglePassword && passwordInput && eyeIcon && eyeOffIcon) {
+            togglePassword.addEventListener('click', () => {
+                const isPassword = passwordInput.getAttribute('type') === 'password';
+                passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+                eyeIcon.classList.toggle('hidden', !isPassword);
+                eyeOffIcon.classList.toggle('hidden', isPassword);
+                togglePassword.setAttribute('aria-label', isPassword ? 'Ocultar contraseña' : 'Mostrar contraseña');
+            });
+        }
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();

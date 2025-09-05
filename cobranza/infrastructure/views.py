@@ -7,7 +7,6 @@ from shared.domain.value_objects import SellerId
 from ..application.use_cases import (
     CrearDocumentoUseCase,
     ObtenerDocumentosUseCase,
-    ObtenerResumenCobranzasUseCase,
     ObtenerDocumentosVencidosUseCase,
     VerDocumentosPendientesUseCase,
     VerDocumentosPendientesClienteUseCase,
@@ -90,25 +89,25 @@ def documentos_view(request):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET'])
-def resumen_cobranzas_view(request):
-    repository = get_documento_repository()
+# @api_view(['GET'])
+# def resumen_cobranzas_view(request):
+#     repository = get_documento_repository()
 
-    seller_id = SellerId(request.user.codigo_vendedor_profit)
+#     seller_id = SellerId(request.user.codigo_vendedor_profit)
     
-    use_case = ObtenerResumenCobranzasUseCase(repository)
-    resumen = use_case.execute(seller_id)
+#     use_case = ObtenerResumenCobranzasUseCase(repository)
+#     resumen = use_case.execute(seller_id)
     
-    return Response({
-        'total_vencido': float(resumen.total_vencido),
-        'total_por_vencer': float(resumen.total_por_vencer),
-        'total_creditos': float(resumen.total_creditos),
-        'total_sinvencimiento': float(resumen.total_sinvencimiento),
-        'total_neto': float(resumen.total_neto),
-        'cantidad_vencidos': resumen.cantidad_vencidos,
-        'cantidad_total': resumen.cantidad_total,
-        'dias_promedio_vencimiento': resumen.dias_promedio_vencimiento
-    })
+#     return Response({
+#         'total_vencido': float(resumen.total_vencido),
+#         'total_por_vencer': float(resumen.total_por_vencer),
+#         'total_creditos': float(resumen.total_creditos),
+#         'total_sinvencimiento': float(resumen.total_sinvencimiento),
+#         'total_neto': float(resumen.total_neto),
+#         'cantidad_vencidos': resumen.cantidad_vencidos,
+#         'cantidad_total': resumen.cantidad_total,
+#         'dias_promedio_vencimiento': resumen.dias_promedio_vencimiento
+#     })
 
 
 @api_view(['GET'])

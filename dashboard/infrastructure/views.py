@@ -41,20 +41,21 @@ def get_dashboard(seller_id: SellerId):
     })    
 
 
-@api_view(['GET'])
-def dashboard_view(request):
-    print('dentro de dashboard_view')
+# @api_view(['GET'])
+# def dashboard_view(request):
+#     print('dentro de dashboard_view')
 
-    if type(request.user).__name__ != "AnonymousUser":
-        seller_id = SellerId(request.user.codigo_vendedor_profit if request.user.codigo_vendedor_profit else '-1')
-    else:
-        seller_id = SellerId("-1")
+#     if type(request.user).__name__ != "AnonymousUser":
+#         print('dentro de dashboard_view con user:', request.user)
+#         seller_id = SellerId(request.user.codigo_vendedor_profit if request.user.codigo_vendedor_profit else '-1')
+#     else:
+#         seller_id = SellerId("-1")
 
-    return get_dashboard(seller_id)        
+#     return get_dashboard(seller_id)        
 
 @api_view(['GET'])
 def dashboard_seller_view(request, seller_id):
-    print('dentro de dashboard_view')
+    print('dentro de dashboard_view con seller_id:', seller_id)
     seller = SellerId(seller_id)
    
     return get_dashboard(seller)

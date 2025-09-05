@@ -599,7 +599,7 @@ class CobranzasApp {
                     fetch(`${this.apiBaseUrl}/cobranzas/pendientes/vendedor/${seller_code}`, {
                         headers: window.authService.getAuthHeaders()
                     }),
-                    fetch(`${this.apiBaseUrl}/dashboard/`, {
+                    fetch(`${this.apiBaseUrl}/dashboard/${seller_code}`, {
                         headers: window.authService.getAuthHeaders()
                     })
                 ]);

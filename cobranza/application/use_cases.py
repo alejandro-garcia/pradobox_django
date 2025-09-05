@@ -77,24 +77,24 @@ class ObtenerDocumentosUseCase(UseCase[FiltroDocumentosRequest, List[DocumentoRe
         )
 
 
-class ObtenerResumenCobranzasUseCase(UseCase[str, ResumenCobranzasResponse]):
+# class ObtenerResumenCobranzasUseCase(UseCase[str, ResumenCobranzasResponse]):
     
-    def __init__(self, documento_repository: DocumentoRepository):
-        self.documento_repository = documento_repository
+#     def __init__(self, documento_repository: DocumentoRepository):
+#         self.documento_repository = documento_repository
     
-    def execute(self, seller_id: SellerId) -> ResumenCobranzasResponse:
-        resumen = self.documento_repository.get_resumen_cobranzas(seller_id)
+#     def execute(self, seller_id: SellerId) -> ResumenCobranzasResponse:
+#         resumen = self.documento_repository.get_resumen_cobranzas(seller_id)
         
-        return ResumenCobranzasResponse(
-            total_vencido=resumen.total_vencido.amount,
-            total_por_vencer=resumen.total_por_vencer.amount,
-            total_creditos=resumen.total_creditos.amount,
-            total_sinvencimiento=resumen.total_sinvencimiento.amount,
-            total_neto=resumen.total_neto.amount,
-            cantidad_vencidos=resumen.cantidad_vencidos,
-            cantidad_total=resumen.cantidad_total,
-            dias_promedio_vencimiento=resumen.dias_promedio_vencimiento
-        )
+#         return ResumenCobranzasResponse(
+#             total_vencido=resumen.total_vencido.amount,
+#             total_por_vencer=resumen.total_por_vencer.amount,
+#             total_creditos=resumen.total_creditos.amount,
+#             total_sinvencimiento=resumen.total_sinvencimiento.amount,
+#             total_neto=resumen.total_neto.amount,
+#             cantidad_vencidos=resumen.cantidad_vencidos,
+#             cantidad_total=resumen.cantidad_total,
+#             dias_promedio_vencimiento=resumen.dias_promedio_vencimiento
+#         )
 
 
 class ObtenerDocumentosVencidosUseCase(UseCase[None, List[DocumentoResponse]]):

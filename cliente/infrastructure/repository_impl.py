@@ -77,6 +77,7 @@ class DjangoClienteRepository(ClienteRepository):
                     # Datos de ejemplo si no hay documentos
                     vencido, por_vencer, creditos, cantidad, dias_promedio = Decimal('0'), Decimal('0'), Decimal('0'), 0, 0
             
+            # TODO: AGREGAR LOS CAMPOS QUE FALTAN EN EL S.P. 
             return ResumenCliente(
                 cliente_id=cliente_id,
                 nombre=cliente_model.nombre,
@@ -84,8 +85,11 @@ class DjangoClienteRepository(ClienteRepository):
                 total_vencido=Money(Decimal(str(vencido))),
                 total_por_vencer=Money(Decimal(str(por_vencer))),
                 total_creditos=Money(Decimal(str(creditos))),
+                total_sinvencimiento= 0, #FALTA EN EL SP
                 cantidad_documentos=int(cantidad),
-                dias_promedio_vencimiento=int(dias_promedio)
+                cantidad_documentos_vencidos=0, # FALTA EN EL SP
+                dias_promedio_vencimiento=int(dias_promedio),
+                dias_promedio_vencimiento_todos=0 # FALTA EN EL SP
             )
             
         except ClienteModel.DoesNotExist:
@@ -131,8 +135,12 @@ class DjangoClienteRepository(ClienteRepository):
                                 total_vencido=Money(Decimal(str(vencido))),
                                 total_por_vencer=Money(Decimal(str(por_vencer))),
                                 total_creditos=Money(Decimal(str(creditos))),
+                                total_sinvencimiento=0, #FALTA EN EL SP.
                                 cantidad_documentos=int(cantidad),
-                                dias_promedio_vencimiento=int(dias_promedio)))
+                                cantidad_documentos_vencidos= 0, #FALTA
+                                dias_promedio_vencimiento=int(dias_promedio),
+                                dias_promedio_vencimiento_todos=0 #FALTA EN EL SP
+                                ))
                 #else:
                     # Datos de ejemplo si no hay documentos
                     #[vencido, por_vencer, creditos, cantidad, dias_promedio = Decimal('0'), Decimal('0'), Decimal('0'), 0, 0]

@@ -34,5 +34,8 @@ class ResumenClienteResponse:
     total_por_vencer: Decimal
     total_creditos: Decimal
     total_neto: Decimal
+    total_sinvencimiento: Decimal
     cantidad_documentos: int
+    cantidad_documentos_vencidos: int
     dias_promedio_vencimiento: int
+    dias_promedio_vencimiento_todos: int

@@ -8,7 +8,7 @@ from django.db.models.functions import Now, Cast, Round
 from shared.domain.value_objects import DocumentId, ClientId, Money, SellerId, EventId, MoneySigned
 from ..domain.entities import Documento, TipoDocumento, EstadoDocumento, ResumenCobranzas, Evento, Balance, BalanceDocument, BalanceFooter
 from ..domain.repository import DocumentoRepository, EventoRepository
-from .models import DocumentoModel, VentaMes, EventoModel
+from .models import DocumentoModel, VentaMes, VentaMesCliente, EventoModel
 from shared.domain.constants import MESES_ES 
 import calendar
 from shared.infrastructure.logging_impl import get_logger
@@ -175,44 +175,107 @@ class DjangoDocumentoRepository(DocumentoRepository):
             dias_transcurridos= dias_transcurridos,
             dias_faltantes=dias_faltantes 
         )
-    
+
     def get_resumen_por_cliente(self, cliente_id: ClientId) -> ResumenCobranzas:
         today = timezone.now().date()
         
-        # Filtrar solo documentos del cliente
-        base_query = DocumentoModel.objects.filter(cliente_id=cliente_id.value)
+        # Totales por estado
+        vencidos = DocumentoModel.objects.filter(
+            fecha_vencimiento__lte=today,
+            anulado=False
+        ).exclude(tipo='N/CR')
+
+        if cliente_id.value != "-1":
+            vencidos  = vencidos.filter(cliente_id=cliente_id.value) 
         
-        vencidos = base_query.filter(
-            fecha_vencimiento__lt=today,
-            estado='PENDIENTE'
-        ).aggregate(
-            total=Sum('monto', default=0),
-            cantidad=Count('id')
+        
+        vencidos = vencidos.aggregate(
+            total=Sum('saldo', default=0),
+            cantidad=Count('id'),
+            dias_vencidos=Sum(DateDiff(
+                            F("fecha_vencimiento"),
+                            Func(function="GETDATE")   
+                        ))
         )
         
-        por_vencer = base_query.filter(
-            fecha_vencimiento__gte=today,
-            estado='PENDIENTE'
-        ).aggregate(
-            total=Sum('monto', default=0),
-            cantidad=Count('id')
+        por_vencer = DocumentoModel.objects.filter(
+            fecha_vencimiento__gt=today,
+            anulado=False).exclude(tipo='N/CR')  # saldo__gt=0,
+        
+        if cliente_id.value != "-1":
+            por_vencer  = por_vencer.filter(cliente_id=cliente_id.value) 
+        
+        por_vencer = por_vencer.aggregate(
+            total=Sum('saldo', default=0),
+            cantidad=Count('id'),
+            dias_vencidos=Sum(DateDiff(
+                            F("fecha_vencimiento"),
+                            Func(function="GETDATE")   
+                        ))
+
         )
         
-        creditos = base_query.filter(
-            tipo__in = ['N/CR','ADEL'],
-        ).aggregate(
-            total=Sum('monto', default=0)
+        creditos = DocumentoModel.objects.filter(
+            tipo__in=['N/CR','ADEL'],
+            saldo__lt=0,
+            anulado=False
         )
+        
+        if cliente_id.value != "-1":
+            creditos  = creditos.filter(cliente_id=cliente_id.value)
+
+        creditos = creditos.aggregate(
+            total=Sum('saldo', default=0)
+        )
+
+        sin_vencimiento = DocumentoModel.objects.filter(
+            anulado=False,
+            tipo='N/CR'
+        )
+
+        if cliente_id.value != "-1":
+            sin_vencimiento  = sin_vencimiento.filter(cliente_id=cliente_id.value)
+
+        sin_vencimiento = sin_vencimiento.aggregate(
+            total=Sum('saldo', default=0),
+            cantidad=Count('id'),
+            dias_vencidos=Sum(DateDiff(
+                            F("fecha_vencimiento"),
+                            Func(function="GETDATE")   
+                        ))
+        )
+        
+        today = timezone.now().date()
+
+        dias_promedio = round(vencidos["dias_vencidos"] / vencidos["cantidad"]) if vencidos["cantidad"] > 0 else 0
+
+        dias_vencidos_total = (vencidos["dias_vencidos"] or 0) + (por_vencer["dias_vencidos"] or 0) + (sin_vencimiento["dias_vencidos"] or 0)
+        cantidad_total = vencidos["cantidad"] + por_vencer["cantidad"] + (sin_vencimiento["cantidad"] or 0) 
+        promedio_vcto_todos = round(dias_vencidos_total / cantidad_total) if cantidad_total > 0 else 0
+
+        dias_transcurridos = today.day
+        
+        ultimo_dia = calendar.monthrange(today.year, today.month)[1]
+
+        # Cantidad de días que faltan
+        dias_faltantes = ultimo_dia - today.day
+
+        if Decimal(str(creditos['total'])) < 0:
+            creditos['total'] = Decimal(str(creditos['total'])) * -1
+
         
         return ResumenCobranzas(
             total_vencido=Money(Decimal(str(vencidos['total']))),
             total_por_vencer=Money(Decimal(str(por_vencer['total']))),
-            total_creditos=Money(Decimal(str(abs(creditos['total'])))),
+            total_creditos=Money(Decimal(str(creditos['total']))),  # Los créditos son negativos
+            total_sinvencimiento=Money(Decimal(str(abs(sin_vencimiento['total'])))),
             cantidad_vencidos=vencidos['cantidad'],
-            cantidad_por_vencer=por_vencer['cantidad'],
-            dias_promedio_vencimiento=0  # Calcular si es necesario
+            cantidad_total=cantidad_total,
+            dias_promedio_vencimiento=dias_promedio,
+            dias_promedio_vencimiento_todos=int(promedio_vcto_todos),
+            dias_transcurridos= dias_transcurridos,
+            dias_faltantes=dias_faltantes 
         )
-    
 
     def find_documentos_pendientes(self, seller_id: str) -> List[Documento]:
         """Obtiene todos los documentos pendientes (vencidos y por vencer) con información del cliente"""
@@ -360,8 +423,31 @@ class DjangoDocumentoRepository(DocumentoRepository):
                 documentos=[],
                 resumen=BalanceFooter(descripcion='', amount='0.00')
             )
-
             
+    def get_ventas_trimestre_cliente(self, client_id: ClientId) -> List[Dict]:
+        if client_id.value != "-1":
+            qs = (
+                VentaMesCliente.objects.filter(co_cli=client_id.value)
+                .values("sales_date")
+                .annotate(amount=Sum("amount"))
+                .order_by("sales_date")
+            )
+        else:
+            qs = (
+                VentaMesCliente.objects.values("sales_date")
+                .annotate(amount=Sum("amount"))
+                .order_by("sales_date")
+            )
+
+        sales_list = []
+        for row in qs:
+            year_month = row["sales_date"]  # Ej: "202505"
+            mes_num = int(year_month[4:])   # "05" → 5
+            mes_nombre = MESES_ES.get(mes_num, str(mes_num))
+            sales_list.append({"mes": mes_nombre, "amount": row["amount"]})
+
+        return sales_list
+
     def _get_condicion_pago(self, co_cond: str) -> str:
         """Obtiene la descripcion de la condición de pago desde la base de datos"""
         if not co_cond:
@@ -413,7 +499,6 @@ class DjangoDocumentoRepository(DocumentoRepository):
             print(f"Error obteniendo productos: {e}")
             return []
 
-
     def _to_domain(self, model: DocumentoModel) -> Documento:
         return Documento(
             id=DocumentId(model.id),
@@ -430,7 +515,6 @@ class DjangoDocumentoRepository(DocumentoRepository):
             forma_pag=model.forma_pag,
             saldo=MoneySigned(model.saldo) if model.saldo is not None else MoneySigned(0)
         )
-    
     
 class DjangoEventoRepository(EventoRepository):
     def find_all(self) -> List[Documento]:

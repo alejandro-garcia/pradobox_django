@@ -447,7 +447,7 @@ class CobranzasApp {
             document.getElementById('remainingDays').textContent = data.situacion.dias_faltantes.toString() + 'd';
             let percentageDays = data.situacion.dias_transcurridos * 100 / (data.situacion.dias_faltantes + data.situacion.dias_transcurridos);
             document.getElementById('daysPercentage').style= `width:${percentageDays}%`;
-
+            debugger;
             document.getElementById('totalVencido').textContent = this.formatCurrency(data.situacion.total_vencido);
             document.getElementById('cantidadVencido').textContent = data.situacion.cantidad_documentos_vencidos;
             document.getElementById('diasVencido').textContent = data.situacion.dias_promedio_vencimiento;
@@ -653,7 +653,7 @@ class CobranzasApp {
                     fetch(`${this.apiBaseUrl}/cobranzas/pendientes/${clientId}`, {
                         headers: window.authService.getAuthHeaders()
                     }),
-                    fetch(`${this.apiBaseUrl}/dashboard/`, {
+                    fetch(`${this.apiBaseUrl}/dashboard/client/${clientId}`, {
                         headers: window.authService.getAuthHeaders()
                     })
                 ]);
@@ -1617,6 +1617,7 @@ class CobranzasApp {
     }
 
     createClienteDetailHTML(cliente, resumen) {
+        debugger; 
         return `
             <div class="space-y-6">
                 <!-- Header Card -->

@@ -104,8 +104,11 @@ def cliente_resumen_view(request, cliente_id):
             'total_por_vencer': float(resumen.total_por_vencer),
             'total_creditos': float(resumen.total_creditos),
             'total_neto': float(resumen.total_neto),
+            'total_sinvencimiento': float(resumen.total_neto),
             'cantidad_documentos': resumen.cantidad_documentos,
-            'dias_promedio_vencimiento': resumen.dias_promedio_vencimiento
+            'cantidad_documentos_vencidos': resumen.cantidad_documentos_vencidos, 
+            'dias_promedio_vencimiento': resumen.dias_promedio_vencimiento,
+            'dias_promedio_vencimiento_todos': resumen.dias_promedio_vencimiento_todos
         })
         
     except EntityNotFoundException as e:

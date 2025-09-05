@@ -32,8 +32,12 @@ class ResumenCliente:
     total_vencido: Money
     total_por_vencer: Money
     total_creditos: Money
+    total_sinvencimiento: Money
     cantidad_documentos: int
+    cantidad_documentos_vencidos: int
     dias_promedio_vencimiento: int
+    dias_promedio_vencimiento_todos: int 
+
     
     @property
     def total_neto(self) -> Money:

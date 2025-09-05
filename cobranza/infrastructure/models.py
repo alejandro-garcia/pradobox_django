@@ -64,6 +64,19 @@ class VentaMes(models.Model):
         verbose_name_plural = 'VentasMensuales'
         unique_together = ['co_ven', 'sales_date']
 
+class VentaMesCliente(models.Model):
+    id  = models.IntegerField(primary_key=True)
+    co_cli = models.CharField(db_column='co_cli', max_length=10, blank=True, null=True)
+    sales_date= models.CharField(db_column='mes', max_length=6, blank=False, null=False)
+    amount = models.DecimalField(db_column='monto_net', max_digits=12, decimal_places=2)
+
+    class Meta:
+        managed = False
+        db_table = 'vw_ventas_mensuales_cliente'
+        verbose_name = 'VentasMesCliente'
+        verbose_name_plural = 'VentasMensualesCliente'
+        unique_together = ['co_cli', 'sales_date']
+
 class EventoModel(models.Model):
     id  = models.CharField(max_length=50,primary_key=True)
     co_cli = models.CharField(db_column='co_cli', max_length=10, blank=True, null=True)

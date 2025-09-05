@@ -50,6 +50,10 @@ class DocumentoRepository(Repository[Documento, DocumentId]):
     def get_detalle_documento(self, documento_id: str) -> Optional[Documento]:
         pass
 
+    @abstractmethod
+    def get_ventas_trimestre_cliente(self, client_id: ClientId) -> List[Dict]:
+        pass
+
 
 class EventoRepository(Repository[Evento, EventId]):
     @abstractmethod

@@ -5,7 +5,7 @@ from django.db import models
 from django.db.models import Sum, Count, Q, Avg, ExpressionWrapper, F, FloatField, IntegerField, DecimalField , Max, Case, When, Value, BigIntegerField, Func
 from django.utils import timezone
 from django.db.models.functions import Now, Cast, Round
-from shared.domain.value_objects import DocumentId, ClientId, Money, SellerId, EventId
+from shared.domain.value_objects import DocumentId, ClientId, Money, SellerId, EventId, MoneySigned
 from ..domain.entities import Documento, TipoDocumento, EstadoDocumento, ResumenCobranzas, Evento, Balance, BalanceDocument, BalanceFooter
 from ..domain.repository import DocumentoRepository, EventoRepository
 from .models import DocumentoModel, VentaMes, EventoModel
@@ -427,7 +427,8 @@ class DjangoDocumentoRepository(DocumentoRepository):
             descripcion=model.descripcion,
             empresa=model.empresa,
             vendedor_id=SellerId(model.vendedor_id) if model.vendedor_id else None,
-            forma_pag=model.forma_pag
+            forma_pag=model.forma_pag,
+            saldo=MoneySigned(model.saldo) if model.saldo is not None else MoneySigned(0)
         )
     
     

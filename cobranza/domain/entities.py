@@ -41,6 +41,7 @@ class Documento:
     vendedor_id: Optional[str] = None
     empresa: Optional[int] = None
     forma_pag: Optional[str] = None
+    saldo: Optional[MoneySigned] = None
     
     @property
     def dias_vencimiento(self) -> int:

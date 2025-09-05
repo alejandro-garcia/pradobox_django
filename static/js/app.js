@@ -688,7 +688,7 @@ class CobranzasApp {
         document.getElementById('resumenCantidadVencido').textContent = data.resumen.cantidad_documentos_vencidos;
         document.getElementById('resumenDiasVencido').textContent = data.resumen.dias_promedio_vencimiento;
         
-        const totalGeneral = data.resumen.total_vencido + data.resumen.total_por_vencer;
+        const totalGeneral = data.resumen.total_vencido + data.resumen.total_por_vencer - data.resumen.total_sinvencimiento;
         
         document.getElementById('resumenTotal').textContent = this.formatCurrency(totalGeneral);
         document.getElementById('resumenCantidadTotal').textContent = data.resumen.cantidad_documentos_total;
@@ -764,7 +764,7 @@ class CobranzasApp {
                         <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${diasVencido}</span>
                         <div class="text-right">
                             <span class="text-xs text-gray-500">falta</span>
-                            <span class="text-red-500 font-medium">${this.formatCurrency(doc.monto)}</span>
+                            <span class="text-red-500 font-medium">${this.formatCurrency(doc.saldo)}</span>
                         </div>
                     </div>
                 </div>
@@ -828,7 +828,7 @@ class CobranzasApp {
                         <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${diasVencido}d</span>
                         <div class="text-right">
                             <span class="text-xs text-gray-500">falta</span>
-                            <span class="text-red-500 font-medium">${this.formatCurrency(doc.monto)}</span>
+                            <span class="text-red-500 font-medium">${this.formatCurrency(doc.saldo)}</span>
                         </div>
                     </div>
                 </div>
@@ -1542,7 +1542,7 @@ class CobranzasApp {
                         <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${diasVencido}</span>
                         <div class="text-right">
                             <span class="text-xs text-gray-500">falta</span>
-                            <span class="text-red-500 font-medium">${this.formatCurrency(doc.monto)}</span>
+                            <span class="text-red-500 font-medium">${this.formatCurrency(doc.saldo)}</span>
                         </div>
                     </div>
                 </div>
@@ -1608,7 +1608,7 @@ class CobranzasApp {
                         <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${Math.abs(diasVencido)}d</span>
                         <div class="text-right">
                             <span class="text-xs text-gray-500">falta</span>
-                            <span class="text-red-500 font-medium">${this.formatCurrency(doc.monto)}</span>
+                            <span class="text-red-500 font-medium">${this.formatCurrency(doc.saldo)}</span>
                         </div>
                     </div>
                 </div>

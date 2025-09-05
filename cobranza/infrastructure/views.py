@@ -155,7 +155,8 @@ def documentos_pendientes_view(request, seller_id):
         'esta_vencido': doc.esta_vencido,
         'descripcion': doc.descripcion,
         'vendedor_id': doc.vendedor_id,
-        'empresa': doc.empresa
+        'empresa': doc.empresa,
+        'saldo': float(doc.saldo)
     } for doc in documentos])
 
 @api_view(['GET'])

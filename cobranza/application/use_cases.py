@@ -150,7 +150,8 @@ class VerDocumentosPendientesUseCase(UseCase[str, List[DocumentoResponse]]):
             descripcion=documento.descripcion,
             cliente_nombre=getattr(documento, 'cliente_nombre', ''),
             vendedor_id=documento.vendedor_id.value,
-            empresa=documento.empresa
+            empresa=documento.empresa, 
+            saldo=documento.saldo.amount
         )
 
 

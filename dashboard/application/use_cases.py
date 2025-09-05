@@ -100,10 +100,16 @@ class ObtenerDashboardClientUseCase(UseCase[ClientId, DashboardResponse]):
         # ]
         
         # El último es el mes actual
-        venta_mes_actual = ventas_por_mes_dict[-1]["amount"]
+        if len(ventas_por_mes_dict) >= 1:
+            venta_mes_actual = ventas_por_mes_dict[-1]["amount"]
+        else:
+            venta_mes_actual = Decimal(0)
 
         # El penúltimo es el mes anterior
-        venta_mes_anterior = ventas_por_mes_dict[-2]["amount"]
+        if len(ventas_por_mes_dict) >= 2:
+            venta_mes_anterior = ventas_por_mes_dict[-2]["amount"]
+        else:
+            venta_mes_anterior = Decimal(0)
 
 
         if venta_mes_anterior and venta_mes_anterior != 0:

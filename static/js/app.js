@@ -1642,7 +1642,7 @@ class CobranzasApp {
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Cantidad</p>
-                            <p class="text-xl font-semibold text-red-500">${resumen.cantidad_documentos}</p>
+                            <p class="text-xl font-semibold text-red-500">${resumen.cantidad_documentos_vencidos}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Días</p>
@@ -1660,7 +1660,7 @@ class CobranzasApp {
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Días</p>
-                            <p class="text-xl font-semibold text-gray-700">${resumen.dias_promedio_vencimiento}</p>
+                            <p class="text-xl font-semibold text-gray-700">${resumen.dias_promedio_vencimiento_todos}</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4">

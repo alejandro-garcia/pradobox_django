@@ -71,7 +71,8 @@ class DjangoClienteRepository(ClienteRepository):
                     vencido = row[11] if row[11] > 0 else 0
                     por_vencer = row[2] if row[2] > 0 else 0
                     creditos = row[6] if row[6] >= 0 else row[6] * -1
-                    cantidad = row[3]
+                    cantidad_vencidos = row[4]
+                    cantidad_documentos = row[3] + row[4]
                     dias_promedio = row[14]
                 else:
                     # Datos de ejemplo si no hay documentos
@@ -86,8 +87,8 @@ class DjangoClienteRepository(ClienteRepository):
                 total_por_vencer=Money(Decimal(str(por_vencer))),
                 total_creditos=Money(Decimal(str(creditos))),
                 total_sinvencimiento= 0, #FALTA EN EL SP
-                cantidad_documentos=int(cantidad),
-                cantidad_documentos_vencidos=0, # FALTA EN EL SP
+                cantidad_documentos=int(cantidad_documentos),
+                cantidad_documentos_vencidos=int(cantidad_vencidos), # FALTA EN EL SP
                 dias_promedio_vencimiento=int(dias_promedio),
                 dias_promedio_vencimiento_todos=0 # FALTA EN EL SP
             )

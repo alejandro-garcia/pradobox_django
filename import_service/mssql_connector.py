@@ -6,7 +6,7 @@ from django.conf import settings
 class MSSQLConnector:
     def __init__(self):
         from decouple import config
-        print(config('DATABASE_HOST', default=''))
+        #print(config('DATABASE_HOST', default=''))
     
     
         self.server = config('DATABASE_HOST', default='')

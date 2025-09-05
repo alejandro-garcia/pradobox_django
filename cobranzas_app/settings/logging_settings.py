@@ -37,12 +37,9 @@ LOGGING = {
             'filters': ['context'],
         },
         'file': {
-            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'class': 'shared.infrastructure.daily_file_handler.DailyFileHandler',
             'formatter': 'file',
             'filename': str(LOG_FILE),
-            'when': 'midnight',
-            'interval': 1,
-            'backupCount': LOG_BACKUP_COUNT,
             'encoding': 'utf-8',
             'filters': ['context'],
         },

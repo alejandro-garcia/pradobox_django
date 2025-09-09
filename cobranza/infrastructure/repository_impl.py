@@ -82,7 +82,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
         vencidos = DocumentoModel.objects.filter(
             fecha_vencimiento__lte=today,
             anulado=False
-        ).exclude(tipo='N/CR')
+        ).exclude(saldo=0).exclude(tipo='N/CR')
 
         if seller_id.value != "-1":
             vencidos  = vencidos.filter(vendedor_id=seller_id.value) 
@@ -99,7 +99,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
         
         por_vencer = DocumentoModel.objects.filter(
             fecha_vencimiento__gt=today,
-            anulado=False).exclude(tipo='N/CR')  # saldo__gt=0,
+            anulado=False).exclude(saldo=0).exclude(tipo='N/CR')  # saldo__gt=0,
         
         if seller_id.value != "-1":
             por_vencer  = por_vencer.filter(vendedor_id=seller_id.value) 
@@ -130,7 +130,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
         sin_vencimiento = DocumentoModel.objects.filter(
             anulado=False,
             tipo='N/CR'
-        )
+        ).exclude(saldo=0)
 
         if seller_id.value != "-1":
             sin_vencimiento  = sin_vencimiento.filter(vendedor_id=seller_id.value)

@@ -6,41 +6,6 @@ from ..domain.entities import Cliente
 from ..domain.repository import ClienteRepository
 from .dtos import CrearClienteRequest, ClienteResponse, ResumenClienteResponse
 
-
-class CrearClienteUseCase(UseCase[CrearClienteRequest, ClienteResponse]):
-    
-    def __init__(self, cliente_repository: ClienteRepository):
-        self.cliente_repository = cliente_repository
-    
-    def execute(self, request: CrearClienteRequest) -> ClienteResponse:
-        # Verificar que no existe un cliente con el mismo RIF
-        existing_cliente = self.cliente_repository.find_by_rif(request.rif)
-        if existing_cliente:
-            raise ValueError(f"Ya existe un cliente con RIF {request.rif}")
-        
-        # Crear nuevo cliente
-        cliente_id = ClientId(f"CLI_{request.rif}")
-        cliente = Cliente(
-            id=cliente_id,
-            nombre=request.nombre,
-            rif=request.rif,
-            telefono=request.telefono,
-            email=request.email,
-            direccion=request.direccion
-        )
-        
-        saved_cliente = self.cliente_repository.save(cliente)
-        
-        return ClienteResponse(
-            id=saved_cliente.id.value,
-            nombre=saved_cliente.nombre,
-            rif=saved_cliente.rif,
-            telefono=saved_cliente.telefono,
-            email=saved_cliente.email,
-            direccion=saved_cliente.direccion
-        )
-
-
 class ObtenerClienteUseCase(UseCase[str, ClienteResponse]):
     
     def __init__(self, cliente_repository: ClienteRepository):

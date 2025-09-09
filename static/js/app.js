@@ -117,6 +117,13 @@ class CobranzasApp {
             }
         });
 
+        // Clear data button
+        document.getElementById('clearCacheBtn').addEventListener('click', async () => {
+            if (confirm('¿Está seguro de que desea eliminar los datos en cache?')) {
+                await this.clearAllCaches();
+            }
+        });
+
         // Import progress listener
         window.addEventListener('importProgress', (event) => {
             this.updateImportProgress(event.detail);
@@ -982,6 +989,33 @@ class CobranzasApp {
         } catch (error) {
             this.showError('Error eliminando datos locales: ' + error.message);
         }
+    }
+
+    async clearAllCaches() {
+        // Eliminar caches de service worker
+        debugger; 
+
+        const cacheNames = await caches.keys();
+        await Promise.all(
+            cacheNames.map(cacheName => caches.delete(cacheName))
+        );
+
+        // Eliminar localStorage
+        localStorage.clear();
+
+        // Eliminar sessionStorage
+        sessionStorage.clear();
+
+        // // Eliminar IndexedDB
+        // if (window.indexedDB) {
+        //     indexedDB.databases().then(dbs => {
+        //     dbs.forEach(db => {
+        //         indexedDB.deleteDatabase(db.name);
+        //     });
+        //     });
+        // }
+
+        alert("Todo el caché local ha sido eliminado.");
     }
 
     async viewDocumentoDetail(empresa, tipo, documentoId) {

@@ -1044,7 +1044,7 @@ class CobranzasApp {
                 }
             } else {
                 // Obtener desde API
-                let documentoKey = `${empresa}_${tipo}_${documentoId}`;
+                let documentoKey = `${empresa}_${tipo.replace('/','')}_${documentoId}`;
 
                 const response = await fetch(`${this.apiBaseUrl}/cobranzas/detalle/${documentoKey}/`, {
                     headers: window.authService.getAuthHeaders()
@@ -1638,6 +1638,8 @@ class CobranzasApp {
 
     createClienteDetailHTML(cliente, resumen) {
         debugger; 
+
+        // flex justify-between items-center mb-2
         return `
             <div class="space-y-6">
                 <!-- Header Card -->

@@ -180,7 +180,8 @@ def documentos_pendientes_cliente_view(request, client_id):
         'esta_vencido': doc.esta_vencido,
         'descripcion': doc.descripcion,
         'vendedor_id': doc.vendedor_id,
-        'empresa': doc.empresa
+        'empresa': doc.empresa,
+        'saldo': float(doc.saldo)
     } for doc in documentos])
 
 @api_view(['GET'])
@@ -239,7 +240,8 @@ def eventos_cliente_view(request, client_id):
         'monto': float(doc.monto),
         'saldo': float(doc.saldo) if doc.saldo else 0,
         'descripcion': doc.descripcion, 
-        'dias_vencimiento': doc.dias_vencimiento
+        'dias_vencimiento': doc.dias_vencimiento,
+        'empresa': doc.company_id
     } for doc in documentos])
 
 

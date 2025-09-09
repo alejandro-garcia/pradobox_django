@@ -69,7 +69,7 @@ class MoneySigned:
         # if self.amount is None:
         #     self.amount = Decimal('0.00')
 
-        if not self.amount:
+        if self.amount is None:
             raise ValueError("Amount is required")
     
     def __add__(self, other: 'Money') -> 'Money':

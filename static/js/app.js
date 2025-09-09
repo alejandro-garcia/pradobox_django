@@ -649,26 +649,15 @@ class CobranzasApp {
                 };
             } else {
                 // Load from API
-                const [documentosResponse, resumenResponse] = await Promise.all([
-                    fetch(`${this.apiBaseUrl}/cobranzas/pendientes/${clientId}`, {
-                        headers: window.authService.getAuthHeaders()
-                    }),
-                    fetch(`${this.apiBaseUrl}/dashboard/client/${clientId}`, {
-                        headers: window.authService.getAuthHeaders()
-                    })
-                ]);
-                
-                if (documentosResponse.status === 401 || resumenResponse.status === 401) {
-                    window.authService.logout();
-                    return;
-                }
+
+                const documentosResponse = await fetch(`${this.apiBaseUrl}/cobranzas/pendientes/${clientId}`, {
+                    headers: window.authService.getAuthHeaders()
+                });
                 
                 const documentos = await documentosResponse.json();
-                const dashboardData = await resumenResponse.json();
                 
                 data = {
-                    documentos: documentos,
-                    resumen: dashboardData.situacion
+                    documentos: documentos, 
                 };
             }
             
@@ -794,7 +783,7 @@ class CobranzasApp {
             const isOverdue = doc.esta_vencido;
             
             return `
-                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200" onclick="cobranzasApp.viewDocumentoDetail(${doc.empresa}, '${doc.tipo}', ${doc.numero})">
                     <!-- Fila 1: Tipo, Cliente, Tiempo -->
                     <div class="flex items-center justify-between mb-2">
                         <div class="flex items-center space-x-3">
@@ -1420,17 +1409,11 @@ class CobranzasApp {
 
     async showClienteDetail(clienteId) {
         try {
-
-            /*
-                fetch(`${this.apiBaseUrl}/cobranzas/pendientes/${clienteId}`, {
-                    headers: window.authService.getAuthHeaders()
-                })
-            */
             const [clienteResponse, resumenResponse, eventsResponse] = await Promise.all([
                 fetch(`${this.apiBaseUrl}/clientes/${clienteId}/`, {
                     headers: window.authService.getAuthHeaders()
-                }),
-                fetch(`${this.apiBaseUrl}/clientes/${clienteId}/resumen/`, {
+                }),                
+                fetch(`${this.apiBaseUrl}/dashboard/client/${clienteId}`, {
                     headers: window.authService.getAuthHeaders()
                 }),
                 fetch(`${this.apiBaseUrl}/cobranzas/eventos/${clienteId}`, {
@@ -1491,6 +1474,8 @@ class CobranzasApp {
             return;
         }
 
+        debugger;
+
         documentosList.innerHTML = docs.map(doc => {
             const tipoColor = this.getTipoColor(doc.tipo);
             const tipoAbrev = this.getTipoAbreviacion(doc.tipo);
@@ -1509,7 +1494,8 @@ class CobranzasApp {
             const isOverdue = doc.esta_vencido;
             
             return `
-                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200" 
+                onclick="cobranzasApp.viewDocumentoDetail(${doc.empresa}, '${doc.tipo}', ${doc.numero})">
                     <!-- Fila 1: Tipo, Cliente, Tiempo -->
                     <div class="flex items-center justify-between mb-2">
                         <div class="flex items-center space-x-3">
@@ -1638,39 +1624,39 @@ class CobranzasApp {
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Vencido</p>
-                            <p class="text-xl font-semibold text-red-500">${this.formatCurrency(resumen.total_vencido)}</p>
+                            <p class="text-xl font-semibold text-red-500">${this.formatCurrency(resumen.situacion.total_vencido)}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Cantidad</p>
-                            <p class="text-xl font-semibold text-red-500">${resumen.cantidad_documentos_vencidos}</p>
+                            <p class="text-xl font-semibold text-red-500">${resumen.situacion.cantidad_documentos_vencidos}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Días</p>
-                            <p class="text-xl font-semibold text-red-500">${resumen.dias_promedio_vencimiento}</p>
+                            <p class="text-xl font-semibold text-red-500">${resumen.situacion.dias_promedio_vencimiento}</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Total</p>
-                            <p class="text-xl font-semibold text-gray-700">${this.formatCurrency(resumen.total_vencido + resumen.total_por_vencer)}</p>
+                            <p class="text-xl font-semibold text-gray-700">${this.formatCurrency(resumen.situacion.total_vencido + resumen.situacion.total_por_vencer)}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Cantidad</p>
-                            <p class="text-xl font-semibold text-gray-700">${resumen.cantidad_documentos}</p>
+                            <p class="text-xl font-semibold text-gray-700">${resumen.situacion.cantidad_documentos_total}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Días</p>
-                            <p class="text-xl font-semibold text-gray-700">${resumen.dias_promedio_vencimiento_todos}</p>
+                            <p class="text-xl font-semibold text-gray-700">${resumen.situacion.dias_promedio_vencimiento_todos}</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Neto</p>
-                            <p class="text-xl font-semibold text-gray-700">${this.formatCurrency(resumen.total_neto)}</p>
+                            <p class="text-xl font-semibold text-gray-700">${this.formatCurrency(resumen.situacion.total_neto)}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Créditos</p>
-                            <p class="text-xl font-semibold text-red-500">${this.formatCurrency(Math.abs(resumen.total_creditos)*-1)}</p>
+                            <p class="text-xl font-semibold text-red-500">${this.formatCurrency(Math.abs(resumen.situacion.total_creditos)*-1)}</p>
                         </div>
                     </div>
                 </div>
@@ -1713,24 +1699,6 @@ class CobranzasApp {
             console.error('Canvas ventasChart no encontrado');
             return;
         }
-
-        // responsive: true,
-/*
-,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                console.log("ejecutando callback... valor:", value);
-                                return (value / 1000).toFixed(0) + 'k';
-                            }
-                        }
-                    }
-                }
-
-                data: data.map(item => (item.monto / 1000).toFixed(0) + 'k'),
-                    */
 
         this.charts.ventas = new Chart(ctx, {
             type: 'bar',

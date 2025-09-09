@@ -127,12 +127,14 @@ class ObtenerDashboardClientUseCase(UseCase[ClientId, DashboardResponse]):
             porcentaje_variacion_ventas=porcentaje_variacion_ventas
         )
         
+        total_neto = resumen.total_vencido + resumen.total_por_vencer - resumen.total_sinvencimiento
+
         situacion = SituacionGeneralResponse(
             total_vencido=resumen.total_vencido.amount,
             total_por_vencer=resumen.total_por_vencer.amount,
             total_creditos=resumen.total_creditos.amount,
             total_sinvencimiento=resumen.total_sinvencimiento.amount,
-            total_neto=resumen.total_neto.amount,
+            total_neto= total_neto.amount,  #resumen.total_neto.amount,
             cantidad_documentos_vencidos=resumen.cantidad_vencidos,
             cantidad_documentos_total=resumen.cantidad_total,
             dias_promedio_vencimiento=resumen.dias_promedio_vencimiento,

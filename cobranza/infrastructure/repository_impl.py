@@ -182,8 +182,9 @@ class DjangoDocumentoRepository(DocumentoRepository):
         # Totales por estado
         vencidos = DocumentoModel.objects.filter(
             fecha_vencimiento__lte=today,
-            anulado=False
-        ).exclude(tipo='N/CR')
+            anulado=False,
+            saldo__gt=0
+        ) #.exclude(saldo=0).exclude(tipo__in=['N/CR','ADEL'])
 
         if cliente_id.value != "-1":
             vencidos  = vencidos.filter(cliente_id=cliente_id.value) 
@@ -200,7 +201,8 @@ class DjangoDocumentoRepository(DocumentoRepository):
         
         por_vencer = DocumentoModel.objects.filter(
             fecha_vencimiento__gt=today,
-            anulado=False).exclude(tipo='N/CR')  # saldo__gt=0,
+            anulado=False,
+            saldo__gt=0) #.exclude(saldo=0).exclude(tipo__in=['N/CR','ADEL'])  # saldo__gt=0,
         
         if cliente_id.value != "-1":
             por_vencer  = por_vencer.filter(cliente_id=cliente_id.value) 
@@ -230,7 +232,8 @@ class DjangoDocumentoRepository(DocumentoRepository):
 
         sin_vencimiento = DocumentoModel.objects.filter(
             anulado=False,
-            tipo='N/CR'
+            saldo__lt=0,
+            tipo__in=['N/CR','ADEL']
         )
 
         if cliente_id.value != "-1":
@@ -240,7 +243,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
             total=Sum('saldo', default=0),
             cantidad=Count('id'),
             dias_vencidos=Sum(DateDiff(
-                            F("fecha_vencimiento"),
+                            (F("fecha_vencimiento") or F("fecha_emision")),
                             Func(function="GETDATE")   
                         ))
         )
@@ -249,7 +252,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
 
         dias_promedio = round(vencidos["dias_vencidos"] / vencidos["cantidad"]) if vencidos["cantidad"] > 0 else 0
 
-        dias_vencidos_total = (vencidos["dias_vencidos"] or 0) + (por_vencer["dias_vencidos"] or 0) + (sin_vencimiento["dias_vencidos"] or 0)
+        dias_vencidos_total = (vencidos["dias_vencidos"] or 0) + (por_vencer["dias_vencidos"] or 0) # + (sin_vencimiento["dias_vencidos"] or 0)
         cantidad_total = vencidos["cantidad"] + por_vencer["cantidad"] + (sin_vencimiento["cantidad"] or 0) 
         promedio_vcto_todos = round(dias_vencidos_total / cantidad_total) if cantidad_total > 0 else 0
 
@@ -301,10 +304,9 @@ class DjangoDocumentoRepository(DocumentoRepository):
     def find_documentos_pendientes_cliente(self, client_id: str) -> List[Documento]:
         """Obtiene todos los documentos pendientes (vencidos y por vencer) con información del cliente"""
         query = DocumentoModel.objects.select_related('cliente').filter(
-            saldo__gt=0,
             anulado=False,
             cliente_id=client_id
-        ).order_by('-fecha_emision')
+        ).exclude(saldo=0).order_by('-fecha_emision')
         
       
         documentos = []
@@ -345,6 +347,9 @@ class DjangoDocumentoRepository(DocumentoRepository):
         try:
             empresa, tipo, doc_id = documento_id.split('_')
 
+            if tipo[:1] == 'N': 
+                tipo = tipo[:1] + "/" + tipo[1:]
+            
             model = DocumentoModel.objects.select_related('cliente').get(empresa=empresa, tipo=tipo, numero=doc_id)
             documento = self._to_domain(model)
             

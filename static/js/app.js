@@ -1612,8 +1612,10 @@ class CobranzasApp {
                     <p class="text-sm opacity-90">Compañía</p>
                     <div class="grid grid-cols-1 gap-4 mt-4 text-sm">
                         <div>
-                            <p class="opacity-75">RIF</p>
-                            <p class="font-medium">${cliente.rif}</p>
+                            <p><span class="opacity-75">RIOORO:</span>
+                            <span class="font-medium">${cliente.rif}</span></p>
+                            <p><span class="opacity-75">DEMO:</span>
+                            <span class="font-medium">${cliente.rif2}</span></p>
                         </div>
                     </div>
                 </div>

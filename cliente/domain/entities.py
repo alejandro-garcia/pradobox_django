@@ -8,6 +8,7 @@ class Cliente:
     id: ClientId
     nombre: str
     rif: str
+    rif2: str 
     telefono: Optional[str] = None
     email: Optional[str] = None
     direccion: Optional[str] = None

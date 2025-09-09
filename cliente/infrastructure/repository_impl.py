@@ -32,7 +32,7 @@ class DjangoClienteRepository(ClienteRepository):
         cliente_models = ClienteModel.objects.all().order_by('dias_ult_fact', 'nombre')
         
         if seller_id and seller_id.value != "-1":
-            cliente_models = cliente_models.filter(co_ven=seller_id.value).order_by('dias_ult_fact', 'nombre')
+            cliente_models = cliente_models.filter(vendedor_id=seller_id.value).order_by('dias_ult_fact', 'nombre')
         
         return [self._to_domain(model) for model in cliente_models]
     
@@ -50,7 +50,7 @@ class DjangoClienteRepository(ClienteRepository):
             cliente_models = ClienteModel.objects.filter(nombre__icontains=nombre).order_by('dias_ult_fact','nombre')
         
         if seller_id and seller_id.value != "-1":
-            cliente_models = cliente_models.filter(co_ven=seller_id.value).order_by('dias_ult_fact', 'nombre')
+            cliente_models = cliente_models.filter(vendedor_id=seller_id.value).order_by('dias_ult_fact', 'nombre')
         
         return [self._to_domain(model) for model in cliente_models]
     
@@ -155,6 +155,7 @@ class DjangoClienteRepository(ClienteRepository):
             id=ClientId(model.id),
             nombre=model.nombre,
             rif=model.rif,
+            rif2=model.rif2,
             telefono=model.telefono,
             email=model.email,
             direccion=model.direccion,

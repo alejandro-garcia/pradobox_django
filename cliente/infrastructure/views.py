@@ -74,7 +74,8 @@ def cliente_detail_view(request, cliente_id):
         return Response({
             'id': cliente.id,
             'nombre': cliente.nombre,
-            'rif': cliente.rif,
+            'rif': cliente.rif or 'N/A',
+            'rif2': cliente.rif2 or 'N/A',
             'telefono': cliente.telefono,
             'email': cliente.email,
             'direccion': cliente.direccion,

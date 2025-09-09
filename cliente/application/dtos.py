@@ -17,6 +17,7 @@ class ClienteResponse:
     id: str
     nombre: str
     rif: str
+    rif2: Optional[str]
     telefono: Optional[str]
     email: Optional[str]
     direccion: Optional[str]

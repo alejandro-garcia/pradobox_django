@@ -12,6 +12,7 @@ class Cliente:
     telefono: Optional[str] = None
     email: Optional[str] = None
     direccion: Optional[str] = None
+    vendedor: Optional[str] = None
     dias_ult_fact: Optional[int] = None
     vencido: Optional[Decimal] = Decimal(0)
     total: Optional[Decimal] = Decimal(0)

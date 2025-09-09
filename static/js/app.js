@@ -1610,12 +1610,15 @@ class CobranzasApp {
                 <div class="bg-primary text-white rounded-lg p-6">
                     <h2 class="text-lg font-bold">${cliente.nombre}</h2>
                     <p class="text-sm opacity-90">Compañía</p>
-                    <div class="grid grid-cols-1 gap-4 mt-4 text-sm">
+                    <div class="grid grid-cols-2 gap-4 mt-4 text-sm">
                         <div>
                             <p><span class="opacity-75">RIOORO:</span>
                             <span class="font-medium">${cliente.rif}</span></p>
                             <p><span class="opacity-75">DEMO:</span>
                             <span class="font-medium">${cliente.rif2}</span></p>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-medium">${cliente.vendedor ? cliente.vendedor: "N/A"}</span>
                         </div>
                     </div>
                 </div>

@@ -159,6 +159,7 @@ class DjangoClienteRepository(ClienteRepository):
             telefono=model.telefono,
             email=model.email,
             direccion=model.direccion,
+            vendedor=model.vendedor.nombre if model.vendedor else None,
             dias_ult_fact=model.dias_ult_fact,
             vencido=model.vencido,
             total=model.total,

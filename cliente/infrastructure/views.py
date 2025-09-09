@@ -79,6 +79,7 @@ def cliente_detail_view(request, cliente_id):
             'telefono': cliente.telefono,
             'email': cliente.email,
             'direccion': cliente.direccion,
+            'vendedor': cliente.vendedor,
             'dias_ult_fact': cliente.dias_ult_fact,
             'vencido': float(cliente.vencido) if cliente.vencido else 0,
             'total': float(cliente.total) if cliente.total else 0,

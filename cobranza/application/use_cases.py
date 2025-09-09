@@ -3,7 +3,7 @@ from django.template.loader import render_to_string
 import pdfkit
 
 from shared.application.use_case import UseCase
-from shared.domain.value_objects import DocumentId, ClientId, Money, SellerId
+from shared.domain.value_objects import DocumentId, ClientId, MoneySigned, SellerId
 from shared.domain.exceptions import EntityNotFoundException
 from ..domain.entities import Documento, TipoDocumento, EstadoDocumento, Evento
 from ..domain.repository import DocumentoRepository, EventoRepository
@@ -29,7 +29,7 @@ class CrearDocumentoUseCase(UseCase[CrearDocumentoRequest, DocumentoResponse]):
             cliente_id=ClientId(request.cliente_id),
             numero=request.numero,
             tipo=TipoDocumento(request.tipo),
-            monto=Money(request.monto),
+            monto=MoneySigned(request.monto),
             fecha_emision=request.fecha_emision,
             fecha_vencimiento=request.fecha_vencimiento,
             estado=EstadoDocumento.PENDIENTE,
@@ -326,9 +326,9 @@ class CreateBalancePdfUseCase(UseCase[str, bytes]):
             numero=nro_doc,
             fecha_emision=fec_emis,
             fecha_vencimiento=fec_venc,
-            total_neto=Money(total_neto),
-            cobrado=Money(cobrado),
-            saldo=Money(saldo)
+            total_neto=MoneySigned(total_neto),
+            cobrado=MoneySigned(cobrado),
+            saldo=MoneySigned(saldo)
 
                             <td>{{ doc.tipo_doc }}</td>
                         <td>{{ doc.nro_doc }}</td>

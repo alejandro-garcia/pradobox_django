@@ -1,7 +1,7 @@
 from typing import List, Optional
 from decimal import Decimal
 from django.db import connection
-from shared.domain.value_objects import Money, SellerId
+from shared.domain.value_objects import SellerId
 from ..domain.entities import Vendedor
 from ..domain.repository import ClienteRepository
 from .models import VendedorModel

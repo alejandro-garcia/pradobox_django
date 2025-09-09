@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-from shared.domain.value_objects import ClientId, Money, Decimal
+from shared.domain.value_objects import ClientId, Decimal, MoneySigned
 
 
 @dataclass
@@ -29,10 +29,10 @@ class ResumenCliente:
     cliente_id: ClientId
     nombre: str
     rif: str
-    total_vencido: Money
-    total_por_vencer: Money
-    total_creditos: Money
-    total_sinvencimiento: Money
+    total_vencido: MoneySigned
+    total_por_vencer: MoneySigned
+    total_creditos: MoneySigned
+    total_sinvencimiento: MoneySigned
     cantidad_documentos: int
     cantidad_documentos_vencidos: int
     dias_promedio_vencimiento: int
@@ -40,5 +40,5 @@ class ResumenCliente:
 
     
     @property
-    def total_neto(self) -> Money:
+    def total_neto(self) -> MoneySigned:
         return self.total_vencido + self.total_por_vencer - self.total_creditos

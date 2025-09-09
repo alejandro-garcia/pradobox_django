@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-from shared.domain.value_objects import SellerId, Money, Decimal
+from shared.domain.value_objects import SellerId
 
 
 @dataclass

@@ -1,7 +1,7 @@
 from typing import List, Optional
 from decimal import Decimal
 from django.db import connection
-from shared.domain.value_objects import ClientId, Money, SellerId
+from shared.domain.value_objects import ClientId, MoneySigned, SellerId
 from ..domain.entities import Cliente, ResumenCliente
 from ..domain.repository import ClienteRepository
 from .models import ClienteModel
@@ -83,9 +83,9 @@ class DjangoClienteRepository(ClienteRepository):
                 cliente_id=cliente_id,
                 nombre=cliente_model.nombre,
                 rif=cliente_model.rif,
-                total_vencido=Money(Decimal(str(vencido))),
-                total_por_vencer=Money(Decimal(str(por_vencer))),
-                total_creditos=Money(Decimal(str(creditos))),
+                total_vencido=MoneySigned(Decimal(str(vencido))),
+                total_por_vencer=MoneySigned(Decimal(str(por_vencer))),
+                total_creditos=MoneySigned(Decimal(str(creditos))),
                 total_sinvencimiento= 0, #FALTA EN EL SP
                 cantidad_documentos=int(cantidad_documentos),
                 cantidad_documentos_vencidos=int(cantidad_vencidos), # FALTA EN EL SP
@@ -133,9 +133,9 @@ class DjangoClienteRepository(ClienteRepository):
                                 cliente_id=cliente_id,
                                 nombre=row[1],
                                 rif=row[0],
-                                total_vencido=Money(Decimal(str(vencido))),
-                                total_por_vencer=Money(Decimal(str(por_vencer))),
-                                total_creditos=Money(Decimal(str(creditos))),
+                                total_vencido=MoneySigned(Decimal(str(vencido))),
+                                total_por_vencer=MoneySigned(Decimal(str(por_vencer))),
+                                total_creditos=MoneySigned(Decimal(str(creditos))),
                                 total_sinvencimiento=0, #FALTA EN EL SP.
                                 cantidad_documentos=int(cantidad),
                                 cantidad_documentos_vencidos= 0, #FALTA

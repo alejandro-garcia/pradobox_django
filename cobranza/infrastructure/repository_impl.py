@@ -5,7 +5,7 @@ from django.db import models
 from django.db.models import Sum, Count, Q, Avg, ExpressionWrapper, F, FloatField, IntegerField, DecimalField , Max, Case, When, Value, BigIntegerField, Func
 from django.utils import timezone
 from django.db.models.functions import Now, Cast, Round
-from shared.domain.value_objects import DocumentId, ClientId, Money, SellerId, EventId, MoneySigned
+from shared.domain.value_objects import DocumentId, ClientId, SellerId, EventId, MoneySigned
 from ..domain.entities import Documento, TipoDocumento, EstadoDocumento, ResumenCobranzas, Evento, Balance, BalanceDocument, BalanceFooter
 from ..domain.repository import DocumentoRepository, EventoRepository
 from .models import DocumentoModel, VentaMes, VentaMesCliente, EventoModel
@@ -164,10 +164,10 @@ class DjangoDocumentoRepository(DocumentoRepository):
 
         
         return ResumenCobranzas(
-            total_vencido=Money(Decimal(str(vencidos['total']))),
-            total_por_vencer=Money(Decimal(str(por_vencer['total']))),
-            total_creditos=Money(Decimal(str(creditos['total']))),  # Los créditos son negativos
-            total_sinvencimiento=Money(Decimal(str(abs(sin_vencimiento['total'])))),
+            total_vencido=MoneySigned(Decimal(str(vencidos['total']))),
+            total_por_vencer=MoneySigned(Decimal(str(por_vencer['total']))),
+            total_creditos=MoneySigned(Decimal(str(creditos['total']))),  # Los créditos son negativos
+            total_sinvencimiento=MoneySigned(Decimal(str(abs(sin_vencimiento['total'])))),
             cantidad_vencidos=vencidos['cantidad'],
             cantidad_total=cantidad_total,
             dias_promedio_vencimiento=dias_promedio,
@@ -265,10 +265,10 @@ class DjangoDocumentoRepository(DocumentoRepository):
 
         
         return ResumenCobranzas(
-            total_vencido=Money(Decimal(str(vencidos['total']))),
-            total_por_vencer=Money(Decimal(str(por_vencer['total']))),
-            total_creditos=Money(Decimal(str(creditos['total']))),  # Los créditos son negativos
-            total_sinvencimiento=Money(Decimal(str(abs(sin_vencimiento['total'])))),
+            total_vencido=MoneySigned(Decimal(str(vencidos['total']))),
+            total_por_vencer=MoneySigned(Decimal(str(por_vencer['total']))),
+            total_creditos=MoneySigned(Decimal(str(creditos['total']))),  # Los créditos son negativos
+            total_sinvencimiento=MoneySigned(Decimal(str(abs(sin_vencimiento['total'])))),
             cantidad_vencidos=vencidos['cantidad'],
             cantidad_total=cantidad_total,
             dias_promedio_vencimiento=dias_promedio,
@@ -505,7 +505,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
             cliente_id=ClientId(model.cliente_id),
             numero=model.numero,
             tipo=TipoDocumento(model.tipo),
-            monto=Money(model.monto),
+            monto=MoneySigned(model.monto),
             fecha_emision=model.fecha_emision,
             fecha_vencimiento=model.fecha_vencimiento,
             estado=EstadoDocumento(model.estado),
@@ -546,7 +546,7 @@ class DjangoEventoRepository(EventoRepository):
             numero=model.doc_number,
             fecha_emision=model.fec_emis,
             fecha_vencimiento=model.fec_venc,
-            monto=Money(model.amount),
-            saldo=Money(model.amount_pending),
+            monto=MoneySigned(model.amount),
+            saldo=MoneySigned(model.amount_pending) if model.amount_pending else MoneySigned(0),
             descripcion=model.comment
         )

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date
 from enum import Enum
 from typing import Optional
-from shared.domain.value_objects import DocumentId, ClientId, Money, EventId, MoneySigned
+from shared.domain.value_objects import DocumentId, ClientId, EventId, MoneySigned
 
 
 class TipoDocumento(Enum):
@@ -33,7 +33,7 @@ class Documento:
     cliente_id: ClientId
     numero: str
     tipo: TipoDocumento
-    monto: Money
+    monto: MoneySigned
     fecha_emision: date
     fecha_vencimiento: date
     estado: EstadoDocumento
@@ -61,10 +61,10 @@ class Documento:
 
 @dataclass
 class ResumenCobranzas:
-    total_vencido: Money
-    total_por_vencer: Money
-    total_creditos: Money
-    total_sinvencimiento: Money
+    total_vencido: MoneySigned
+    total_por_vencer: MoneySigned
+    total_creditos: MoneySigned
+    total_sinvencimiento: MoneySigned
     cantidad_vencidos: int
     cantidad_total: int
     dias_promedio_vencimiento: int
@@ -73,7 +73,7 @@ class ResumenCobranzas:
     dias_faltantes: int
     
     @property
-    def total_neto(self) -> Money:
+    def total_neto(self) -> MoneySigned:
         result = self.total_vencido + self.total_por_vencer + self.total_creditos - self.total_sinvencimiento
         return result
     
@@ -86,8 +86,8 @@ class Evento:
     numero: str
     fecha_emision: date
     fecha_vencimiento: date
-    monto: Money
-    saldo: Money
+    monto: MoneySigned
+    saldo: MoneySigned
     descripcion: Optional[str] = None
     
     @property

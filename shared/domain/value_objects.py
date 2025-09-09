@@ -4,29 +4,6 @@ from decimal import Decimal
 
 
 @dataclass(frozen=True)
-class Money:
-    amount: Decimal
-    currency: str = "USD"
-    
-    def __post_init__(self):
-        # if self.amount is None:
-        #     self.amount = Decimal('0.00')
-
-        if self.amount and self.amount < 0:
-            raise ValueError("Money amount cannot be negative")
-    
-    def __add__(self, other: 'Money') -> 'Money':
-        if self.currency != other.currency:
-            raise ValueError("Cannot add different currencies")
-        return Money(self.amount + other.amount, self.currency)
-    
-    def __sub__(self, other: 'Money') -> 'Money':
-        if self.currency != other.currency:
-            raise ValueError("Cannot subtract different currencies")
-        return Money(self.amount - other.amount, self.currency)
-
-
-@dataclass(frozen=True)
 class DocumentId:
     value: str
     
@@ -72,12 +49,12 @@ class MoneySigned:
         if self.amount is None:
             raise ValueError("Amount is required")
     
-    def __add__(self, other: 'Money') -> 'Money':
+    def __add__(self, other: 'MoneySigned') -> 'MoneySigned':
         if self.currency != other.currency:
             raise ValueError("Cannot add different currencies")
-        return Money(self.amount + other.amount, self.currency)
+        return MoneySigned(self.amount + other.amount, self.currency)
     
-    def __sub__(self, other: 'Money') -> 'Money':
+    def __sub__(self, other: 'MoneySigned') -> 'MoneySigned':
         if self.currency != other.currency:
             raise ValueError("Cannot subtract different currencies")
-        return Money(self.amount - other.amount, self.currency)
+        return MoneySigned(self.amount - other.amount, self.currency)

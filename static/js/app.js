@@ -726,7 +726,7 @@ class CobranzasApp {
 
             return `
                 <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors" 
-                     onclick="cobranzasApp.viewDocumentoDetail(${doc.empresa}, '${doc.tipo}', ${doc.numero})">
+                    onclick="cobranzasApp.viewDocumentoDetail(${doc.empresa}, '${doc.tipo}', ${doc.numero})">
                     <!-- Fila 1: Tipo, Cliente, Tiempo -->
                     <div class="flex items-center justify-between mb-2">
                         <div class="flex items-center space-x-3">
@@ -742,24 +742,30 @@ class CobranzasApp {
                     </div>
                     
                     <!-- Fila 2: Fecha emisión, Días crédito, Monto -->
-                    <div class="flex justify-between items-center mb-2 text-sm">
-                        <div class="flex items-center space-x-1">
+                    <div class="grid grid-cols-5 items-center mb-2 text-sm"> 
+                        <div class="col-span-2 flex items-center space-x-1">
                             <span class="text-gray-600">E</span>
                             <span class="text-gray-900">${this.formatDate(doc.fecha_emision)}</span>
                         </div>
-                        <span class="text-gray-600">${diasCredito}</span>
-                        <span class="text-gray-900 font-medium">${this.formatCurrency(doc.monto)}</span>
+                        <div class="text-right">
+                            <span class="text-gray-600 pr-10">${diasCredito}</span>
+                        </div>
+                        <div class="col-span-2 text-right">
+                            <span class="text-gray-900 font-medium">${this.formatCurrency(doc.monto)}</span>
+                        </div>
                     </div>
                     
                     <!-- Fila 3: Fecha vencimiento, Días vencido, Saldo -->
-                    <div class="flex justify-between items-center text-sm">
-                        <div class="flex items-center space-x-1">
+                    <div class="grid grid-cols-5 items-center mb-2 text-sm">
+                        <div class="col-span-2 flex items-center space-x-1">
                             <span class="text-gray-600">V</span>
                             <span class="text-gray-900">${this.formatDate(doc.fecha_vencimiento)}</span>
                         </div>
-                        <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${diasVencido}</span>
-                        <div class="text-right">
-                            <span class="text-xs text-gray-500">falta</span>
+                        <div class="text-right pr-10">
+                            <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${diasVencido}</span>
+                        </div>
+                        <div class="col-span-2 text-right">
+                            <span class="text-xs text-red-500">falta</span>
                             <span class="text-red-500 font-medium">${this.formatCurrency(doc.saldo)}</span>
                         </div>
                     </div>
@@ -798,32 +804,37 @@ class CobranzasApp {
                                 <span class="text-white text-xs font-bold">${tipoAbrev}</span>
                             </div>
                             <div>
-                                <p class="font-medium text-gray-900 text-sm">${doc.cliente_nombre}</p>
-                                <p class="text-xs text-gray-500">${doc.numero}</p>
+                                <p class="font-medium text-gray-900 text-sm">${doc.numero}</p>
                             </div>
                         </div>
                         <span class="text-xs text-gray-500">${timeAgo}</span>
                     </div>
                     
                     <!-- Fila 2: Fecha emisión, Días crédito, Monto -->
-                    <div class="flex justify-between items-center mb-2 text-sm">
-                        <div class="flex items-center space-x-1">
+                    <div class="grid grid-cols-5 items-center mb-2 text-sm">
+                        <div class="col-span-2 flex items-center space-x-1">
                             <span class="text-gray-600">E</span>
                             <span class="text-gray-900">${this.formatDate(doc.fecha_emision)}</span>
                         </div>
-                        <span class="text-gray-600">${diasCredito}d</span>
-                        <span class="text-gray-900 font-medium">${this.formatCurrency(doc.monto)}</span>
+                        <div class="text-right">
+                            <span class="text-gray-600 pr-10">${diasCredito}d</span>
+                        </div>
+                        <div class="col-span-2 text-right">
+                            <span class="text-gray-900 font-medium">${this.formatCurrency(doc.monto)}</span>
+                        </div>
                     </div>
                     
                     <!-- Fila 3: Fecha vencimiento, Días vencido, Saldo -->
-                    <div class="flex justify-between items-center text-sm">
-                        <div class="flex items-center space-x-1">
+                    <div class="grid grid-cols-5 items-center text-sm">
+                        <div class="col-span-2 flex items-center space-x-1">
                             <span class="text-gray-600">V</span>
                             <span class="text-gray-900">${this.formatDate(doc.fecha_vencimiento)}</span>
                         </div>
-                        <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${diasVencido}d</span>
                         <div class="text-right">
-                            <span class="text-xs text-gray-500">falta</span>
+                            <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'} pr-10">${diasVencido}d</span>
+                        </div>
+                        <div class="col-span-2 text-right">
+                            <span class="text-xs text-red-500">falta</span>
                             <span class="text-red-500 font-medium">${this.formatCurrency(doc.saldo)}</span>
                         </div>
                     </div>
@@ -1337,17 +1348,17 @@ class CobranzasApp {
             <div class="flex justify-between items-start">
                 <div class="flex-1">
                     <div class="grid grid-cols-1 gap-1">
-                        <h3 class="font-semibold text-gray-800 break-words" >${cliente.nombre}</h3>
+                        <h4 class="text-gray-800 break-words" >${cliente.nombre}</h4>
                     </div>
                 </div>
                 <div class="flex flex-col items-end space-y-1">
                     <div class="flex space-x-2">
-                        <span class="text-sm ${cliente.vencido ? 'text-red-500' : 'text-gray-500'}">${expiredAmountText}</span>
-                        <span class="text-sm text-gray-500">${cliente.dias_ult_fact  || 'N/A'}</span>
+                        <span class="text-sm ${cliente.vencido ? 'text-red-500' : 'text-gray-500'}">${expiredAmountText !== "0" ? expiredAmountText: " "}</span>
+                        <span class="text-sm text-gray-500">${cliente.dias_ult_fact ?  cliente.dias_ult_fact.toString() + "d" : 'N/A'}</span>
                     </div>
                     <div class="flex space-x-2">
+                        <span class="text-sm text-gray-500">&nbsp;</span>
                         <span class="text-sm text-orange-500">${totalAmountText}</span>
-                        <span class="text-sm text-gray-500">${lastQuarterSalesText}</span>
                     </div>
                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -1476,7 +1487,7 @@ class CobranzasApp {
             detailView.classList.remove('hidden');
             
             // Update header
-            document.getElementById('pageTitle').textContent = cliente.nombre;
+            document.getElementById('pageTitle').textContent = "Cliente";
 
             // add floating action button
             this.addFloatingActionButton(cliente);
@@ -1544,24 +1555,30 @@ class CobranzasApp {
                     </div>
                     
                     <!-- Fila 2: Fecha emisión, Días crédito, Monto -->
-                    <div class="flex justify-between items-center mb-2 text-sm">
-                        <div class="flex items-center space-x-1">
+                    <div class="grid grid-cols-5 items-center mb-2 text-sm">
+                        <div class="col-span-2 flex items-center space-x-1">
                             <span class="text-gray-600">E </span>
                             <span class="text-gray-900">${this.formatDate(doc.fecha_emision)}</span>
                         </div>
-                        <span class="text-gray-600">${diasCredito}</span>
-                        <span class="text-gray-900 font-medium">${this.formatCurrency(doc.monto)}</span>
+                        <div class="text-right">
+                            <span class="text-gray-600 pr-10">${diasCredito}</span>
+                        </div>
+                        <div class="col-span-2 text-right">
+                            <span class="text-gray-900 font-medium">${this.formatCurrency(doc.monto)}</span>
+                        </div>
                     </div>
                     
                     <!-- Fila 3: Fecha vencimiento, Días vencido, Saldo -->
-                    <div class="flex justify-between items-center text-sm">
-                        <div class="flex items-center space-x-1">
+                    <div class="grid grid-cols-5 items-center text-sm">
+                        <div class="col-span-2 flex items-center space-x-1">
                             <span class="text-gray-600">${(doc.fecha_vencimiento) ? "V ": ""} </span>
                             <span class="text-gray-900">${(doc.fecha_vencimiento) ? this.formatDate(doc.fecha_vencimiento): ""}</span>
                         </div>
-                        <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${diasVencido}</span>
                         <div class="text-right">
-                            <span class="text-xs text-gray-500">falta</span>
+                            <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'} pr-10">${diasVencido}</span>
+                        </div>
+                        <div class="col-span-2 text-right">
+                            <span class="text-xs text-red-500">falta</span>
                             <span class="text-red-500 font-medium">${this.formatCurrency(doc.saldo)}</span>
                         </div>
                     </div>
@@ -1602,8 +1619,7 @@ class CobranzasApp {
                                 <span class="text-white text-xs font-bold">${tipoAbrev}</span>
                             </div>
                             <div>
-                                <p class="font-medium text-gray-900 text-sm">${doc.cliente_nombre}</p>
-                                <p class="text-xs text-gray-500">${doc.numero}</p>
+                                <p class="font-medium text-gray-900 text-sm">${doc.numero}</p>
                             </div>
                         </div>
                         <span class="text-xs text-gray-500">${timeAgo}</span>
@@ -1639,6 +1655,13 @@ class CobranzasApp {
     createClienteDetailHTML(cliente, resumen) {
         debugger; 
 
+        let averageSales =  cliente.ventas_ultimo_trimestre ? Math.round(cliente.ventas_ultimo_trimestre/3,2) : 0; 
+        let averageSalesStr = averageSales.toString();
+        
+        if (averageSales > 1000)
+            averageSalesStr = (averageSales/1000).toString() + "K"
+
+
         // flex justify-between items-center mb-2
         return `
             <div class="space-y-6">
@@ -1659,6 +1682,24 @@ class CobranzasApp {
                     </div>
                 </div>
 
+                <!-- VENTAS -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">VENTAS</h3>
+                    <div class="grid grid-cols-3 gap-4 mb-4">
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500">Desde última factura</p>
+                            <p class="text-xl font-semibold text-gray-700">${cliente.dias_ult_fact ? cliente.dias_ult_fact.toString() + "d": "N/A"}</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500">Días entre facturas</p>
+                            <p class="text-xl font-semibold text-gray-700">${cliente.dias_promedio_emision ? cliente.dias_promedio_emision.toString() + "d": "N/A"}</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500">Factura promedio</p>
+                            <p class="text-xl font-semibold text-gray-700">${averageSalesStr}</p>
+                        </div>
+                    </div>
+                </div>
                 <!-- Cuentas por Cobrar -->
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">CUENTAS POR COBRAR</h3>
@@ -1679,7 +1720,7 @@ class CobranzasApp {
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Total</p>
-                            <p class="text-xl font-semibold text-gray-700">${this.formatCurrency(resumen.situacion.total_vencido + resumen.situacion.total_por_vencer)}</p>
+                            <p class="text-xl font-semibold text-gray-700">${this.formatCurrency(resumen.situacion.total_neto)}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Cantidad</p>
@@ -1693,7 +1734,7 @@ class CobranzasApp {
                     <div class="grid grid-cols-2 gap-4">
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Neto</p>
-                            <p class="text-xl font-semibold text-gray-700">${this.formatCurrency(resumen.situacion.total_neto)}</p>
+                            <p class="text-xl font-semibold text-gray-700">${this.formatCurrency(resumen.situacion.total_vencido + resumen.situacion.total_por_vencer)}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Créditos</p>
@@ -1710,6 +1751,18 @@ class CobranzasApp {
                         <p class="mt-2 text-gray-600">Cargando documentos...</p>
                     </div>
                     <div id="clientDocsPendingList">
+                        <!-- Documents will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Contactos -->
+                <div id="clientContacts" class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">CONTACTOS</h3>
+                    <div id="clientContactsPendingLoading" class="hidden text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <p class="mt-2 text-gray-600">Cargando contactos...</p>
+                    </div>
+                    <div id="contactsContainer">
                         <!-- Documents will be loaded here -->
                     </div>
                 </div>
@@ -1816,7 +1869,8 @@ class CobranzasApp {
     formatCurrency(amount) {
         return new Intl.NumberFormat('es-ES', {
             minimumFractionDigits: 2,
-            maximumFractionDigits: 2
+            maximumFractionDigits: 2,
+            useGrouping: true
         }).format(amount);
     }
 

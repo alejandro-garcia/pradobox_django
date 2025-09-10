@@ -16,6 +16,7 @@ class ClienteModel(models.Model):
     #co_ven = models.CharField(db_column='co_ven', max_length=6, blank=True, null=True)
     vendedor = models.ForeignKey('vendedor.VendedorModel', db_column='co_ven', on_delete=models.CASCADE, related_name='cliente_vendedor', blank=True, null=True)
     plaz_pag = models.IntegerField(db_column='plaz_pag', blank=True, null=True)
+    dias_promedio_emision = models.IntegerField(db_column='dias_promedio_emision', blank=True, null=True)
 
     #created_at = models.DateTimeField(db_column='fe_us_in', auto_now_add=True)
     #updated_at = models.DateTimeField(db_column='fe_us_mo', auto_now=True)

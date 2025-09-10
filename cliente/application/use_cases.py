@@ -26,6 +26,7 @@ class ObtenerClienteUseCase(UseCase[str, ClienteResponse]):
             direccion=cliente.direccion,
             vendedor=cliente.vendedor,
             dias_ult_fact=cliente.dias_ult_fact,
+            dias_promedio_emision=cliente.dias_promedio_emision,
             vencido=cliente.vencido,
             total=cliente.total,  
             ventas_ultimo_trimestre=cliente.ventas_ultimo_trimestre

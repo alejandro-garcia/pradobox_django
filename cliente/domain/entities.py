@@ -14,6 +14,7 @@ class Cliente:
     direccion: Optional[str] = None
     vendedor: Optional[str] = None
     dias_ult_fact: Optional[int] = None
+    dias_promedio_emision: Optional[int] = None
     vencido: Optional[Decimal] = Decimal(0)
     total: Optional[Decimal] = Decimal(0)
     ventas_ultimo_trimestre: Optional[Decimal] = Decimal(0)

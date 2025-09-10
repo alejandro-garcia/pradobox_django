@@ -161,6 +161,7 @@ class DjangoClienteRepository(ClienteRepository):
             direccion=model.direccion,
             vendedor=model.vendedor.nombre if model.vendedor else None,
             dias_ult_fact=model.dias_ult_fact,
+            dias_promedio_emision=model.dias_promedio_emision,
             vencido=model.vencido,
             total=model.total,
             ventas_ultimo_trimestre=model.ventas_ultimo_trimestre

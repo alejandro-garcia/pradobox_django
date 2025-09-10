@@ -81,6 +81,7 @@ def cliente_detail_view(request, cliente_id):
             'direccion': cliente.direccion,
             'vendedor': cliente.vendedor,
             'dias_ult_fact': cliente.dias_ult_fact,
+            'dias_promedio_emision': cliente.dias_promedio_emision,
             'vencido': float(cliente.vencido) if cliente.vencido else 0,
             'total': float(cliente.total) if cliente.total else 0,
             'ventas_ultimo_trimestre': float(cliente.ventas_ultimo_trimestre) if cliente.ventas_ultimo_trimestre else 0

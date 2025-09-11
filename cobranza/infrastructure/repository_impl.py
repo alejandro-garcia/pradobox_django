@@ -84,8 +84,18 @@ class DjangoDocumentoRepository(DocumentoRepository):
             anulado=False
         ).exclude(saldo=0).exclude(tipo='N/CR')
 
-        if seller_id.value != "-1":
-            vencidos  = vencidos.filter(vendedor_id=seller_id.value) 
+        seller_flag = True 
+        seller_codes = []
+
+        if "," in seller_id.value:
+            seller_codes = [c.strip() for c in seller_id.value.split(",")]
+        elif seller_id.value != "-1":
+            seller_codes.append(seller_id.value)
+        else:
+            seller_flag = False
+
+        if seller_flag:
+            vencidos  = vencidos.filter(vendedor_id__in=seller_codes) 
         
         
         vencidos = vencidos.aggregate(
@@ -101,8 +111,8 @@ class DjangoDocumentoRepository(DocumentoRepository):
             fecha_vencimiento__gt=today,
             anulado=False).exclude(saldo=0).exclude(tipo='N/CR')  # saldo__gt=0,
         
-        if seller_id.value != "-1":
-            por_vencer  = por_vencer.filter(vendedor_id=seller_id.value) 
+        if seller_flag:
+            por_vencer = por_vencer.filter(vendedor_id__in=seller_codes) 
         
         por_vencer = por_vencer.aggregate(
             total=Sum('saldo', default=0),
@@ -120,8 +130,8 @@ class DjangoDocumentoRepository(DocumentoRepository):
             anulado=False
         )
         
-        if seller_id.value != "-1":
-            creditos  = creditos.filter(vendedor_id=seller_id.value)
+        if seller_flag:
+            creditos  = creditos.filter(vendedor_id__in=seller_codes)
 
         creditos = creditos.aggregate(
             total=Sum('saldo', default=0)
@@ -132,8 +142,8 @@ class DjangoDocumentoRepository(DocumentoRepository):
             tipo='N/CR'
         ).exclude(saldo=0)
 
-        if seller_id.value != "-1":
-            sin_vencimiento  = sin_vencimiento.filter(vendedor_id=seller_id.value)
+        if seller_flag:
+            sin_vencimiento  = sin_vencimiento.filter(vendedor_id__in=seller_codes)
 
         sin_vencimiento = sin_vencimiento.aggregate(
             total=Sum('saldo', default=0),
@@ -288,7 +298,13 @@ class DjangoDocumentoRepository(DocumentoRepository):
         )
         
         if seller_id != '' and seller_id != "-1":
-            query = query.filter(vendedor_id=seller_id)
+            seller_codes = [] 
+            if "," in seller_id:
+                seller_codes = [c.strip() for c in seller_id.split(",")]
+            else:
+                seller_codes.append(seller_id)
+
+            query = query.filter(vendedor_id__in=seller_codes)
         
         query = query.order_by('fecha_vencimiento')
         
@@ -320,8 +336,14 @@ class DjangoDocumentoRepository(DocumentoRepository):
 
     def get_ventas_trimestre(self, seller_id: SellerId) -> List[Dict]:
         if seller_id.value != "-1":
+            seller_codes = [] 
+            if "," in seller_id.value:
+                seller_codes = [c.strip() for c in seller_id.value.split(",")]
+            else:
+                seller_codes.append(seller_id.value)
+
             qs = (
-                VentaMes.objects.filter(co_ven=seller_id.value)
+                VentaMes.objects.filter(co_ven__in=seller_codes)
                 .values("sales_date")
                 .annotate(amount=Sum("amount"))
                 .order_by("sales_date")

@@ -4,7 +4,7 @@ from django.db import models
 
 class UsuarioModel(AbstractUser):
     nombre_completo = models.CharField(max_length=200, blank=True)
-    codigo_vendedor_profit = models.CharField(max_length=6, blank=True)
+    codigo_vendedor_profit = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

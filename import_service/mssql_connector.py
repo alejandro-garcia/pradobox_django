@@ -102,6 +102,7 @@ class MSSQLConnector:
                 ltrim(rtrim(co_ven)) as co_ven,
                 fec_emis,
                 fec_venc,
+                monto_net,
                 saldo,
                 anulado
             FROM docum_cc 

@@ -72,7 +72,8 @@ class CobranzasApp {
 
         // Refresh button
         document.getElementById('refreshBtn').addEventListener('click', () => {
-            this.refreshDashboard();
+            //this.refreshDashboard();
+            this.navigateTo('sync');
         });
 
         // Logout button
@@ -133,6 +134,7 @@ class CobranzasApp {
         document.getElementById('offlineMode').addEventListener('change', (e) => {
             this.offlineMode = e.target.checked;
             localStorage.setItem('offlineMode', this.offlineMode);
+            this.dashboardLoaded = false;
             
             // If we're on dashboard, refresh to show appropriate data
             if (this.currentView === 'dashboard') {
@@ -218,7 +220,9 @@ class CobranzasApp {
             'tareas': 'Tareas',
             'eventos': 'Eventos',
             'mas': 'Más',
-            'docs-pdtes-cliente': 'Cobrables'
+            'docs-pdtes-cliente': 'Cobrables',
+            'cliente-detail': 'Detalle del Cliente',
+            'sync': 'Sincronizar'
         };
 
         document.getElementById('pageTitle').textContent = titles[view] || 'Cobranzas';
@@ -229,11 +233,6 @@ class CobranzasApp {
             backBtn.classList.add('hidden');
         } else {
             backBtn.classList.remove('hidden');
-        }
-
-        // Clean up charts when leaving dashboard
-        if (this.currentView === 'dashboard' && view !== 'dashboard') {
-            this.destroyCharts();
         }
 
         this.currentView = view;
@@ -255,6 +254,13 @@ class CobranzasApp {
             case 'docs-pdtes-cliente':
                 // Handled when opening from client detail
                 this.LoadClientPendingDocs(this.currentClientId);
+                break;
+            case 'cliente-detail':
+                // The content is injected before navigating; nothing to load here
+                break;
+            case 'sync':
+                // The content is injected before navigating; nothing to load here
+                this.updateStorageInfoSync();
                 break;
             case 'mas':
                 this.updateStorageInfo();
@@ -375,6 +381,7 @@ class CobranzasApp {
 
     async loadDashboard() {
         try {
+            debugger; 
             // Evitar múltiples cargas simultáneas y cargas innecesarias
             if (this.loadingDashboard || this.dashboardLoaded) {
                 return;
@@ -471,7 +478,7 @@ class CobranzasApp {
 
         } catch (error) {
             console.error('Error loading dashboard:', error);
-            this.showError('Error cargando el dashboard');
+            this.showError('Error cargando el dashboard...' + error.message);
         } finally {
             this.loadingDashboard = false;
         }
@@ -479,24 +486,25 @@ class CobranzasApp {
 
     async loadDashboardFromIndexedDB(seller_code) {
         const resumen = await window.indexedDBService.getResumenCobranzas(seller_code);
-        
+        const ventas = await window.indexedDBService.getVentasTrimestre(seller_code);
+
+        const situacion = {
+            total_vencido: resumen.total_vencido,
+            total_por_vencer: resumen.total_por_vencer,
+            total_creditos: resumen.total_creditos,
+            total_sinvencimiento: resumen.total_sinvencimiento,
+            total_neto: resumen.total_vencido + resumen.total_por_vencer - resumen.total_sinvencimiento,
+            cantidad_documentos_vencidos: resumen.cantidad_vencidos,
+            cantidad_documentos_total: resumen.cantidad_total,
+            dias_promedio_vencimiento: resumen.dias_promedio_vencimiento,
+            dias_promedio_vencimiento_todos: resumen.dias_promedio_vencimiento_todos,
+            dias_transcurridos: resumen.dias_transcurridos,
+            dias_faltantes: resumen.dias_faltantes
+        };
+
         return {
-            situacion: {
-                total_vencido: resumen.total_vencido,
-                total_por_vencer: resumen.total_por_vencer,
-                total_creditos: resumen.total_creditos,
-                total_neto: resumen.total_vencido + resumen.total_por_vencer - resumen.total_creditos,
-                cantidad_documentos_vencidos: resumen.cantidad_vencidos,
-                cantidad_documentos_por_vencer: resumen.cantidad_por_vencer,
-                dias_promedio_vencimiento: resumen.dias_promedio_vencimiento,
-                dias_transcurridos: new Date().getDate(),
-                dias_faltantes: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate()
-            },
-            ventas_por_mes: [
-                { mes: 'may', monto: 155000 },
-                { mes: 'jun', monto: 144000 },
-                { mes: 'jul', monto: 69400 }
-            ]
+            situacion,
+            ventas_por_mes: ventas
         };
     }
 
@@ -542,7 +550,7 @@ class CobranzasApp {
 
         } catch (error) {
             console.error('Error loading clientes:', error);
-            this.showError('Error cargando los clientes');
+            this.showError('Error cargando los clientes...' + error.message);
             this.displayClientes([]);
         } finally {
             this.showClientesLoading(false);
@@ -585,20 +593,55 @@ class CobranzasApp {
             
             if (this.offlineMode) {
 
-                const user = await this.indexedDBService.getCurrentUser();
-                const seller_code = user.codigo_vendedor_profit;                 
+                const user = await window.indexedDBService.getCurrentUser();
+                const seller_code = user.codigo_vendedor_profit;     
+                
+                const clientes = await window.indexedDBService.getClientes();
+
+                const clientesDict = clientes.reduce((acc, item) => {
+                        acc[item.co_cli] = item.cli_des.trim(); // trim() para limpiar espacios
+                        return acc;
+                }, {});
+
                 // Load from IndexedDB
                 const documentos = await window.indexedDBService.getDocumentos({ co_ven: seller_code });
                 const resumen = await window.indexedDBService.getResumenCobranzas(seller_code);
+
+                const resumenDto = {
+                    total_vencido: resumen.total_vencido,
+                    total_por_vencer: resumen.total_por_vencer,
+                    total_creditos: resumen.total_creditos,
+                    total_sinvencimiento: resumen.total_sinvencimiento,
+                    total_neto: resumen.total_vencido + resumen.total_por_vencer - resumen.total_sinvencimiento,
+                    cantidad_documentos_vencidos: resumen.cantidad_vencidos,
+                    cantidad_documentos_total: resumen.cantidad_total,
+                    dias_promedio_vencimiento: resumen.dias_promedio_vencimiento,
+                    dias_promedio_vencimiento_todos: resumen.dias_promedio_vencimiento_todos,
+                    dias_transcurridos: resumen.dias_transcurridos,
+                    dias_faltantes: resumen.dias_faltantes
+                };
                 
                 data = {
+                    // documentos: documentos.map(doc => ({
+                    //     ...doc,
+                    //     cliente_nombre: 'Cliente Local', // En IndexedDB necesitaríamos hacer join
+                    //     dias_vencimiento: this.calculateDaysOverdue(doc.fec_venc),
+                    //     esta_vencido: new Date(doc.fec_venc) < new Date()
+                    // })),
                     documentos: documentos.map(doc => ({
-                        ...doc,
-                        cliente_nombre: 'Cliente Local', // En IndexedDB necesitaríamos hacer join
+                        cliente_id: doc.co_cli, 
+                        vendedor_id: doc.co_ven, 
+                        fecha_emision: doc.fec_emis, 
+                        fecha_vencimiento: doc.fec_venc, 
+                        id: doc.nro_doc, 
+                        tipo: doc.tipo_doc, 
+                        monto: doc.monto_net,
+                        saldo: doc.saldo, 
+                        cliente_nombre: clientesDict[doc.co_cli] || 'Cliente: ' + doc.co_cli, 
                         dias_vencimiento: this.calculateDaysOverdue(doc.fec_venc),
                         esta_vencido: new Date(doc.fec_venc) < new Date()
                     })),
-                    resumen: resumen
+                    resumen: resumenDto
                 };
             } else {
                 const user = window.authService.getCurrentUser();
@@ -631,7 +674,7 @@ class CobranzasApp {
             
         } catch (error) {
             console.error('Error loading documentos pendientes:', error);
-            this.showError('Error cargando documentos pendientes');
+            this.showError('Error cargando documentos pendientes...' + error.message);
         } finally {
             this.showDocumentosPendientesLoading(false);
         }
@@ -674,7 +717,7 @@ class CobranzasApp {
             
         } catch (error) {
             console.error('Error loading documentos pendientes:', error);
-            this.showError('Error cargando documentos pendientes');
+            this.showError('Error cargando documentos pendientes...' + error.message);
         } finally {
             this.showClientDocsPendingLoading(false);
         }
@@ -892,7 +935,7 @@ class CobranzasApp {
 
         } catch (error) {
             console.error('Error searching clientes:', error);
-            this.showError('Error buscando clientes');
+            this.showError('Error buscando clientes...' + error.message);
             this.displayClientes([]);
         } finally {
             this.showClientesLoading(false);
@@ -959,8 +1002,7 @@ class CobranzasApp {
             const result = await window.importService.importFromMSSQL(user);
             
             this.showSuccess(`Importación completada: ${result.clientes_imported} clientes, ${result.documentos_imported} documentos`);
-            await this.updateStorageInfo();
-            
+            await this.updateStorageInfoSync();           
         } catch (error) {
             this.showError('Error durante la importación: ' + error.message);
         } finally {
@@ -988,6 +1030,24 @@ class CobranzasApp {
                 document.getElementById('lastSync').textContent = date.toLocaleString();
             } else {
                 document.getElementById('lastSync').textContent = 'Nunca';
+            }
+        } catch (error) {
+            console.error('Error updating storage info:', error);
+        }
+    }
+
+    async updateStorageInfoSync() {
+        try {
+            const info = await window.indexedDBService.getStorageInfo();
+            
+            document.getElementById('clientesCount2').textContent = info.clientes_count;
+            document.getElementById('documentosCount2').textContent = info.documentos_count;
+            
+            if (info.last_sync) {
+                const date = new Date(info.last_sync);
+                document.getElementById('lastSync2').textContent = date.toLocaleString();
+            } else {
+                document.getElementById('lastSync2').textContent = 'Nunca';
             }
         } catch (error) {
             console.error('Error updating storage info:', error);
@@ -1079,7 +1139,7 @@ class CobranzasApp {
             
         } catch (error) {
             console.error('Error loading documento detail:', error);
-            this.showError('Error cargando detalle del documento');
+            this.showError('Error cargando detalle del documento...' + error.message);
         } finally {
             this.showDocumentoDetailLoading(false);
         }
@@ -1301,6 +1361,67 @@ class CobranzasApp {
                         setLoading(false);
                     }
                 });
+            } else if (this.offlineMode) {
+                // OFFLINE: botón para imprimir/guardar HTML del detalle actual
+                const fab = document.createElement('button');
+                fab.id = 'fabSharePdf';
+                fab.type = 'button';
+                fab.title = 'Imprimir/Guardar Estado de Cuenta (Offline)';
+                fab.className = 'fixed bottom-20 right-6 w-14 h-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center focus:outline-none z-40';
+                fab.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 12l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>`;
+
+                container.appendChild(fab);
+
+                fab.addEventListener('click', async () => {
+                    try {
+                        const detail = document.getElementById('cliente-detail-view');
+                        if (!detail) {
+                            this.showError('No se encontró el contenido del cliente para imprimir');
+                            return;
+                        }
+
+                        const printableHtml = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Estado de Cuenta - ${cliente.nombre}</title>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji"; color:#111827; }
+    .container { max-width: 800px; margin: 0 auto; padding: 16px; }
+    .print-only { display: block; margin-bottom: 12px; font-size: 12px; color: #6B7280; }
+    .card { background: #fff; border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  </style>
+  <link rel="icon" href="/static/icons/PradoBox_ico_32x32.ico">
+  </head>
+<body>
+  <div class="container">
+    <div class="print-only">Generado offline • ${new Date().toLocaleString()}</div>
+    ${detail.innerHTML}
+  </div>
+  <script>window.onload = () => window.print();</script>
+ </body>
+</html>`;
+
+                        const printWindow = window.open('', '_blank');
+                        if (printWindow && printWindow.document) {
+                            printWindow.document.open();
+                            printWindow.document.write(printableHtml);
+                            printWindow.document.close();
+                        } else {
+                            // Fallback: descargar como HTML
+                            const blob = new Blob([printableHtml], { type: 'text/html;charset=utf-8' });
+                            this.legacyDownload(`EstadoCuenta_${(cliente.rif||cliente.id||'cliente')}.html`, blob);
+                            this.showSuccess('Archivo HTML descargado (offline)');
+                        }
+                    } catch (err) {
+                        console.error('Error generando vista imprimible offline:', err);
+                        this.showError('No se pudo generar la vista imprimible offline');
+                    }
+                });
             }
         } catch (e) {
             console.warn('No se pudo crear el botón flotante de compartir:', e);
@@ -1378,7 +1499,7 @@ class CobranzasApp {
             if (existingFab) existingFab.remove();
 
             const hasKeys = (cliente.rif !== undefined);
-
+            
             if (!this.offlineMode && hasKeys) {
                 const documentoKey = cliente.rif.trim();
                 const fab = document.createElement('button');
@@ -1454,6 +1575,68 @@ class CobranzasApp {
 
     async showClienteDetail(clienteId) {
         try {
+            if (this.offlineMode) {
+                // OFFLINE: obtener datos desde IndexedDB
+                const clientes = await window.indexedDBService.getClientes();
+                const c = clientes.find(x => String(x.co_cli).trim() === String(clienteId).trim());
+                if (!c) {
+                    this.showError('Cliente no encontrado en datos locales');
+                    return;
+                }
+
+                // Mapear al formato usado por la UI online
+                const cliente = {
+                    id: c.co_cli,
+                    nombre: c.cli_des,
+                    rif: c.rif || c.rif2 || '',
+                    telefono: c.telefonos,
+                    email: c.email,
+                    direccion: c.direccion || c.direc1 || '',
+                    dias_ult_fact: c.dias_ult_fact,
+                    ventas_ultimo_trimestre: c.ventas_ultimo_trimestre || 0
+                };
+
+                const r = await window.indexedDBService.getResumenCliente(clienteId);
+                const resumen = {
+                    situacion: {
+                        total_vencido: r.total_vencido,
+                        total_por_vencer: r.total_por_vencer,
+                        total_creditos: r.total_creditos,
+                        total_sinvencimiento: r.total_sinvencimiento,
+                        total_neto: r.total_vencido + r.total_por_vencer - r.total_sinvencimiento,
+                        cantidad_documentos_vencidos: r.cantidad_vencidos,
+                        cantidad_documentos_total: r.cantidad_total,
+                        dias_promedio_vencimiento: r.dias_promedio_vencimiento,
+                        dias_promedio_vencimiento_todos: r.dias_promedio_vencimiento_todos,
+                        dias_transcurridos: r.dias_transcurridos,
+                        dias_faltantes: r.dias_faltantes
+                    }
+                };
+
+                const eventos = await window.indexedDBService.getEventosCliente(clienteId);
+                const docsPendientes = await window.indexedDBService.getDocumentosPendientesCliente(clienteId);
+
+                const detailView = document.getElementById('cliente-detail-view');
+                if (detailView) {
+                    detailView.innerHTML = this.createClienteDetailHTML(cliente, resumen);
+                    this.createClientePendingDocsHTML(docsPendientes);
+                    this.createClienteEventsHTML(eventos);
+                }
+                this.navigateTo('cliente-detail');
+                document.getElementById('pageTitle').textContent = "Cliente";
+
+                // Botón flotante (solo si no offline y tiene RIF); en offline no generamos PDF
+                this.addFloatingActionButton(cliente);
+
+                document.getElementById('clientPendingDocs').onclick = () => {
+                    this.currentClientId = clienteId;
+                    this.LoadClientPendingDocs(clienteId);
+                };
+
+                return;
+            }
+
+            // ONLINE (sin cambios)
             const [clienteResponse, resumenResponse, eventsResponse] = await Promise.all([
                 fetch(`${this.apiBaseUrl}/clientes/${clienteId}/`, {
                     headers: window.authService.getAuthHeaders()
@@ -1471,22 +1654,20 @@ class CobranzasApp {
                 return;
             }
 
-            const cliente = await clienteResponse.json();
-            const resumen = await resumenResponse.json();
-            const eventos = await eventsResponse.json();
+            const [cliente, resumen, eventos] = await Promise.all([
+                clienteResponse.json(),
+                resumenResponse.json(),
+                eventsResponse.json()
+            ]);
 
+            // Render cliente detail
             const detailView = document.getElementById('cliente-detail-view');
-            detailView.innerHTML = this.createClienteDetailHTML(cliente, resumen);
-
-            if (eventos.length !== 0) {
-                 this.createClienteEventsHTML(eventos);
+            if (detailView) {
+                detailView.innerHTML = this.createClienteDetailHTML(cliente, resumen);
+                //this.createClientePendingDocsHTML([]);
+                this.createClienteEventsHTML(eventos);
             }
-            
-            // Hide clientes view and show detail view
-            document.getElementById('clientes-view').classList.add('hidden');
-            detailView.classList.remove('hidden');
-            
-            // Update header
+            this.navigateTo('cliente-detail');
             document.getElementById('pageTitle').textContent = "Cliente";
 
             // add floating action button
@@ -1496,12 +1677,11 @@ class CobranzasApp {
             document.getElementById('clientPendingDocs').onclick = () => {
                 this.currentClientId = clienteId;
                 this.LoadClientPendingDocs(clienteId);
-                //this.showView('docs-pdtes-cliente');
             };
 
         } catch (error) {
             console.error('Error loading cliente detail:', error);
-            this.showError('Error cargando los detalles del cliente');
+            this.showError('Error cargando los detalles del cliente...' + error.message);
         }
     }
 
@@ -1586,9 +1766,8 @@ class CobranzasApp {
     }
 
     createClientePendingDocsHTML(docs){
-    
-        const detailView = document.getElementById('cliente-detail-view');
-        const documentosList = detailView.querySelector('#documentosPendientes');
+
+        const documentosList = document.getElementById('clientDocsPendingList');
 
         if (docs.length === 0) {
             documentosList.innerHTML = `

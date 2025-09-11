@@ -85,6 +85,14 @@ class MSSQLConnector:
             raise Exception(f"Error ejecutando consulta: {str(e)}")
 
     def get_documentos_cc(self, seller_code) -> List[Dict[str, Any]]:
+        seller_codes = []
+        if "," in seller_code:
+            seller_codes = [c.strip() for c in seller_code.split(",")]
+        else:
+            seller_codes.append(seller_code)
+
+        placeholders = ", ".join([f"'{c}'" for c in seller_codes])
+
         """Obtiene documentos de cuentas por cobrar según criterios específicos"""
         query = f"""
             SELECT 
@@ -98,7 +106,7 @@ class MSSQLConnector:
                 anulado
             FROM docum_cc 
             WHERE saldo <> 0 AND anulado = 0
-            and ltrim(rtrim(co_ven)) = '{seller_code}'
+            and ltrim(rtrim(co_ven)) in ({placeholders})
             ORDER BY fec_venc DESC
         """
         return self.execute_query(query)

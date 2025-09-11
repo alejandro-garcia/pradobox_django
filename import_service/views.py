@@ -56,10 +56,18 @@ def import_clientes_view(request):
                 co_cli,
                 cli_des,
                 rif,
+                rif2,
                 telefonos,
                 email,
-                direc1,
-                inactivo
+                direccion,
+                inactivo,
+                dias_ult_fact, 
+                dias_promedio_emision,
+                neto, 
+                creditos,
+                total,
+                ventas_ultimo_trimestre,
+                plaz_pag
             FROM clientes 
             ORDER BY cli_des
         """

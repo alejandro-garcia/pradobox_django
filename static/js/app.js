@@ -517,7 +517,11 @@ class CobranzasApp {
                     rif: cliente.rif,
                     telefono: cliente.telefonos,
                     email: cliente.email,
-                    direccion: cliente.direccion
+                    direccion: cliente.direccion,
+                    dias_ult_fact: cliente.dias_ult_fact,
+                    vencido: cliente.vencido,
+                    total: cliente.total, 
+                    ventas_ultimo_trimestre: cliente.ventas_ultimo_trimestre
                 }));
             } else {
                 const user = window.authService.getCurrentUser();
@@ -1322,7 +1326,7 @@ class CobranzasApp {
 
     parseAmountToMilesK(amount) {
         let addSuffix = false;
-        let result = amount;
+        let result =  (typeof(amount) !== 'string') ? amount: Number(amount);
         
         if (amount >= 1000) {
             addSuffix = true;

@@ -88,28 +88,6 @@ def documentos_view(request):
         except (ValueError, KeyError) as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
-# @api_view(['GET'])
-# def resumen_cobranzas_view(request):
-#     repository = get_documento_repository()
-
-#     seller_id = SellerId(request.user.codigo_vendedor_profit)
-    
-#     use_case = ObtenerResumenCobranzasUseCase(repository)
-#     resumen = use_case.execute(seller_id)
-    
-#     return Response({
-#         'total_vencido': float(resumen.total_vencido),
-#         'total_por_vencer': float(resumen.total_por_vencer),
-#         'total_creditos': float(resumen.total_creditos),
-#         'total_sinvencimiento': float(resumen.total_sinvencimiento),
-#         'total_neto': float(resumen.total_neto),
-#         'cantidad_vencidos': resumen.cantidad_vencidos,
-#         'cantidad_total': resumen.cantidad_total,
-#         'dias_promedio_vencimiento': resumen.dias_promedio_vencimiento
-#     })
-
-
 @api_view(['GET'])
 def documentos_vencidos_view(request):
     repository = get_documento_repository()

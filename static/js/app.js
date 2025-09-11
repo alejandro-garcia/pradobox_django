@@ -251,7 +251,6 @@ class CobranzasApp {
                 break;
             case 'documento-detalle':
                 // No load here, will be loaded when navigating with document ID
-                debugger;
                 break;
             case 'docs-pdtes-cliente':
                 // Handled when opening from client detail
@@ -386,8 +385,6 @@ class CobranzasApp {
             
             if (this.offlineMode) {
                 // Load from IndexedDB
-                debugger;
-                // TODO: get current user from IndexedDB
                 const user = await window.indexedDBService.getCurrentUser();
                 const seller_code = user.codigo_vendedor_profit; 
 
@@ -452,9 +449,10 @@ class CobranzasApp {
 
             document.getElementById('currentDay').textContent = data.situacion.dias_transcurridos.toString() + 'd';
             document.getElementById('remainingDays').textContent = data.situacion.dias_faltantes.toString() + 'd';
+            
             let percentageDays = data.situacion.dias_transcurridos * 100 / (data.situacion.dias_faltantes + data.situacion.dias_transcurridos);
+           
             document.getElementById('daysPercentage').style= `width:${percentageDays}%`;
-            debugger;
             document.getElementById('totalVencido').textContent = this.formatCurrency(data.situacion.total_vencido);
             document.getElementById('cantidadVencido').textContent = data.situacion.cantidad_documentos_vencidos;
             document.getElementById('diasVencido').textContent = data.situacion.dias_promedio_vencimiento;
@@ -1008,8 +1006,6 @@ class CobranzasApp {
 
     async clearAllCaches() {
         // Eliminar caches de service worker
-        debugger; 
-
         const cacheNames = await caches.keys();
         await Promise.all(
             cacheNames.map(cacheName => caches.delete(cacheName))
@@ -1523,8 +1519,6 @@ class CobranzasApp {
             return;
         }
 
-        debugger;
-
         documentosList.innerHTML = docs.map(doc => {
             const tipoColor = this.getTipoColor(doc.tipo);
             const tipoAbrev = this.getTipoAbreviacion(doc.tipo);
@@ -1657,8 +1651,6 @@ class CobranzasApp {
     }
 
     createClienteDetailHTML(cliente, resumen) {
-        debugger; 
-
         let averageSales =  cliente.ventas_ultimo_trimestre ? Math.round(cliente.ventas_ultimo_trimestre/3,2) : 0; 
         let averageSalesStr = averageSales.toString();
         

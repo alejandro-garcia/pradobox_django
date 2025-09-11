@@ -118,7 +118,7 @@ REST_FRAMEWORK = {
 # CORS
 CORS_ALLOW_ALL_ORIGINS = True
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8001', 'http://127.0.0.1:8001']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8001', 'http://127.0.0.1:8001', 'https://pradobox.alimentoslprado.com:9000']
 
 # Custom User Model
 AUTH_USER_MODEL = 'authentication.UsuarioModel'

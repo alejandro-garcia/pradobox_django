@@ -25,6 +25,12 @@ class IndexedDBService {
                     clientesStore.createIndex('rif', 'rif', { unique: false });
                 }
 
+                // Store para vendedroes
+                if (!db.objectStoreNames.contains('vendedores')) {
+                    const sellersStore = db.createObjectStore('vendedores', { keyPath: 'co_ven' });
+                    sellersStore.createIndex('nombre', 'ven_des', { unique: false });
+                }
+
                 // Store para documentos
                 if (!db.objectStoreNames.contains('documentos')) {
                     const documentosStore = db.createObjectStore('documentos', { keyPath: 'id' });
@@ -32,6 +38,18 @@ class IndexedDBService {
                     documentosStore.createIndex('tipo_doc', 'tipo_doc', { unique: false });
                     documentosStore.createIndex('fec_venc', 'fec_venc', { unique: false });
                     documentosStore.createIndex('saldo', 'saldo', { unique: false });
+                }
+
+                // Store para renglones
+                if (!db.objectStoreNames.contains('renglones')) {
+                    const renglonesStore = db.createObjectStore('renglones', { keyPath: 'id' });
+                    renglonesStore.createIndex('doc_id', 'doc_id', { unique: false });
+                }
+
+                // Store para ventas mensuales
+                if (!db.objectStoreNames.contains('ventas_mensuales')) {
+                    const ventasMensualesStore = db.createObjectStore('ventas_mensuales', { keyPath: 'id' });
+                    ventasMensualesStore.createIndex('mes', 'mes', { unique: false });
                 }
 
                 // Store para metadatos de sincronización
@@ -42,7 +60,7 @@ class IndexedDBService {
         });
     }
 
-    async saveClientes(clientes) {
+    async saveClients(clientes) {
         const transaction = this.db.transaction(['clientes'], 'readwrite');
         const store = transaction.objectStore('clientes');
 
@@ -53,7 +71,29 @@ class IndexedDBService {
         return transaction.complete;
     }
 
-    async saveDocumentos(documentos) {
+    async saveSellers(sellers) {
+        const transaction = this.db.transaction(['vendedores'], 'readwrite');
+        const store = transaction.objectStore('vendedores');
+
+        for (const seller of sellers) {
+            await store.put(seller);
+        }
+
+        return transaction.complete;
+    }
+
+    async saveMonthSales(month_sales) {
+        const transaction = this.db.transaction(['ventas_mensuales'], 'readwrite');
+        const store = transaction.objectStore('ventas_mensuales');
+
+        for (const month_sale of month_sales) {
+            await store.put(month_sale);
+        }
+
+        return transaction.complete;
+    }
+
+    async saveDocs(documentos) {
         const transaction = this.db.transaction(['documentos'], 'readwrite');
         const store = transaction.objectStore('documentos');
 
@@ -66,11 +106,48 @@ class IndexedDBService {
         return transaction.complete;
     }
 
+    async saveDocLines(lines) {
+        const transaction = this.db.transaction(['renglones'], 'readwrite');
+        const store = transaction.objectStore('renglones');
+
+        for (const line of lines) {
+            // Crear ID único combinando tipo_doc y nro_doc
+            //documento.id = `${documento.tipo_doc}_${documento.nro_doc}`;
+            await store.put(line);
+        }
+
+        return transaction.complete;
+    }
+
     async getClientes() {
         const transaction = this.db.transaction(['clientes'], 'readonly');
         const store = transaction.objectStore('clientes');
         return new Promise((resolve, reject) => {
             const request = store.getAll();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async getSellerByCode(sellerId){
+        const transaction = this.db.transaction("vendedores", "readonly");
+        const store = transaction.objectStore("vendedores");
+
+        return new Promise((resolve, reject) => {
+            const request = store.get(sellerId.trim());
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async getDocLines(docId){
+        const transaction = this.db.transaction("renglones", "readonly");
+        const store = transaction.objectStore("renglones");
+
+        return new Promise((resolve, reject) => {
+            const index = store.index("doc_id");
+            const request = index.getAll(docId);
+            //const request = store.get(sellerId.trim());
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
         });
@@ -238,9 +315,20 @@ class IndexedDBService {
         return resumen;
     }
 
+    async getVentasMensuales() {
+        const transaction = this.db.transaction(['ventas_mensuales'], 'readonly');
+        const store = transaction.objectStore('ventas_mensuales');
+        return new Promise((resolve, reject) => {
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
     async getVentasTrimestre(seller_code) {
         // Cargar documentos filtrados por vendedor (admite CSV)
         const documentos = await this.getDocumentos({ co_ven: seller_code });
+        debugger;
 
         // Determinar los últimos 3 meses (incluyendo mes actual)
         const now = new Date();
@@ -397,7 +485,7 @@ class IndexedDBService {
                 numero: d.nro_doc || d.numero,
                 fecha_emision: emisStr,
                 fecha_vencimiento: (d.fec_venc || d.fecha_vencimiento || '').slice(0, 10),
-                monto: parseFloat(d.monto) || 0,
+                monto: parseFloat(d.monto_net) || 0,
                 saldo: parseFloat(d.saldo) || 0,
                 empresa: d.empresa || 1
             });
@@ -427,7 +515,7 @@ class IndexedDBService {
                 const tipo = (d.tipo_doc || d.tipo || '').trim();
                 const fecha_emision = (d.fec_emis || d.fecha_emision || '').slice(0, 10);
                 const fecha_vencimiento = (d.fec_venc || d.fecha_vencimiento || '').slice(0, 10);
-                const monto = parseFloat(d.monto) || 0;
+                const monto = parseFloat(d.monto_net) || 0;
                 const saldo = parseFloat(d.saldo) || 0;
                 const numero = d.nro_doc || d.numero;
 
@@ -487,14 +575,27 @@ class IndexedDBService {
         return transaction.complete;
     }
 
+    async getDocLinesCount(){
+        const transaction = this.db.transaction(['renglones'], 'readonly');
+        const store = transaction.objectStore('renglones');
+        return new Promise((resolve, reject) => {
+            const request = store.count();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
     async getStorageInfo() {
         const clientes = await this.getClientes();
         const documentos = await this.getDocumentos();
+        //const renglonees = await this.getRenglones();
+        const renglones_count = await this.getDocLinesCount();
         const lastSync = await this.getSyncMetadata('last_sync');
 
         return {
             clientes_count: clientes.length,
             documentos_count: documentos.length,
+            renglones_count: renglones_count,
             last_sync: lastSync,
             storage_size: await this.calculateStorageSize()
         };

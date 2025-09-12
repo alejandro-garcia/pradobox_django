@@ -51,6 +51,7 @@ class MSSQLConnector:
             self.disconnect()
         return False
 
+    
     def execute_query(self, query: str) -> List[Dict[str, Any]]:
         """Ejecuta una consulta y retorna los resultados como lista de diccionarios"""
         if not self.connection:
@@ -84,6 +85,7 @@ class MSSQLConnector:
         except Exception as e:
             raise Exception(f"Error ejecutando consulta: {str(e)}")
 
+    
     def get_documentos_cc(self, seller_code) -> List[Dict[str, Any]]:
         seller_codes = []
         if "," in seller_code:
@@ -104,14 +106,82 @@ class MSSQLConnector:
                 fec_venc,
                 monto_net,
                 saldo,
-                anulado
+                anulado,
+                empresa
             FROM docum_cc 
             WHERE saldo <> 0 AND anulado = 0
             and ltrim(rtrim(co_ven)) in ({placeholders})
             ORDER BY fec_venc DESC
         """
         return self.execute_query(query)
+    
+    
+    def get_document_details(self, seller_code) -> List[Dict[str, Any]]:
+        seller_codes = []
+        if "," in seller_code:
+            seller_codes = [c.strip() for c in seller_code.split(",")]
+        else:
+            seller_codes.append(seller_code)
 
+        placeholders = ", ".join([f"'{c}'" for c in seller_codes])
+
+        """Obtiene documentos de cuentas por cobrar según criterios específicos"""
+        query = f"""
+            SELECT
+                rtrim(convert(varchar, empresa)) + '-' + ltrim(rtrim(tipo_doc)) + '-' + convert(varchar, nro_doc) + '-' + convert(varchar, reng_num) as id,
+                rtrim(convert(varchar, empresa)) + '-' + ltrim(rtrim(tipo_doc)) + '-' + convert(varchar, nro_doc) as doc_id,
+                empresa,
+                tipo_doc,
+                nro_doc,
+                ltrim(rtrim(co_ven)) as co_ven,
+                reng_num,
+                ltrim(rtrim(co_art)) as co_art,
+                ltrim(rtrim(art_des)) as art_des,
+                total_art,
+                prec_vta, 
+                total, 
+                uni_venta
+            FROM vw_renglones_documento 
+            WHERE ltrim(rtrim(co_ven)) in ({placeholders})
+        """
+        return self.execute_query(query)
+
+    def get_month_sales(self, seller_code) -> List[Dict[str, Any]]:
+        seller_codes = []
+        if "," in seller_code:
+            seller_codes = [c.strip() for c in seller_code.split(",")]
+        else:
+            seller_codes.append(seller_code)
+
+        placeholders = ", ".join([f"'{c}'" for c in seller_codes])
+
+        """Obtiene documentos de cuentas por cobrar según criterios específicos"""
+        query = f"""
+            SELECT
+                right(mes,2) as id,
+                case right(mes,2) 
+                   when '01' then 'ene'
+                   when '02' then 'feb'
+                   when '03' then 'mar'
+                   when '04' then 'abr'
+                   when '05' then 'may'
+                   when '06' then 'jun'
+                   when '07' then 'jul'
+                   when '08' then 'ago'
+                   when '09' then 'sep'
+                   when '10' then 'oct'
+                   when '11' then 'nov'
+                   when '12' then 'dic'
+                else mes end as mes,
+                sum(monto_net) as monto
+            FROM [vw_ventas_mensuales_vendedor] 
+            WHERE ltrim(rtrim(co_ven)) in ({placeholders})
+            group by mes
+            order by id
+        """
+        return self.execute_query(query)
+
+    
     def get_clientes(self, cliente_codes: List[str]) -> List[Dict[str, Any]]:
         """Obtiene clientes activos que están en la lista de códigos proporcionada"""
         if not cliente_codes:
@@ -138,13 +208,28 @@ class MSSQLConnector:
                 creditos,
                 total,
                 ventas_ultimo_trimestre,
-                plaz_pag
+                plaz_pag,
+                ltrim(rtrim(co_ven)) as co_ven
             FROM clientes 
             WHERE co_cli IN ({codes_string})
             ORDER BY cli_des
         """
         return self.execute_query(query)
 
+
+    def get_sellers(self) -> List[Dict[str, Any]]:
+        query = f"""
+            SELECT 
+                ltrim(rtrim(co_ven)) as co_ven,
+                ven_des,
+                cedula,
+                telefonos,
+                email
+            FROM vendedor 
+        """
+        return self.execute_query(query)
+
+    
     def disconnect(self):
         """Cierra la conexión"""
         if self.connection:

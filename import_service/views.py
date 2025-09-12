@@ -9,7 +9,6 @@ from decouple import config
 from .mssql_connector import MSSQLConnector
 
 
-
 def get_sql_config_view():
     """Obtiene la configuración de SQL Server desde las variables de entorno"""
     try:
@@ -80,6 +79,58 @@ def import_clientes_view(request):
             
             return Response(clientes)
 
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    
+@api_view(['POST'])
+@csrf_exempt
+def import_sellers_view(request):
+    """Importa Vendedores desde SQL Server"""
+    try:
+        
+        with MSSQLConnector() as connector:
+            sellers = connector.get_sellers()
+            
+            return Response(sellers)
+
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    
+@api_view(['POST'])
+@csrf_exempt
+def import_document_details(request):
+    """Importa Renglones de Documentos desde SQL Server"""
+    seller_code = request.data.get('sellerCode', None)
+
+    try:
+        with MSSQLConnector() as connector:
+            sellers = connector.get_document_details(seller_code)
+            
+            return Response(sellers)
+
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+@api_view(['POST'])
+@csrf_exempt
+def import_month_sales_view(request):
+    seller_code = request.data.get('sellerCode', None)
+
+    try:
+        with MSSQLConnector() as connector:
+            sales = connector.get_month_sales(seller_code)
+
+            return Response(sales)
+    
     except Exception as e:
         return Response({
             'error': str(e)

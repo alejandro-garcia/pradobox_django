@@ -381,9 +381,8 @@ class CobranzasApp {
 
     async loadDashboard() {
         try {
-            debugger; 
             // Evitar múltiples cargas simultáneas y cargas innecesarias
-            if (this.loadingDashboard || this.dashboardLoaded) {
+            if (this.loadingDashboard){ // || this.dashboardLoaded) {
                 return;
             }
             this.loadingDashboard = true;
@@ -486,7 +485,8 @@ class CobranzasApp {
 
     async loadDashboardFromIndexedDB(seller_code) {
         const resumen = await window.indexedDBService.getResumenCobranzas(seller_code);
-        const ventas = await window.indexedDBService.getVentasTrimestre(seller_code);
+        //const ventas = await window.indexedDBService.getVentasTrimestre(seller_code);
+        const ventas = await window.indexedDBService.getVentasMensuales();
 
         const situacion = {
             total_vencido: resumen.total_vencido,
@@ -508,6 +508,21 @@ class CobranzasApp {
         };
     }
 
+    clientToDomain(cliente){
+        return {
+            id: cliente.co_cli,
+            nombre: cliente.cli_des,
+            rif: cliente.rif,
+            telefono: cliente.telefonos,
+            email: cliente.email,
+            direccion: cliente.direccion,
+            dias_ult_fact: cliente.dias_ult_fact,
+            vencido: cliente.vencido,
+            total: cliente.total,
+            ventas_ultimo_trimestre: cliente.ventas_ultimo_trimestre
+        }
+    }
+
     async loadClientes() {
         this.showClientesLoading(true);
         
@@ -517,18 +532,7 @@ class CobranzasApp {
             if (this.offlineMode) {
                 clientes = await window.indexedDBService.getClientes();
                 // Transform to match API format
-                clientes = clientes.map(cliente => ({
-                    id: cliente.co_cli,
-                    nombre: cliente.cli_des,
-                    rif: cliente.rif,
-                    telefono: cliente.telefonos,
-                    email: cliente.email,
-                    direccion: cliente.direccion,
-                    dias_ult_fact: cliente.dias_ult_fact,
-                    vencido: cliente.vencido,
-                    total: cliente.total, 
-                    ventas_ultimo_trimestre: cliente.ventas_ultimo_trimestre
-                }));
+                clientes = clientes.map(cliente => this.clientToDomain(cliente));
             } else {
                 const user = window.authService.getCurrentUser();
                 const sellerCode = user.codigo_vendedor_profit || '-1'; 
@@ -601,7 +605,7 @@ class CobranzasApp {
                 const clientesDict = clientes.reduce((acc, item) => {
                         acc[item.co_cli] = item.cli_des.trim(); // trim() para limpiar espacios
                         return acc;
-                }, {});
+                }, {});    
 
                 // Load from IndexedDB
                 const documentos = await window.indexedDBService.getDocumentos({ co_ven: seller_code });
@@ -633,13 +637,15 @@ class CobranzasApp {
                         vendedor_id: doc.co_ven, 
                         fecha_emision: doc.fec_emis, 
                         fecha_vencimiento: doc.fec_venc, 
-                        id: doc.nro_doc, 
+                        id: doc.nro_doc,
+                        numero: doc.nro_doc, 
                         tipo: doc.tipo_doc, 
                         monto: doc.monto_net,
                         saldo: doc.saldo, 
                         cliente_nombre: clientesDict[doc.co_cli] || 'Cliente: ' + doc.co_cli, 
                         dias_vencimiento: this.calculateDaysOverdue(doc.fec_venc),
-                        esta_vencido: new Date(doc.fec_venc) < new Date()
+                        esta_vencido: new Date(doc.fec_venc) < new Date(),
+                        empresa: doc.empresa 
                     })),
                     resumen: resumenDto
                 };
@@ -687,16 +693,22 @@ class CobranzasApp {
             
             if (this.offlineMode) {
                 // Load from IndexedDB
-                const documentos = await window.indexedDBService.getDocumentos();
+                //const docsPendientes = await window.indexedDBService.getDocumentos();
+                const docsPendientes = await window.indexedDBService.getDocumentosPendientesCliente(clientId);
+                
                 const resumen = await window.indexedDBService.getResumenCobranzas();
                 
+                // data = {
+                //     documentos: documentos.map(doc => ({
+                //         ...doc,
+                //         cliente_nombre: 'Cliente Local', // En IndexedDB necesitaríamos hacer join
+                //         dias_vencimiento: this.calculateDaysOverdue(doc.fec_venc),
+                //         esta_vencido: new Date(doc.fec_venc) < new Date()
+                //     })),
+                //     resumen: resumen
+                // };
                 data = {
-                    documentos: documentos.map(doc => ({
-                        ...doc,
-                        cliente_nombre: 'Cliente Local', // En IndexedDB necesitaríamos hacer join
-                        dias_vencimiento: this.calculateDaysOverdue(doc.fec_venc),
-                        esta_vencido: new Date(doc.fec_venc) < new Date()
-                    })),
+                    documentos: docsPendientes,
                     resumen: resumen
                 };
             } else {
@@ -898,14 +910,7 @@ class CobranzasApp {
                 clientes = await window.indexedDBService.getClientes();
                 // Transform and filter locally
                 clientes = clientes
-                    .map(cliente => ({
-                        id: cliente.co_cli,
-                        nombre: cliente.cli_des,
-                        rif: cliente.rif,
-                        telefono: cliente.telefonos,
-                        email: cliente.email,
-                        direccion: cliente.direccion
-                    }))
+                    .map(cliente => this.clientToDomain(cliente))
                     .filter(cliente => 
                         searchTerm === '' || 
                         cliente.nombre.toLowerCase().includes(searchTerm.toLowerCase())
@@ -1001,7 +1006,7 @@ class CobranzasApp {
             const user = window.authService.getCurrentUser();
             const result = await window.importService.importFromMSSQL(user);
             
-            this.showSuccess(`Importación completada: ${result.clientes_imported} clientes, ${result.documentos_imported} documentos`);
+            this.showSuccess(`Importación completada: ${result.clientes_imported} clientes, ${result.documentos_imported} documentos, ${result.renglones_imported} renglones`);
             await this.updateStorageInfoSync();           
         } catch (error) {
             this.showError('Error durante la importación: ' + error.message);
@@ -1024,6 +1029,7 @@ class CobranzasApp {
             
             document.getElementById('clientesCount').textContent = info.clientes_count;
             document.getElementById('documentosCount').textContent = info.documentos_count;
+            document.getElementById('renglonesCount').textContent = info.renglones_count;
             
             if (info.last_sync) {
                 const date = new Date(info.last_sync);
@@ -1042,6 +1048,7 @@ class CobranzasApp {
             
             document.getElementById('clientesCount2').textContent = info.clientes_count;
             document.getElementById('documentosCount2').textContent = info.documentos_count;
+            document.getElementById('renglonesCount2').textContent = info.renglones_count;
             
             if (info.last_sync) {
                 const date = new Date(info.last_sync);
@@ -1098,20 +1105,70 @@ class CobranzasApp {
             if (this.offlineMode) {
                 // En modo offline, obtener de IndexedDB (funcionalidad limitada)
                 const documentos = await window.indexedDBService.getDocumentos();
-                documento = documentos.find(doc => doc.id === documentoId);
-                if (documento) {
+
+                const clientes = await window.indexedDBService.getClientes();
+
+                const clientesDict = clientes.reduce((acc, item) => {
+                        acc[item.co_cli] = item.cli_des.trim(); // trim() para limpiar espacios
+                        return acc;
+                }, {});    
+
+                let doc = documentos.find(doc => doc.empresa == empresa && doc.tipo_doc === tipo && doc.nro_doc === documentoId);
+                
+                if (doc) {
                     // Simular estructura completa para modo offline
+                    // documento = {
+                    //     ...documento,
+                    //     cliente_nombre: 'Cliente Local',
+                    //     vendedor_nombre: 'Vendedor Local',
+                    //     productos: [],
+                    //     subtotal: documento.saldo,
+                    //     descuentos: 0,
+                    //     impuestos: 0,
+                    //     total: documento.saldo,
+                    //     comentarios: documento.observa || ''
+                    // };
+
+                    let vendedor = await window.indexedDBService.getSellerByCode(doc.co_ven);
+                    let vendedor_nombre = 'Vendedor Local'
+                    if (vendedor)
+                        vendedor_nombre = vendedor.ven_des; 
+
+                    
+                    let productos = [];
+                    
+                    debugger;
+                    if ('FACT|DEV'.indexOf(doc.tipo_doc) !== -1){
+                        let doc_id = doc.empresa + "-" + doc.tipo_doc + '-' + doc.nro_doc.toString();
+                        productos = await window.indexedDBService.getDocLines(doc_id);
+                        if (!Array.isArray(productos))
+                            productos = [productos];
+
+                        productos = productos.map(p => ({
+                            codigo: p.co_art, 
+                            descripcion: p.art_des, 
+                            cantidad: Number(p.total_art), 
+                            precio_unitario: Number(p.prec_vta),
+                            subtotal: Number(p.total)
+                        }))
+                    }
+                    
                     documento = {
-                        ...documento,
-                        cliente_nombre: 'Cliente Local',
-                        vendedor_nombre: 'Vendedor Local',
-                        productos: [],
-                        subtotal: documento.saldo,
-                        descuentos: 0,
-                        impuestos: 0,
-                        total: documento.saldo,
-                        comentarios: documento.observa || ''
-                    };
+                        cliente_id: doc.co_cli, 
+                        vendedor_id: doc.co_ven, 
+                        fecha_emision: doc.fec_emis, 
+                        fecha_vencimiento: doc.fec_venc, 
+                        numero: doc.nro_doc,
+                        tipo: doc.tipo_doc, 
+                        monto: doc.monto_net,
+                        saldo: doc.saldo, 
+                        cliente_nombre: clientesDict[doc.co_cli] || 'Cliente: ' + doc.co_cli, 
+                        dias_vencimiento: this.calculateDaysOverdue(doc.fec_venc),
+                        esta_vencido: new Date(doc.fec_venc) < new Date(),
+                        vendedor_nombre,
+                        productos
+                    }
+                    
                 }
             } else {
                 // Obtener desde API
@@ -1584,16 +1641,21 @@ class CobranzasApp {
                     return;
                 }
 
+                let vendedor = await window.indexedDBService.getSellerByCode(c.co_ven);
+
                 // Mapear al formato usado por la UI online
                 const cliente = {
                     id: c.co_cli,
                     nombre: c.cli_des,
                     rif: c.rif || c.rif2 || '',
+                    rif2: c.rif2 || '',
                     telefono: c.telefonos,
                     email: c.email,
                     direccion: c.direccion || c.direc1 || '',
                     dias_ult_fact: c.dias_ult_fact,
-                    ventas_ultimo_trimestre: c.ventas_ultimo_trimestre || 0
+                    ventas_ultimo_trimestre: c.ventas_ultimo_trimestre || 0,
+                    dias_promedio_emision: c.dias_promedio_emision || 0,
+                    vendedor: vendedor.ven_des
                 };
 
                 const r = await window.indexedDBService.getResumenCliente(clienteId);
@@ -1614,12 +1676,12 @@ class CobranzasApp {
                 };
 
                 const eventos = await window.indexedDBService.getEventosCliente(clienteId);
-                const docsPendientes = await window.indexedDBService.getDocumentosPendientesCliente(clienteId);
+                //const docsPendientes = await window.indexedDBService.getDocumentosPendientesCliente(clienteId);
 
                 const detailView = document.getElementById('cliente-detail-view');
                 if (detailView) {
                     detailView.innerHTML = this.createClienteDetailHTML(cliente, resumen);
-                    this.createClientePendingDocsHTML(docsPendientes);
+                    //this.createClientePendingDocsHTML(docsPendientes);
                     this.createClienteEventsHTML(eventos);
                 }
                 this.navigateTo('cliente-detail');

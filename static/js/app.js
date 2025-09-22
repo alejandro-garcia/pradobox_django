@@ -493,7 +493,7 @@ class CobranzasApp {
             total_por_vencer: resumen.total_por_vencer,
             total_creditos: resumen.total_creditos,
             total_sinvencimiento: resumen.total_sinvencimiento,
-            total_neto: resumen.total_vencido + resumen.total_por_vencer - resumen.total_sinvencimiento,
+            total_neto: resumen.total_vencido + resumen.total_por_vencer + resumen.total_creditos - resumen.total_sinvencimiento,
             cantidad_documentos_vencidos: resumen.cantidad_vencidos,
             cantidad_documentos_total: resumen.cantidad_total,
             dias_promedio_vencimiento: resumen.dias_promedio_vencimiento,
@@ -751,6 +751,7 @@ class CobranzasApp {
         document.getElementById('resumenCreditos').textContent = this.formatCurrency(data.resumen.total_creditos * -1);
 
         // Display documentos
+        document.getElementById('globalPendingDocsTitle').textContent = 'DOCUMENTOS PENDIENTES (' + data.documentos.length + ')';
         const documentosList = document.getElementById('documentosPendientesList');
         const documentosEmpty = document.getElementById('documentosPendientesEmpty');
         

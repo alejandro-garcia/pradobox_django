@@ -239,6 +239,10 @@ class IndexedDBService {
         let cantidadPorVencer = 0;
         let cantidadSinVencimiento = 0;
 
+        let porVencerDias = 0;
+        let vencidosDias = 0;
+        let sinVencimientoDias = 0;
+
         for (const doc of documentos) {
             const saldo = parseFloat(doc.saldo);
             if (!isFinite(saldo) || saldo === 0) continue;
@@ -253,10 +257,50 @@ class IndexedDBService {
             if (tipo === 'N/CR' || tipo === 'ADEL') {
                 if (saldo < 0) {
                     resumen.total_creditos += Math.abs(saldo);
-                }
+                } 
+
                 // Además, N/CR cuentan como "sin vencimiento" en el online
-                resumen.total_sinvencimiento += saldo;
-                cantidadSinVencimiento += 1;
+                
+                if (tipo === 'N/CR') {
+                    resumen.total_sinvencimiento += saldo;
+                    cantidadSinVencimiento += 1;
+                    const diasVenc = Math.floor((today - fecVenc) / (1000 * 60 * 60 * 24));
+                    if (isFinite(diasVenc)) {
+                        sinVencimientoDias += diasVenc;
+                    }
+                }
+
+                // fix: ADEL se considera vencido
+                if (tipo === 'ADEL') {
+                    if (fecVencStr <= todayStr) {
+                        resumen.total_vencido += saldo;
+                        resumen.cantidad_vencidos++;
+    
+                        // Días de vencimiento (hoy - fecha_venc)
+                        const diasVenc = Math.floor((today - fecVenc) / (1000 * 60 * 60 * 24));
+                        if (isFinite(diasVenc)) {
+                            totalDiasVencimientoVencidos += Math.max(0, diasVenc);
+                            cantidadVencidos++;
+                            //totalDiasVencimientoTodos += diasVenc; // positivo
+                            cantidadTodos++;
+                            vencidosDias += diasVenc;
+                        }
+                        else {
+                            // Por vencer: tipo distinto de N/CR
+                            debugger;
+                            resumen.total_por_vencer += saldo;
+                            resumen.cantidad_por_vencer++;
+                            cantidadPorVencer++;
+
+                            const diasVenc = Math.floor((today - fecVenc) / (1000 * 60 * 60 * 24));
+                            if (isFinite(diasVenc)) {
+                               // totalDiasVencimientoTodos += diasVenc; // negativo
+                                cantidadTodos++;
+                                porVencerDias += diasVenc;
+                            }
+                        }
+                    }
+                }
                 // Se excluyen de los bloques vencidos/por vencer para totales, pero sí cuentan en cantidad_total (online los incluye en el denominador)
                 continue;
             }
@@ -272,8 +316,9 @@ class IndexedDBService {
                 if (isFinite(diasVenc)) {
                     totalDiasVencimientoVencidos += Math.max(0, diasVenc);
                     cantidadVencidos++;
-                    totalDiasVencimientoTodos += diasVenc; // positivo
+                    //totalDiasVencimientoTodos += diasVenc; // positivo
                     cantidadTodos++;
+                    vencidosDias += diasVenc;
                 }
             } else {
                 // Por vencer: tipo distinto de N/CR
@@ -283,11 +328,14 @@ class IndexedDBService {
 
                 const diasVenc = Math.floor((today - fecVenc) / (1000 * 60 * 60 * 24));
                 if (isFinite(diasVenc)) {
-                    totalDiasVencimientoTodos += diasVenc; // negativo
+                    //totalDiasVencimientoTodos += diasVenc; // negativo
                     cantidadTodos++;
+                    porVencerDias += diasVenc;
                 }
             }
         }
+
+        totalDiasVencimientoTodos = vencidosDias + porVencerDias + sinVencimientoDias;
 
         // Promedio de días vencidos (solo sobre vencidos, como en servidor)
         resumen.dias_promedio_vencimiento = cantidadVencidos > 0
@@ -302,7 +350,7 @@ class IndexedDBService {
 
         // Promedio de vencimiento considerando todos (vencidos + por vencer) como en servidor
         resumen.dias_promedio_vencimiento_todos = resumen.cantidad_total > 0
-            ? Math.round(totalDiasVencimientoTodos / (resumen.cantidad_vencidos + cantidadPorVencer)) // servidor no suma días de sin_vencimiento
+            ? Math.round(totalDiasVencimientoTodos / (resumen.cantidad_total)) // servidor no suma días de sin_vencimiento
             : 0;
 
         // Días transcurridos y faltantes en el mes actual

@@ -13,11 +13,13 @@ from ..application.use_cases import (
     EventosClienteUseCase,
     VerDetalleDocumentoClienteUseCase,
     CreateDocumentPdfUseCase,
-    CreateBalancePdfUseCase
+    CreateBalancePdfUseCase, 
+    CreateSellerBalancePdfUseCase
 )
 from ..application.dtos import CrearDocumentoRequest, FiltroDocumentosRequest
 from .repository_impl import DjangoDocumentoRepository, DjangoEventoRepository
 from django.http import HttpResponse
+from uuid import uuid4
 
 
 def get_documento_repository():
@@ -243,6 +245,19 @@ def balance_pdf_view(request, rif):
         pdf_bytes = use_case.execute(rif)
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="documento_{rif}.pdf"'
+        return response
+    except EntityNotFoundException as e:
+        return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+def balance_seller_pdf_view(request, seller_ids):
+    repository = get_documento_repository()
+    try:
+        use_case = CreateSellerBalancePdfUseCase(repository)
+        pdf_bytes = use_case.execute(seller_ids)
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        uuid = uuid4()
+
+        response['Content-Disposition'] = f'attachment; filename="documento_{uuid}.pdf"'
         return response
     except EntityNotFoundException as e:
         return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)

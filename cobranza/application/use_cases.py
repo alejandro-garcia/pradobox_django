@@ -375,3 +375,50 @@ class CreateBalancePdfUseCase(UseCase[str, bytes]):
 
         pdf_bytes = pdfkit.from_string(html, False, options=options)
         return pdf_bytes
+
+class CreateSellerBalancePdfUseCase(UseCase[str, bytes]):
+    """Genera un PDF de un balance usando la plantilla balance.html"""
+
+    def __init__(self, documento_repository: DocumentoRepository):
+        self.documento_repository = documento_repository
+
+    def execute(self, rif: str) -> bytes:
+        estado_cuenta = self.documento_repository.get_estado_cuenta_vendedor(seller_ids)
+        if not estado_cuenta:
+            raise EntityNotFoundException(f"Estado de cuenta para vendedores {seller_ids} no encontrado")
+        
+        context = {
+            'vendedor': estado_cuenta.vendedor,
+            'fecha': estado_cuenta.fecha.strftime('%d/%m/%Y'),
+            'documentos': [
+                {
+                    'cliente': doc.cliente,
+                    'tipo_doc': doc.tipo_doc,
+                    'nro_doc': doc.numero,
+                    'fec_emis': doc.fecha_emision.strftime('%d/%m/%Y'),
+                    'fec_vcto': doc.fecha_vencimiento.strftime('%d/%m/%Y'),
+                    'tot_neto': doc.total_neto,
+                    'cobrado': doc.cobrado,
+                    'saldo': doc.saldo
+                } for doc in estado_cuenta.renglones
+            ],
+            'estado_deudor': [
+                {
+                'esta': edocta.descripcion,
+                'saldo': edocta.amount
+             
+            } for edocta in estado_cuenta.resumen ],
+            'cobrador': estado_cuenta.vendedor
+        }
+
+        html = render_to_string('balance.html', context)
+
+        # Opciones básicas para wkhtmltopdf/pdfkit
+        options = {
+            'encoding': 'UTF-8',
+            'enable-local-file-access': None,
+            'quiet': ''
+        }
+
+        pdf_bytes = pdfkit.from_string(html, False, options=options)
+        return pdf_bytes

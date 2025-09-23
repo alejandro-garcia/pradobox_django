@@ -119,6 +119,17 @@ class BalanceDocument:
     saldo: str
 
 @dataclass
+class BalanceDocumentSeller:
+    cliente: str
+    tipo_doc: TipoDocumento
+    numero: str
+    fecha_emision: date
+    fecha_vencimiento: date
+    total_neto: str
+    cobrado: str
+    saldo: str
+
+@dataclass
 class BalanceFooter:
     descripcion: str
     amount: str
@@ -126,6 +137,13 @@ class BalanceFooter:
 @dataclass
 class Balance:
     cliente: str
+    vendedor: str 
+    fecha: date
+    renglones: list[BalanceDocument]
+    resumen: list[BalanceFooter]
+
+@dataclass
+class BalanceSeller:
     vendedor: str 
     fecha: date
     renglones: list[BalanceDocument]

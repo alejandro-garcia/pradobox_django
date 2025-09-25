@@ -456,9 +456,14 @@ class IndexedDBService {
 
         let totalDiasVencimientoVencidos = 0;
         let cantidadVencidos = 0;
-        let totalDiasVencimientoTodos = 0;
+        let totalDiasVencimientoTodos = 0; // vencidos + por vencer (negativos para por vencer)
+        let cantidadTodos = 0; // vencidos + por vencer + sin_vencimiento (solo cuenta)
         let cantidadPorVencer = 0;
         let cantidadSinVencimiento = 0;
+
+        let porVencerDias = 0;
+        let vencidosDias = 0;
+        let sinVencimientoDias = 0;
 
         for (const doc of documentos) {
             const saldo = parseFloat(doc.saldo);
@@ -471,36 +476,95 @@ class IndexedDBService {
 
             if (tipo === 'N/CR' || tipo === 'ADEL') {
                 if (saldo < 0) resumen.total_creditos += Math.abs(saldo);
-                resumen.total_sinvencimiento += saldo;
-                cantidadSinVencimiento++;
+                // Además, N/CR cuentan como "sin vencimiento" en el online
+                
+                if (tipo === 'N/CR') {
+                    resumen.total_sinvencimiento += saldo;
+                    cantidadSinVencimiento += 1;
+                    const diasVenc = Math.floor((today - fecVenc) / (1000 * 60 * 60 * 24));
+                    if (isFinite(diasVenc)) {
+                        sinVencimientoDias += diasVenc;
+                    }
+                }
+
+                // fix: ADEL se considera vencido
+                if (tipo === 'ADEL') {
+                    if (fecVencStr <= todayStr) {
+                        resumen.total_vencido += saldo;
+                        resumen.cantidad_vencidos++;
+    
+                        // Días de vencimiento (hoy - fecha_venc)
+                        const diasVenc = Math.floor((today - fecVenc) / (1000 * 60 * 60 * 24));
+                        if (isFinite(diasVenc)) {
+                            totalDiasVencimientoVencidos += Math.max(0, diasVenc);
+                            cantidadVencidos++;
+                            //totalDiasVencimientoTodos += diasVenc; // positivo
+                            cantidadTodos++;
+                            vencidosDias += diasVenc;
+                        }
+                        else {
+                            // Por vencer: tipo distinto de N/CR
+                            debugger;
+                            resumen.total_por_vencer += saldo;
+                            resumen.cantidad_por_vencer++;
+                            cantidadPorVencer++;
+
+                            const diasVenc = Math.floor((today - fecVenc) / (1000 * 60 * 60 * 24));
+                            if (isFinite(diasVenc)) {
+                               // totalDiasVencimientoTodos += diasVenc; // negativo
+                                cantidadTodos++;
+                                porVencerDias += diasVenc;
+                            }
+                        }
+                    }
+                }
+                // Se excluyen de los bloques vencidos/por vencer para totales, pero sí cuentan en cantidad_total (online los incluye en el denominador)
                 continue;
             }
 
-            if (fecVenc && fecVencStr <= todayStr) {
+            // Clasificación por fecha de vencimiento
+            if (fecVencStr <= todayStr) {
+                // Vencidos: tipo distinto de N/CR
                 resumen.total_vencido += saldo;
                 resumen.cantidad_vencidos++;
+
+                // Días de vencimiento (hoy - fecha_venc)
                 const diasVenc = Math.floor((today - fecVenc) / (1000 * 60 * 60 * 24));
                 if (isFinite(diasVenc)) {
                     totalDiasVencimientoVencidos += Math.max(0, diasVenc);
                     cantidadVencidos++;
-                    totalDiasVencimientoTodos += diasVenc;
+                    //totalDiasVencimientoTodos += diasVenc; // positivo
+                    cantidadTodos++;
+                    vencidosDias += diasVenc;
                 }
-            } else if (fecVenc) {
-                resumen.total_por_vencer += saldo;
-                cantidadPorVencer++;
-                const diasVenc = Math.floor((today - fecVenc) / (1000 * 60 * 60 * 24));
-                if (isFinite(diasVenc)) totalDiasVencimientoTodos += diasVenc;
             } else {
-                // Sin fecha de vencimiento explícita
-                cantidadSinVencimiento++;
+                // Por vencer: tipo distinto de N/CR
+                resumen.total_por_vencer += saldo;
+                resumen.cantidad_por_vencer++;
+                cantidadPorVencer++;
+
+                const diasVenc = Math.floor((today - fecVenc) / (1000 * 60 * 60 * 24));
+                if (isFinite(diasVenc)) {
+                    //totalDiasVencimientoTodos += diasVenc; // negativo
+                    cantidadTodos++;
+                    porVencerDias += diasVenc;
+                }
             }
         }
 
+        totalDiasVencimientoTodos = vencidosDias + porVencerDias + sinVencimientoDias;
+
+        // Promedio de días vencidos (solo sobre vencidos, como en servidor)
+        resumen.dias_promedio_vencimiento = cantidadVencidos > 0
+            ? Math.round(totalDiasVencimientoVencidos / cantidadVencidos)
+            : 0;
+
+        // Total sin vencimiento usa valor absoluto en el retorno online
         resumen.total_sinvencimiento = Math.abs(resumen.total_sinvencimiento);
         resumen.cantidad_total = (resumen.cantidad_vencidos || 0) + (cantidadPorVencer || 0) + (cantidadSinVencimiento || 0);
         resumen.dias_promedio_vencimiento = cantidadVencidos > 0 ? Math.round(totalDiasVencimientoVencidos / cantidadVencidos) : 0;
-        resumen.dias_promedio_vencimiento_todos = (resumen.cantidad_vencidos + cantidadPorVencer) > 0
-            ? Math.round(totalDiasVencimientoTodos / (resumen.cantidad_vencidos + cantidadPorVencer))
+        resumen.dias_promedio_vencimiento_todos = resumen.cantidad_total > 0
+            ? Math.round(totalDiasVencimientoTodos / (resumen.cantidad_total)) // servidor no suma días de sin_vencimiento
             : 0;
 
         const now = new Date();
@@ -511,6 +575,7 @@ class IndexedDBService {
 
         return resumen;
     }
+
 
     async getEventosCliente(cliente_id) {
         // Aprox de eventos: documentos del cliente en últimos 90 días

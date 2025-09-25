@@ -382,7 +382,7 @@ class CreateSellerBalancePdfUseCase(UseCase[str, bytes]):
     def __init__(self, documento_repository: DocumentoRepository):
         self.documento_repository = documento_repository
 
-    def execute(self, rif: str) -> bytes:
+    def execute(self, seller_ids: str) -> bytes:
         estado_cuenta = self.documento_repository.get_estado_cuenta_vendedor(seller_ids)
         if not estado_cuenta:
             raise EntityNotFoundException(f"Estado de cuenta para vendedores {seller_ids} no encontrado")
@@ -392,14 +392,16 @@ class CreateSellerBalancePdfUseCase(UseCase[str, bytes]):
             'fecha': estado_cuenta.fecha.strftime('%d/%m/%Y'),
             'documentos': [
                 {
+                    'rif': doc.rif,
                     'cliente': doc.cliente,
                     'tipo_doc': doc.tipo_doc,
                     'nro_doc': doc.numero,
-                    'fec_emis': doc.fecha_emision.strftime('%d/%m/%Y'),
-                    'fec_vcto': doc.fecha_vencimiento.strftime('%d/%m/%Y'),
+                    'fec_emis': doc.fecha_emision.strftime('%d/%m/%Y') if doc.fecha_emision else '',
+                    'fec_vcto': doc.fecha_vencimiento.strftime('%d/%m/%Y') if doc.fecha_vencimiento else '',
+                    'dias_vcto': doc.dias_vcto,
                     'tot_neto': doc.total_neto,
-                    'cobrado': doc.cobrado,
-                    'saldo': doc.saldo
+                    'saldo': doc.saldo,
+                    'flag': doc.orden
                 } for doc in estado_cuenta.renglones
             ],
             'estado_deudor': [
@@ -411,7 +413,7 @@ class CreateSellerBalancePdfUseCase(UseCase[str, bytes]):
             'cobrador': estado_cuenta.vendedor
         }
 
-        html = render_to_string('balance.html', context)
+        html = render_to_string('seller_balance.html', context)
 
         # Opciones básicas para wkhtmltopdf/pdfkit
         options = {

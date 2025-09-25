@@ -56,6 +56,22 @@ class CobranzasApp {
         }
     }
 
+    generateUUID() { // Public Domain/MIT
+        var d = new Date().getTime();//Timestamp
+        var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now()*1000)) || 0;//Time in microseconds since page-load or 0 if unsupported
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16;//random number between 0 and 16
+            if(d > 0){//Use timestamp until depleted
+                r = (d + r)%16 | 0;
+                d = Math.floor(d/16);
+            } else {//Use microseconds since page-load if supported
+                r = (d2 + r)%16 | 0;
+                d2 = Math.floor(d2/16);
+            }
+            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+    }
+
     setupEventListeners() {
         // Navigation
         document.querySelectorAll('.nav-item').forEach(item => {
@@ -388,16 +404,17 @@ class CobranzasApp {
             this.loadingDashboard = true;
             
             let data;
+            let seller_code;
             
             if (this.offlineMode) {
                 // Load from IndexedDB
                 const user = await window.indexedDBService.getCurrentUser();
-                const seller_code = user.codigo_vendedor_profit; 
+                seller_code = user.codigo_vendedor_profit; 
 
                 data = await this.loadDashboardFromIndexedDB(seller_code);
             } else {
                 const user = window.authService.getCurrentUser();
-                const seller_code = user.codigo_vendedor_profit; 
+                seller_code = user.codigo_vendedor_profit; 
 
                 // Load from API
                 const response = await fetch(`${this.apiBaseUrl}/dashboard/${seller_code}`, {
@@ -471,6 +488,10 @@ class CobranzasApp {
             // Create charts only if they don't exist
             if (!this.charts.ventas) {
                 this.createVentasChart(data.ventas_por_mes);
+            }
+
+            if (!this.offlineMode) {
+                this.addSellerFloatingActionButton(seller_code);
             }
 
             this.dashboardLoaded = true;
@@ -1588,6 +1609,95 @@ class CobranzasApp {
                 fab.addEventListener('click', async () => {
                     const filename = `EstadoCuenta_${documentoKey}.pdf`;
                     const url = `${this.apiBaseUrl}/cobranzas/balance/${documentoKey}/pdf/`;
+                    setLoading(true);
+                    try {
+                        const response = await fetch(url, { headers: window.authService.getAuthHeaders() });
+                        if (!response.ok) throw new Error(`Error ${response.status}`);
+                        const blob = await response.blob();
+
+                        // Web Share API with files (Android Chrome)
+                        const file = new File([blob], filename, { type: 'application/pdf' });
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                            try {
+                                await navigator.share({ title: filename, text: `Compartiendo ${filename}`, files: [file] });
+                            } catch (err) {
+                                console.error('Error compartiendo archivo:', err);
+                                this.legacyDownload(filename, blob);
+                                if (this.showNotification) this.showNotification('Tu dispositivo no soporta compartir. Se descargó el PDF.', 'success');
+                            }
+
+                        } else if (navigator.share) {
+                            await navigator.share({ title: filename, text: 'Estado de cuenta generado. Descárguelo a continuación.' });
+                            const link = document.createElement('a');
+                            link.href = URL.createObjectURL(blob);
+                            link.download = filename;
+                            document.body.appendChild(link);
+                            link.click();
+                            link.remove();
+                        } else {
+                            this.legacyDownload(filename, blob);
+
+                            if (this.showNotification) this.showNotification('Tu dispositivo no soporta compartir. Se descargó el PDF.', 'success');
+                        }
+                    } catch (err) {
+                        console.error('Error al generar/compartir PDF:', err);
+                        if (this.showNotification) this.showNotification('No se pudo generar o compartir el PDF', 'error');
+                    } finally {
+                        setLoading(false);
+                    }
+                });
+            }
+        } catch (e) {
+            console.warn('No se pudo crear el botón flotante de compartir:', e);
+        }
+    }
+
+    addSellerFloatingActionButton(sellerId) {
+        // Floating Share Button for PDF
+        try {
+            const container = document.getElementById('dashboard-view') || document.body;
+            const existingFab = document.getElementById('fabSharePdf');
+            if (existingFab) existingFab.remove();
+
+            //const hasKeys = (cliente.rif !== undefined);
+            
+            if (!this.offlineMode) {
+                const documentoKey = sellerId.trim();
+                const fab = document.createElement('button');
+
+                //const uuid = uuid.v4();
+                const uuid =  (crypto.randomUUID) ? crypto.randomUUID() : this.generateUUID();
+
+                fab.id = 'fabSharePdf';
+                fab.type = 'button';
+                fab.title = 'Compartir Estado de Cuenta';
+                fab.className = 'fixed bottom-20 right-6 w-14 h-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center focus:outline-none z-40';
+                fab.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4m0 0L8 6m4-4v14" />
+                    </svg>`;
+
+                container.appendChild(fab);
+
+                const setLoading = (loading) => {
+                    if (loading) {
+                        fab.disabled = true;
+                        fab.innerHTML = '<span class="animate-spin inline-block w-6 h-6 border-2 border-white border-t-transparent rounded-full"></span>';
+                    } else {
+                        fab.disabled = false;
+                        fab.innerHTML = `
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4m0 0L8 6m4-4v14" />
+                            </svg>`;
+                    }
+                };
+
+                fab.addEventListener('click', async () => {
+                    debugger;
+
+                    const filename = `EstadoCuenta_${uuid}.pdf`;
+                    //const filename = `EstadoCuenta_${documentoKey}.pdf`;
+                    const url = `${this.apiBaseUrl}/cobranzas/balance/vendedor/${documentoKey}/pdf/`;
                     setLoading(true);
                     try {
                         const response = await fetch(url, { headers: window.authService.getAuthHeaders() });

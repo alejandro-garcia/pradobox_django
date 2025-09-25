@@ -451,8 +451,10 @@ class DjangoDocumentoRepository(DocumentoRepository):
                 resumen=BalanceFooter(descripcion='', amount='0.00')
             )
 
-    def get_estado_cuenta_vendedor(self, seller_ids: str) -> Balance:
+    def get_estado_cuenta_vendedor(self, seller_ids: str) -> BalanceSeller:
         """Genera el estado de cuenta para un cliente identificado por su RIF"""
+        vendedor_nombre = ''
+
         try:
             from django.db import connection
             with connection.cursor() as cursor:
@@ -461,25 +463,26 @@ class DjangoDocumentoRepository(DocumentoRepository):
                 """, [seller_ids])
                 
                 documentos = []
-                cliente_nombre = ''
                 vendedor_nombre = ''
 
                 rows = cursor.fetchall()
 
                 for i, row in enumerate(rows, start=1):
-                    rif, cliente, vendedor, tipo, nro_doc, fec_emis, fec_venc, dias_ven, saldo, cobrado, total_neto = row
+                    vendedor, rif, cliente, tipo, nro_doc, fec_emis, fec_venc, dias_ven, saldo, total_neto, orden = row
                     if i == 1:
-                        cliente_nombre = cliente
                         vendedor_nombre = vendedor
 
                     documentos.append(BalanceDocumentSeller(
+                        rif=rif,
+                        cliente=cliente,
                         tipo_doc=tipo,
                         numero=nro_doc,
                         fecha_emision=fec_emis,
                         fecha_vencimiento=fec_venc,
+                        dias_vcto=dias_ven,
                         total_neto=total_neto,
-                        cobrado=cobrado,
-                        saldo=saldo
+                        saldo=saldo,
+                        orden=orden
                     ))
                 
                 cursor.nextset()
@@ -489,7 +492,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
                     footers.append(BalanceFooter(descripcion=descripcion, amount=valor))
 
                 balance = BalanceSeller(
-                    vendedor=vendedor_nombre,
+                    vendedor=vendedor_nombre if vendedor_nombre else seller_ids,
                     fecha=date.today(),
                     renglones=documentos,
                     resumen=footers
@@ -500,8 +503,7 @@ class DjangoDocumentoRepository(DocumentoRepository):
         except Exception as e:
             logger.error(f"Error generando estado de cuenta: {str(e)}")
             print(f"Error generando estado de cuenta: {e}")
-            return Balance(
-                cliente=rif,
+            return BalanceSeller(
                 vendedor='',
                 fecha=date.today(),
                 documentos=[],

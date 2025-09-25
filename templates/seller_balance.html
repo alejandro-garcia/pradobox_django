@@ -190,17 +190,19 @@
             <table>
                 <thead>
                     <tr>
+                        <th>Cliente</th>
                         <th>Tipo Doc.</th>
                         <th>Nro.Doc</th>
                         <th>Fec. Emis</th>
                         <th>Fec. Vcto</th>
+                        <th>días Vcto</th>
                         <th>Total Neto</th>
-                        <th>Cobrado</th>
                         <th>Saldo</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for doc in documentos %}
+                    {% if doc.flag == 0 %}
                     <tr>
                         <td>{{ doc.cliente }}</td>
                         <td>{{ doc.tipo_doc }}</td>
@@ -211,6 +213,14 @@
                         <td class="align-right">{{ doc.tot_neto }}</td>
                         <td class="align-right {% if doc.dias_vcto > 0 %} negativo {% endif %}">{{ doc.saldo }}</td>
                     </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="align-right"><strong>{{ doc.rif }}</strong></td>
+                        <td><strong>{{ doc.dias_vcto }}</strong></td>
+                        <td class="align-right"><strong>{{ doc.tot_neto }}</strong></td>
+                        <td class="align-right {% if doc.dias_vcto > 0 %} negativo {% endif %}"><strong>{{ doc.saldo }}</strong></td>
+                    </tr>
+                    {% endif %}
                     {% endfor %}
                 </tbody>
             </table>

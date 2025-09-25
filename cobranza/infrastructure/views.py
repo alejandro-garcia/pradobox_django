@@ -249,6 +249,8 @@ def balance_pdf_view(request, rif):
     except EntityNotFoundException as e:
         return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)
 
+
+@api_view(['GET'])
 def balance_seller_pdf_view(request, seller_ids):
     repository = get_documento_repository()
     try:
@@ -261,3 +263,5 @@ def balance_seller_pdf_view(request, seller_ids):
         return response
     except EntityNotFoundException as e:
         return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

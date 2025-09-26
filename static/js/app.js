@@ -455,7 +455,7 @@ class CobranzasApp {
                 topSalesMonth = data.ventas_por_mes[topSalesIndex].mes;
 
                 //lessSales = (data.ventas_por_mes[lessSalesIndex].monto / 1000).toString().split(".")[0] + "K";
-                lessSales = this.formatCurrency(data.ventas_por_mes[lessSalesIndex].monto / 1000, false) + "K";
+                lessSales = this.formatCurrency(data.ventas_por_mes[lessSalesIndex].monto / 1000, false, false) + "K";
                 lessSalesMonth = data.ventas_por_mes[lessSalesIndex].mes;
 
                 let salesPercentage = (topSales !== 0) ? correntSalesNum * 100 / topSales: 0; 
@@ -463,16 +463,16 @@ class CobranzasApp {
                 if (salesPercentage > 100) salesPercentage = 100;
 
                 //let currentSales = (data.ventas_por_mes[2].monto / 1000).toString().split(".")[0] + "K";
-                let currentSales = this.formatCurrency(data.ventas_por_mes[2].monto, true);
+                let currentSales = this.formatCurrency(data.ventas_por_mes[2].monto, true, false);
 
-                topSales = this.formatCurrency(topSales, false) + "K";
+                topSales = this.formatCurrency(topSales, false, false) + "K";
 
                 document.getElementById('currentSales').textContent = currentSales;
                 document.getElementById('lessSales').textContent = lessSales + " " + lessSalesMonth;
                 //document.getElementById('topSales').textContent = topSales.toString().split(".")[0] + "K" + " " + topSalesMonth;
                 document.getElementById('topSales').textContent = topSales + " " + topSalesMonth;
                 //document.getElementById('remainingSales').textContent = remainingSales.toString().split(".")[0] + "K";
-                document.getElementById('remainingSales').textContent =  this.formatCurrency(remainingSales, false) + "K";
+                document.getElementById('remainingSales').textContent =  this.formatCurrency(remainingSales, false, false) + "K";
                 document.getElementById('salesPercentage').style= `width:${salesPercentage}%`;
             }
 
@@ -1306,10 +1306,10 @@ class CobranzasApp {
                                     <div class="flex-1">
                                         <p class="font-medium text-gray-900">${producto.descripcion}</p>
                                         <p class="text-sm text-gray-600">${producto.codigo}</p>
-                                        <p class="text-sm text-gray-500">${producto.cantidad} x ${this.formatCurrency(producto.precio_unitario)}</p>
+                                        <p class="text-sm text-gray-500">${producto.cantidad} x ${this.formatCurrency(producto.precio_unitario, true, true)}</p>
                                     </div>
                                     <div class="text-right">
-                                        <span class="font-medium">${this.formatCurrency(producto.subtotal)}</span>
+                                        <span class="font-medium">${this.formatCurrency(producto.subtotal, true, true)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -1338,20 +1338,20 @@ class CobranzasApp {
                 <div class="space-y-3">
                     <div class="flex justify-between">
                         <span class="text-gray-600">Subtotal</span>
-                        <span class="font-medium">${this.formatCurrency(documento.subtotal || 0)}</span>
+                        <span class="font-medium">${this.formatCurrency(documento.subtotal || 0, true)}</span>
                     </div>
                     
                     ${documento.descuentos && documento.descuentos > 0 ? `
                         <div class="flex justify-between">
                             <span class="text-gray-600">Descuentos</span>
-                            <span class="font-medium text-red-500">-${this.formatCurrency(documento.descuentos)}</span>
+                            <span class="font-medium text-red-500">-${this.formatCurrency(documento.descuentos, true)}</span>
                         </div>
                     ` : ''}
                     
                     ${documento.impuestos && documento.impuestos > 0 ? `
                         <div class="flex justify-between">
                             <span class="text-gray-600">Impuestos</span>
-                            <span class="font-medium">${this.formatCurrency(documento.impuestos)}</span>
+                            <span class="font-medium">${this.formatCurrency(documento.impuestos, true)}</span>
                         </div>
                     ` : ''}
                     
@@ -1359,12 +1359,12 @@ class CobranzasApp {
                     
                     <div class="flex justify-between">
                         <span class="text-gray-900 font-medium">Total</span>
-                        <span class="font-bold text-lg">${this.formatCurrency(documento.total || documento.monto)}</span>
+                        <span class="font-bold text-lg">${this.formatCurrency(documento.total || documento.monto, true)}</span>
                     </div>
                     
                     <div class="flex justify-between">
                         <span class="text-red-600 font-medium">Pendiente</span>
-                        <span class="font-bold text-lg text-red-600">${this.formatCurrency(documento.saldo || documento.monto)}</span>
+                        <span class="font-bold text-lg text-red-600">${this.formatCurrency(documento.saldo || documento.monto, true)}</span>
                     </div>
                 </div>
             </div>
@@ -2060,7 +2060,7 @@ class CobranzasApp {
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Vencido</p>
-                            <p class="text-xl font-semibold text-red-500">${this.formatCurrency(resumen.situacion.total_vencido)}</p>
+                            <p class="text-xl font-semibold text-red-500">${this.formatCurrency(resumen.situacion.total_vencido, true) }</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Cantidad</p>
@@ -2074,7 +2074,7 @@ class CobranzasApp {
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Total</p>
-                            <p class="text-xl font-semibold text-gray-700">${this.formatCurrency(resumen.situacion.total_neto)}</p>
+                            <p class="text-xl font-semibold text-gray-700">${this.formatCurrency(resumen.situacion.total_neto, true)}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Cantidad</p>
@@ -2088,11 +2088,11 @@ class CobranzasApp {
                     <div class="grid grid-cols-2 gap-4">
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Neto</p>
-                            <p class="text-xl font-semibold text-gray-700">${this.formatCurrency(resumen.situacion.total_vencido + resumen.situacion.total_por_vencer)}</p>
+                            <p class="text-xl font-semibold text-gray-700">${this.formatCurrency(resumen.situacion.total_vencido + resumen.situacion.total_por_vencer, true)}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Créditos</p>
-                            <p class="text-xl font-semibold text-red-500">${this.formatCurrency(Math.abs(resumen.situacion.total_creditos)*-1)}</p>
+                            <p class="text-xl font-semibold text-red-500">${this.formatCurrency(Math.abs(resumen.situacion.total_creditos)*-1, true)}</p>
                         </div>
                     </div>
                 </div>
@@ -2133,10 +2133,10 @@ class CobranzasApp {
         `;
     }
 
-    formatCurrency(amount, showSign = false) {
+    formatCurrency(amount,showSign = false, showDecimal = true) {
         return new Intl.NumberFormat('es-ES', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
+            minimumFractionDigits: showDecimal ? 2 : 0,
+            maximumFractionDigits: showDecimal ? 2 : 0,
             useGrouping: true
         }).format(amount) + (showSign ? ' $' : '');
     }
@@ -2182,7 +2182,7 @@ class CobranzasApp {
                             size: 12
                         },
                         formatter: function(value) {
-                            return formatCurrency(value / 1000, false) + 'k';
+                            return formatCurrency(value / 1000, false, false) + 'k';
                         }
                     }
                 },

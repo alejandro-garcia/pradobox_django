@@ -448,25 +448,31 @@ class CobranzasApp {
                     topSalesIndex = 1
                     lessSalesIndex = 0;
                 }
-                
+                debugger;
                 topSales = data.ventas_por_mes[topSalesIndex].monto / 1000;
                 let remainingSales  = Math.round((topSales - correntSalesNum),1)
 
                 topSalesMonth = data.ventas_por_mes[topSalesIndex].mes;
 
-                lessSales = (data.ventas_por_mes[lessSalesIndex].monto / 1000).toString().split(".")[0] + "K";
+                //lessSales = (data.ventas_por_mes[lessSalesIndex].monto / 1000).toString().split(".")[0] + "K";
+                lessSales = this.formatCurrency(data.ventas_por_mes[lessSalesIndex].monto / 1000, false) + "K";
                 lessSalesMonth = data.ventas_por_mes[lessSalesIndex].mes;
 
                 let salesPercentage = (topSales !== 0) ? correntSalesNum * 100 / topSales: 0; 
 
                 if (salesPercentage > 100) salesPercentage = 100;
 
-                let currentSales = (data.ventas_por_mes[2].monto / 1000).toString().split(".")[0] + "K";
+                //let currentSales = (data.ventas_por_mes[2].monto / 1000).toString().split(".")[0] + "K";
+                let currentSales = this.formatCurrency(data.ventas_por_mes[2].monto, true);
+
+                topSales = this.formatCurrency(topSales, false) + "K";
 
                 document.getElementById('currentSales').textContent = currentSales;
                 document.getElementById('lessSales').textContent = lessSales + " " + lessSalesMonth;
-                document.getElementById('topSales').textContent = topSales.toString().split(".")[0] + "K" + " " + topSalesMonth;
-                document.getElementById('remainingSales').textContent = remainingSales.toString().split(".")[0] + "K";
+                //document.getElementById('topSales').textContent = topSales.toString().split(".")[0] + "K" + " " + topSalesMonth;
+                document.getElementById('topSales').textContent = topSales + " " + topSalesMonth;
+                //document.getElementById('remainingSales').textContent = remainingSales.toString().split(".")[0] + "K";
+                document.getElementById('remainingSales').textContent =  this.formatCurrency(remainingSales, false) + "K";
                 document.getElementById('salesPercentage').style= `width:${salesPercentage}%`;
             }
 
@@ -476,18 +482,18 @@ class CobranzasApp {
             let percentageDays = data.situacion.dias_transcurridos * 100 / (data.situacion.dias_faltantes + data.situacion.dias_transcurridos);
            
             document.getElementById('daysPercentage').style= `width:${percentageDays}%`;
-            document.getElementById('totalVencido').textContent = this.formatCurrency(data.situacion.total_vencido);
+            document.getElementById('totalVencido').textContent = this.formatCurrency(data.situacion.total_vencido, true);
             document.getElementById('cantidadVencido').textContent = data.situacion.cantidad_documentos_vencidos;
             document.getElementById('diasVencido').textContent = data.situacion.dias_promedio_vencimiento;
-            document.getElementById('totalGeneral').textContent =  this.formatCurrency(data.situacion.total_vencido + data.situacion.total_por_vencer - data.situacion.total_sinvencimiento);
+            document.getElementById('totalGeneral').textContent =  this.formatCurrency(data.situacion.total_vencido + data.situacion.total_por_vencer - data.situacion.total_sinvencimiento, true);
             document.getElementById('cantidadTotal').textContent = data.situacion.cantidad_documentos_total;
             document.getElementById('diasTotal').textContent = data.situacion.dias_promedio_vencimiento_todos;
-            document.getElementById('totalNeto').textContent =  this.formatCurrency(data.situacion.total_neto);
-            document.getElementById('totalCreditos').textContent = this.formatCurrency(data.situacion.total_creditos * -1);
+            document.getElementById('totalNeto').textContent =  this.formatCurrency(data.situacion.total_neto, true);
+            document.getElementById('totalCreditos').textContent = this.formatCurrency(data.situacion.total_creditos * -1, true);
 
             // Create charts only if they don't exist
             if (!this.charts.ventas) {
-                this.createVentasChart(data.ventas_por_mes);
+                this.createVentasChart(data.ventas_por_mes, this.formatCurrency);
             }
 
             if (!this.offlineMode) {
@@ -758,18 +764,18 @@ class CobranzasApp {
 
     displayDocumentosPendientes(data) {
         // Update resumen
-        document.getElementById('resumenVencido').textContent = this.formatCurrency(data.resumen.total_vencido);
+        document.getElementById('resumenVencido').textContent = this.formatCurrency(data.resumen.total_vencido, true);
         document.getElementById('resumenCantidadVencido').textContent = data.resumen.cantidad_documentos_vencidos;
         document.getElementById('resumenDiasVencido').textContent = data.resumen.dias_promedio_vencimiento;
         
         const totalGeneral = data.resumen.total_vencido + data.resumen.total_por_vencer - data.resumen.total_sinvencimiento;
         
-        document.getElementById('resumenTotal').textContent = this.formatCurrency(totalGeneral);
+        document.getElementById('resumenTotal').textContent = this.formatCurrency(totalGeneral, true);
         document.getElementById('resumenCantidadTotal').textContent = data.resumen.cantidad_documentos_total;
         document.getElementById('resumenDiasTotal').textContent = data.resumen.dias_promedio_vencimiento_todos;
         
-        document.getElementById('resumenNeto').textContent = this.formatCurrency(data.resumen.total_neto);
-        document.getElementById('resumenCreditos').textContent = this.formatCurrency(data.resumen.total_creditos * -1);
+        document.getElementById('resumenNeto').textContent = this.formatCurrency(data.resumen.total_neto, true);
+        document.getElementById('resumenCreditos').textContent = this.formatCurrency(data.resumen.total_creditos * -1, true);
 
         // Display documentos
         document.getElementById('globalPendingDocsTitle').textContent = 'DOCUMENTOS PENDIENTES (' + data.documentos.length + ')';
@@ -2127,7 +2133,15 @@ class CobranzasApp {
         `;
     }
 
-    createVentasChart(data) {       
+    formatCurrency(amount, showSign = false) {
+        return new Intl.NumberFormat('es-ES', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+            useGrouping: true
+        }).format(amount) + (showSign ? ' $' : '');
+    }
+
+    createVentasChart(data, formatCurrency) {       
         // Verificar si ya existe un gráfico
         if (this.charts.ventas) {
             this.charts.ventas.data.labels = data.map(item => item.mes);
@@ -2168,7 +2182,7 @@ class CobranzasApp {
                             size: 12
                         },
                         formatter: function(value) {
-                            return (value / 1000).toFixed(0) + 'k';
+                            return formatCurrency(value / 1000, false) + 'k';
                         }
                     }
                 },
@@ -2212,14 +2226,6 @@ class CobranzasApp {
             month: '2-digit',
             year: 'numeric'
         });
-    }
-
-    formatCurrency(amount) {
-        return new Intl.NumberFormat('es-ES', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-            useGrouping: true
-        }).format(amount);
     }
 
     showSuccess(message) {

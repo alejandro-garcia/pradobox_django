@@ -68,13 +68,19 @@
             color: #333;
             background-color: #f4f4f4;
 			-webkit-print-color-adjust: exact;
+            margin: 0;
+            padding: 0;
+            width: 100%;
 		}
         .container {
             position: relative;
             height: 297mm;
-            width: 210mm;
+            /*width: 210mm;*/
 			
-	        max-width: 800px;
+	        /* max-width: 800px; */
+            width: 100%;
+            max-width: 100%;
+            
             margin: 0 auto;
             /*background-color: #fff;*/
             border-radius: 8px;
@@ -172,25 +178,17 @@
             <div class="date"><span class="span-date">Fecha de Emisión: {{ fecha }}</span></div> -->
         </div>
 
-        <div class="client-info">
+        <!-- <div class="client-info">
             <div class="info-box">
-                <!-- <h2>Información del Cliente</h2>
-                <p><strong>Cliente:</strong>{{ cliente }}</p> -->
                 <p><strong>Vendedor:</strong> {{ vendedor }}</p>
             </div>
+        </div> -->
 
-            <!-- <div class="info-box"> -->
-                <!-- <h2>Información de la Factura</h2> -->
-                <!-- <p><strong>Número de Factura:</strong> {{ nro_factura }}</p> -->
-                <!-- <p><strong>Fecha de Vencimiento:</strong> {{ fecha_vencimiento }}</p> -->
-                <!-- <p><strong>Moneda:</strong> {{ moneda }}</p> -->
-            <!-- </div> -->
-        </div>
         <div>
             <table>
                 <thead>
                     <tr>
-                        <th>Cliente</th>
+                        <!-- <th>Cliente</th> -->
                         <th>Tipo Doc.</th>
                         <th>Nro.Doc</th>
                         <th>Fec. Emis</th>
@@ -202,9 +200,19 @@
                 </thead>
                 <tbody>
                     {% for doc in documentos %}
-                    {% if doc.flag == 0 %}
+                    {% if doc.flag == 0 and doc.rif != None %}
+                    <tr> 
+                        <td colspan="7"><strong>VENDEDOR: {{ doc.rif }}</strong></td>
+                    </tr>
+                    {% endif %}
+                    {% if doc.flag == 1 and doc.rif != None %}
+                    <tr> 
+                        <td colspan="7"><strong>CLIENTE: {{ doc.rif }}</strong></td>
+                    </tr>
+                    {% endif %}
+                    {% if doc.flag == 2 %}
                     <tr>
-                        <td>{{ doc.cliente }}</td>
+                        <!-- <td>{{ doc.cliente }}</td> -->
                         <td>{{ doc.tipo_doc }}</td>
                         <td>{{ doc.nro_doc }}</td>
                         <td>{{ doc.fec_emis }}</td>
@@ -213,9 +221,10 @@
                         <td class="align-right">{{ doc.tot_neto }}</td>
                         <td class="align-right {% if doc.dias_vcto > 0 %} negativo {% endif %}">{{ doc.saldo }}</td>
                     </tr>
-                    {% else %}
+                    {% endif %}
+                    {% if doc.flag >= 3 %}
                     <tr>
-                        <td colspan="5" class="align-right"><strong>{{ doc.rif }}</strong></td>
+                        <td colspan="4" class="align-right"><strong>{{ doc.rif }}</strong></td>
                         <td><strong>{{ doc.dias_vcto }}</strong></td>
                         <td class="align-right"><strong>{{ doc.tot_neto }}</strong></td>
                         <td class="align-right {% if doc.dias_vcto > 0 %} negativo {% endif %}"><strong>{{ doc.saldo }}</strong></td>

@@ -302,6 +302,11 @@ class CreateDocumentPdfUseCase(UseCase[str, bytes]):
 
         # Opciones básicas para wkhtmltopdf/pdfkit
         options = {
+            'page-size': 'Letter',
+            'margin-top': '0.01in',
+            'margin-right': '0.01in',
+            'margin-bottom':'0.01in',
+            'margin-left':'0.01in',
             'encoding': 'UTF-8',
             'enable-local-file-access': None,
             'quiet': ''
@@ -417,6 +422,11 @@ class CreateSellerBalancePdfUseCase(UseCase[str, bytes]):
 
         # Opciones básicas para wkhtmltopdf/pdfkit
         options = {
+            'page-size': 'Letter',
+            'margin-top': '0.01in',
+            'margin-right': '0.01in',
+            'margin-bottom':'0.01in',
+            'margin-left':'0.01in',
             'encoding': 'UTF-8',
             'enable-local-file-access': None,
             'quiet': ''

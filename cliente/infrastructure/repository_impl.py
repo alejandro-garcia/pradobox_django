@@ -2,7 +2,7 @@ from typing import List, Optional
 from decimal import Decimal
 from django.db import connection
 from shared.domain.value_objects import ClientId, MoneySigned, SellerId
-from ..domain.entities import Cliente, ResumenCliente
+from ..domain.entities import Cliente, ResumenCliente, ClientFilterCriteria
 from ..domain.repository import ClienteRepository
 from .models import ClienteModel
 
@@ -65,6 +65,81 @@ class DjangoClienteRepository(ClienteRepository):
             cliente_models = cliente_models.filter(vendedor_id__in=seller_codes).order_by('dias_ult_fact', 'nombre')
         
         return [self._to_domain(model) for model in cliente_models]
+    
+    def search_by_name_seller_with_criteria(self, nombre: str, seller_id: SellerId, criteria: ClientFilterCriteria) -> List[Cliente]:
+        qs = ClienteModel.objects.all()
+
+        # Optional name filter
+        if nombre and len(nombre) >= 3:
+            qs = qs.filter(nombre__icontains=nombre)
+
+        # Seller filter
+        if seller_id and seller_id.value != "-1":
+            seller_codes = []
+            if "," in seller_id.value:
+                seller_codes = [c.strip() for c in seller_id.value.split(",")]
+            else:
+                seller_codes.append(seller_id.value)
+            qs = qs.filter(vendedor_id__in=seller_codes)
+
+        # Map numeric buckets
+        def apply_bucket(queryset, field_name: str, bucket: str):
+            mapping = {
+                'lessTen': (0, 10),
+                'lestHundred': (11, 100),
+                'lestThousand': (101, 1000),
+                'lestTenThousand': (1001, 10000),
+                'overTenThousand': (10001, None)
+            }
+            if not bucket or bucket == 'all':
+                return queryset
+            rng = mapping.get(bucket)
+            if not rng:
+                return queryset
+            min_v, max_v = rng
+            if min_v is not None:
+                queryset = queryset.filter(**{f"{field_name}__gte": min_v})
+            if max_v is not None:
+                queryset = queryset.filter(**{f"{field_name}__lte": max_v})
+            return queryset
+
+        # Map days buckets
+        def apply_days_bucket(queryset, field_name: str, bucket: str):
+            mapping = {
+                'upToSeven': (0, 7),
+                'upToFourteen': (8, 14),
+                'upToThirty': (15, 30),
+                'upToSixty': (31, 60),
+                'upToNinety': (61, 90)
+            }
+            if not bucket or bucket == 'all':
+                return queryset
+            rng = mapping.get(bucket)
+            if not rng:
+                return queryset
+            min_v, max_v = rng
+            if min_v is not None:
+                queryset = queryset.filter(**{f"{field_name}__gte": min_v})
+            if max_v is not None:
+                queryset = queryset.filter(**{f"{field_name}__lte": max_v})
+            return queryset
+
+        # Apply criteria
+        # We don't have a last-year sales field; approximate with ventas_ultimo_trimestre
+        if criteria:
+            if criteria.lastYearSales:
+                qs = apply_bucket(qs, 'ventas_ultimo_trimestre', criteria.lastYearSales)
+            if criteria.overdueDebt:
+                qs = apply_bucket(qs, 'vencido', criteria.overdueDebt)
+            if criteria.totalOverdue:
+                qs = apply_bucket(qs, 'total', criteria.totalOverdue)
+            if criteria.daysSinceLastInvoice:
+                qs = apply_days_bucket(qs, 'dias_ult_fact', criteria.daysSinceLastInvoice)
+            # criteria.daysPastDue is not available at client level; would require join/aggregate on documents
+
+        qs = qs.order_by('dias_ult_fact', 'nombre')
+
+        return [self._to_domain(model) for model in qs]
     
     def get_resumen_cliente(self, cliente_id: ClientId) -> Optional[ResumenCliente]:
         try:

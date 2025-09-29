@@ -2,7 +2,7 @@ from typing import List, Optional
 from shared.application.use_case import UseCase
 from shared.domain.value_objects import ClientId, SellerId
 from shared.domain.exceptions import EntityNotFoundException
-from ..domain.entities import Cliente
+from ..domain.entities import Cliente, ClientFilterCriteria
 from ..domain.repository import ClienteRepository
 from .dtos import CrearClienteRequest, ClienteResponse, ResumenClienteResponse
 
@@ -113,4 +113,30 @@ class ListarClientesPorVendedorUseCase(UseCase[List[str], List[ClienteResponse]]
             )
             for cliente in clientes
             if cliente.total > 0 or len(search_term or '') >= 3
+        ]
+
+
+class ListarClientesPorVendedorConCriteriosUseCase(UseCase[List[str], List[ClienteResponse]]):
+    def __init__(self, cliente_repository: ClienteRepository):
+        self.cliente_repository = cliente_repository
+
+    def execute(self, seller_id: str, search_term: Optional[str], criteria: ClientFilterCriteria) -> List[ClienteResponse]:
+        clientes = self.cliente_repository.search_by_name_seller_with_criteria(search_term, SellerId(seller_id), criteria)
+
+        return [
+            ClienteResponse(
+                id=cliente.id.value,
+                nombre=cliente.nombre,
+                rif=cliente.rif,
+                rif2=cliente.rif2,
+                telefono=cliente.telefono,
+                email=cliente.email,
+                direccion=cliente.direccion,
+                vendedor=cliente.vendedor,
+                dias_ult_fact=cliente.dias_ult_fact,
+                vencido=cliente.vencido,
+                total=cliente.total,
+                ventas_ultimo_trimestre=cliente.ventas_ultimo_trimestre
+            )
+            for cliente in clientes
         ]

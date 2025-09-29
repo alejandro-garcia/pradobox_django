@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import List, Optional
 from shared.infrastructure.repository import Repository
 from shared.domain.value_objects import ClientId, SellerId
-from .entities import Cliente, ResumenCliente
+from .entities import Cliente, ResumenCliente, ClientFilterCriteria
 
 
 class ClienteRepository(Repository[Cliente, ClientId]):
@@ -31,3 +31,7 @@ class ClienteRepository(Repository[Cliente, ClientId]):
     def search_by_name_and_seller(self, nombre: str, seller_id: SellerId) -> List[Cliente]:
         pass
 
+    @abstractmethod
+    def search_by_name_seller_with_criteria(self, nombre: str, seller_id: SellerId, criteria: ClientFilterCriteria) -> List[Cliente]:
+        """Search clients by optional name and seller applying criteria buckets."""
+        pass

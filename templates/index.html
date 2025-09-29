@@ -188,10 +188,81 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </div>
+                        <!-- Filters toggle button -->
+                        <button id="toggleFiltersBtn" type="button" class="absolute inset-y-0 right-8 pr-2 flex items-center text-gray-500 hover:text-gray-700" title="Filtros">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 01.8 1.6l-4.2 5.6a1 1 0 00-.2.6v3.8a1 1 0 01-1.447.894l-2-1A1 1 0 018 14.6V12a1 1 0 00-.2-.6L3.2 5.6A1 1 0 013 5z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
                         <div id="clearSearchBtn" class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer hidden">
                             <svg class="w-5 h-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
+                        </div>
+                    </div>
+                    <!-- Search Filters -->
+                    <div id="searchFilters" class="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3 hidden">
+                        <div class="grid grid-cols-2 gap-3">
+                            <!-- lastYearSales -->
+                            <div>
+                                <label for="filterLastYearSales" class="block text-xs text-gray-600 mb-1">Ventas último año</label>
+                                <select id="filterLastYearSales" class="w-full border-gray-300 rounded-md text-sm">
+                                    <option value="all">(Todas)</option>
+                                    <option value="lessTen">0-10</option>
+                                    <option value="lestHundred">11-100</option>
+                                    <option value="lestThousand">101-1000</option>
+                                    <option value="lestTenThousand">1001-10000</option>
+                                    <option value="overTenThousand">>=10001</option>
+                                </select>
+                            </div>
+                            <!-- overdueDebt -->
+                            <div>
+                                <label for="filterOverdueDebt" class="block text-xs text-gray-600 mb-1">Deuda vencida</label>
+                                <select id="filterOverdueDebt" class="w-full border-gray-300 rounded-md text-sm">
+                                    <option value="all">(Todas)</option>
+                                    <option value="lessTen">0-10</option>
+                                    <option value="lestHundred">11-100</option>
+                                    <option value="lestThousand">101-1000</option>
+                                    <option value="lestTenThousand">1001-10000</option>
+                                    <option value="overTenThousand">>=10001</option>
+                                </select>
+                            </div>
+                            <!-- totalOverdue -->
+                            <div>
+                                <label for="filterTotalOverdue" class="block text-xs text-gray-600 mb-1">Total por cobrar</label>
+                                <select id="filterTotalOverdue" class="w-full border-gray-300 rounded-md text-sm">
+                                    <option value="all">(Todas)</option>
+                                    <option value="lessTen">0-10</option>
+                                    <option value="lestHundred">11-100</option>
+                                    <option value="lestThousand">101-1000</option>
+                                    <option value="lestTenThousand">1001-10000</option>
+                                    <option value="overTenThousand">>=10001</option>
+                                </select>
+                            </div>
+                            <!-- daysPastDue -->
+                            <div>
+                                <label for="filterDaysPastDue" class="block text-xs text-gray-600 mb-1">Días vencidos</label>
+                                <select id="filterDaysPastDue" class="w-full border-gray-300 rounded-md text-sm">
+                                    <option value="all">(Todas)</option>
+                                    <option value="upToSeven">0-7</option>
+                                    <option value="upToFourteen">8-14</option>
+                                    <option value="upToThirty">15-30</option>
+                                    <option value="upToSixty">31-60</option>
+                                    <option value="upToNinety">61-90</option>
+                                </select>
+                            </div>
+                            <!-- daysSinceLastInvoice -->
+                            <div>
+                                <label for="filterDaysSinceLastInvoice" class="block text-xs text-gray-600 mb-1">Días desde última factura</label>
+                                <select id="filterDaysSinceLastInvoice" class="w-full border-gray-300 rounded-md text-sm">
+                                    <option value="all">(Todas)</option>
+                                    <option value="upToSeven">0-7</option>
+                                    <option value="upToFourteen">8-14</option>
+                                    <option value="upToThirty">15-30</option>
+                                    <option value="upToSixty">31-60</option>
+                                    <option value="upToNinety">61-90</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                     <div id="searchResults" class="mt-2 text-sm text-gray-600 hidden">
@@ -412,7 +483,7 @@
             <div class="flex justify-around">
                 <button class="nav-item flex flex-col items-center py-2 px-3 rounded-lg transition-colors active" data-view="dashboard">
                     <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
+                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a2 2 0 012-2v2a2 2 0 01-2 2v2a2 2 0 01-2-2v-2a2 2 0 012-2h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 01.293.707V14a1 1 0 01-1 1H3z"></path>
                     </svg>
                     <span class="text-xs">Situación</span>
                 </button>

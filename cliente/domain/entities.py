@@ -45,3 +45,12 @@ class ResumenCliente:
     @property
     def total_neto(self) -> MoneySigned:
         return self.total_vencido + self.total_por_vencer - self.total_creditos
+
+
+@dataclass
+class ClientFilterCriteria:
+    lastYearSales: Optional[str] = None
+    overdueDebt: Optional[str] = None
+    totalOverdue: Optional[str] = None
+    daysPastDue: Optional[str] = None
+    daysSinceLastInvoice: Optional[str] = None

@@ -6,9 +6,11 @@ from ..application.use_cases import (
     ObtenerClienteUseCase, 
     ObtenerResumenClienteUseCase,
     ListarClientesUseCase,
-    ListarClientesPorVendedorUseCase
+    ListarClientesPorVendedorUseCase,
+    ListarClientesPorVendedorConCriteriosUseCase
 )
 
+from ..domain.entities import ClientFilterCriteria
 from .repository_impl import DjangoClienteRepository
 
 def get_cliente_repository():
@@ -48,6 +50,42 @@ def clients_by_seller(request, seller_id):
     use_case =  ListarClientesPorVendedorUseCase(repository)
 
     clientes = use_case.execute(seller_id, search_term if search_term else None)
+
+    return Response([{
+        'id': cliente.id,
+        'nombre': cliente.nombre,
+        'rif': cliente.rif,
+        'telefono': cliente.telefono,
+        'email': cliente.email,
+        'direccion': cliente.direccion,
+        'dias_ult_fact': cliente.dias_ult_fact,
+        'vencido': float(cliente.vencido) if cliente.vencido else 0,
+        'total': float(cliente.total) if cliente.total else 0,
+        'ventas_ultimo_trimestre': float(cliente.ventas_ultimo_trimestre) if cliente.ventas_ultimo_trimestre else 0
+    } for cliente in clientes])
+
+
+@api_view(['GET'])
+def clients_by_seller_filter(request, seller_id):
+    repository = get_cliente_repository()
+
+    # Build criteria from query params (only non-'all' values considered)
+    def qp(name):
+        val = request.GET.get(name)
+        return val if val and val != 'all' else None
+
+    criteria = ClientFilterCriteria(
+        lastYearSales=qp('lastYearSales'),
+        overdueDebt=qp('overdueDebt'),
+        totalOverdue=qp('totalOverdue'),
+        daysPastDue=qp('daysPastDue'),
+        daysSinceLastInvoice=qp('daysSinceLastInvoice'),
+    )
+
+    search_term = request.GET.get('search', '').strip()
+
+    use_case = ListarClientesPorVendedorConCriteriosUseCase(repository)
+    clientes = use_case.execute(seller_id, search_term if search_term else None, criteria)
 
     return Response([{
         'id': cliente.id,

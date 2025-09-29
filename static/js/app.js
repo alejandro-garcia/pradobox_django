@@ -167,12 +167,43 @@ class CobranzasApp {
     setupClientSearchEventListeners() {
         const searchInput = document.getElementById('clienteSearchInput');
         const clearBtn = document.getElementById('clearSearchBtn');
+        const toggleFiltersBtn = document.getElementById('toggleFiltersBtn');
+        const searchFiltersDiv = document.getElementById('searchFilters');
+
+        // Selects
+        const filterLastYearSales = document.getElementById('filterLastYearSales');
+        const filterOverdueDebt = document.getElementById('filterOverdueDebt');
+        const filterTotalOverdue = document.getElementById('filterTotalOverdue');
+        const filterDaysPastDue = document.getElementById('filterDaysPastDue');
+        const filterDaysSinceLastInvoice = document.getElementById('filterDaysSinceLastInvoice');
+
         let searchTimeout;
+
+        // Helpers
+        const getFilters = () => ({
+            lastYearSales: filterLastYearSales ? filterLastYearSales.value : 'all',
+            overdueDebt: filterOverdueDebt ? filterOverdueDebt.value : 'all',
+            totalOverdue: filterTotalOverdue ? filterTotalOverdue.value : 'all',
+            daysPastDue: filterDaysPastDue ? filterDaysPastDue.value : 'all',
+            daysSinceLastInvoice: filterDaysSinceLastInvoice ? filterDaysSinceLastInvoice.value : 'all',
+        });
+
+        const onFiltersChanged = () => {
+            const searchTerm = searchInput ? searchInput.value.trim() : '';
+            if (searchTerm.length === 0 || searchTerm.length >= 0) {
+                this.searchClientes(searchTerm, getFilters());
+            }
+        };
+
+        if (toggleFiltersBtn && searchFiltersDiv) {
+            toggleFiltersBtn.addEventListener('click', () => {
+                searchFiltersDiv.classList.toggle('hidden');
+            });
+        }
 
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 const searchTerm = e.target.value.trim();
-                
                 // Show/hide clear button
                 if (searchTerm.length > 0) {
                     clearBtn.classList.remove('hidden');
@@ -180,17 +211,15 @@ class CobranzasApp {
                     clearBtn.classList.add('hidden');
                 }
 
-                // Clear previous timeout
+                // Debounce
                 if (searchTimeout) {
                     clearTimeout(searchTimeout);
                 }
-
-                // Set new timeout for search
                 searchTimeout = setTimeout(() => {
                     if (searchTerm.length >= 3 || searchTerm.length === 0) {
-                        this.searchClientes(searchTerm);
+                        this.searchClientes(searchTerm, getFilters());
                     }
-                }, 300); // 300ms delay for better UX
+                }, 300);
             });
         }
 
@@ -198,9 +227,14 @@ class CobranzasApp {
             clearBtn.addEventListener('click', () => {
                 searchInput.value = '';
                 clearBtn.classList.add('hidden');
-                this.searchClientes('');
+                this.searchClientes('', getFilters());
             });
         }
+
+        // React on select changes
+        [filterLastYearSales, filterOverdueDebt, filterTotalOverdue, filterDaysPastDue, filterDaysSinceLastInvoice]
+            .filter(Boolean)
+            .forEach(sel => sel.addEventListener('change', onFiltersChanged));
     }
 
     navigateTo(view) {
@@ -928,7 +962,7 @@ class CobranzasApp {
         }).join('');
     }
 
-    async searchClientes(searchTerm) {
+    async searchClientes(searchTerm, filters = null) {
         this.showClientesLoading(true);
         
         try {
@@ -938,19 +972,72 @@ class CobranzasApp {
                 clientes = await window.indexedDBService.getClientes();
                 // Transform and filter locally
                 clientes = clientes
-                    .map(cliente => this.clientToDomain(cliente))
-                    .filter(cliente => 
-                        searchTerm === '' || 
-                        cliente.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-                    );
+                    .map(cliente => this.clientToDomain(cliente));
+
+                // Apply name filter
+                if (searchTerm && searchTerm.length >= 3) {
+                    clientes = clientes.filter(c => c.nombre.toLowerCase().includes(searchTerm.toLowerCase()));
+                }
+
+                // Apply filters (criteria)
+                if (filters) {
+                    const inBucket = (value, bucket) => {
+                        if (bucket === 'all') return true;
+                        const map = {
+                            lessTen: [0, 10],
+                            lestHundred: [11, 100],
+                            lestThousand: [101, 1000],
+                            lestTenThousand: [1001, 10000],
+                            overTenThousand: [10001, null],
+                        };
+                        const range = map[bucket];
+                        if (!range) return true;
+                        const [min, max] = range;
+                        if (min !== null && Number(value) < min) return false;
+                        if (max !== null && Number(value) > max) return false;
+                        return true;
+                    };
+
+                    const inDaysBucket = (value, bucket) => {
+                        if (bucket === 'all') return true;
+                        const map = {
+                            upToSeven: [0, 7],
+                            upToFourteen: [8, 14],
+                            upToThirty: [15, 30],
+                            upToSixty: [31, 60],
+                            upToNinety: [61, 90],
+                        };
+                        const range = map[bucket];
+                        if (!range) return true;
+                        const [min, max] = range;
+                        if (min !== null && Number(value ?? 0) < min) return false;
+                        if (max !== null && Number(value ?? 0) > max) return false;
+                        return true;
+                    };
+
+                    clientes = clientes.filter(c => {
+                        const okSales = inBucket((c.ventas_ultimo_trimestre || 0), filters.lastYearSales);
+                        const okOverdueDebt = inBucket((c.vencido || 0), filters.overdueDebt);
+                        const okTotal = inBucket((c.total || 0), filters.totalOverdue);
+                        // daysPastDue: not available per client in local model; skip for now
+                        const okDaysSinceLastInv = inDaysBucket((c.dias_ult_fact || 0), filters.daysSinceLastInvoice);
+                        return okSales && okOverdueDebt && okTotal && okDaysSinceLastInv;
+                    });
+                }
             } else {
                 const user = window.authService.getCurrentUser();
-                const seller_code = user.codigo_vendedor_profit || '-1'; 
+                const sellerCode = user.codigo_vendedor_profit || '-1';
+                const params = new URLSearchParams();
+                if (searchTerm) params.set('search', searchTerm);
+                if (filters) {
+                    Object.entries(filters).forEach(([k, v]) => { if (v && v !== 'all') params.set(k, v); });
+                }
 
-                const url = searchTerm 
-                    ? `${this.apiBaseUrl}/clientes/vendedor/${seller_code}?search=${encodeURIComponent(searchTerm)}`
-                    : `${this.apiBaseUrl}/clientes/vendedor/${seller_code}`;
-                    
+                // Decide endpoint
+                const hasAnyFilter = filters && Object.values(filters).some(v => v && v !== 'all');
+                const endpoint = hasAnyFilter ? `${this.apiBaseUrl}/clientes/vendedor/${sellerCode}/filter` : `${this.apiBaseUrl}/clientes/vendedor/${sellerCode}`;
+                const url = params.toString() ? `${endpoint}?${params.toString()}` : endpoint;
+
                 const response = await fetch(url, {
                     headers: window.authService.getAuthHeaders()
                 });
@@ -1882,9 +1969,9 @@ class CobranzasApp {
             const tipoColor = this.getTipoColor(doc.tipo);
             const tipoAbrev = this.getTipoAbreviacion(doc.tipo);
             const timeAgo = this.getTimeAgo(doc.fecha_emision);
-            
-            let diasCredito =  '';
-            let diasVencido = '';
+
+            let diasCredito =  ''; 
+            let diasVencido = ''; 
 
             if (doc.tipo != 'COB') {
                 diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
@@ -1892,7 +1979,8 @@ class CobranzasApp {
 
                 diasVencido = doc.dias_vencimiento;
                 diasVencido = diasVencido != null? Math.abs(diasVencido).toString() + 'd': '';
-            }
+            } 
+
             const isOverdue = doc.esta_vencido;
             
             return `
@@ -1999,7 +2087,7 @@ class CobranzasApp {
                         </div>
                         <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'}">${Math.abs(diasVencido)}d</span>
                         <div class="text-right">
-                            <span class="text-xs text-gray-500">falta</span>
+                            <span class="text-xs text-red-500">falta</span>
                             <span class="text-red-500 font-medium">${this.formatCurrency(doc.saldo)}</span>
                         </div>
                     </div>

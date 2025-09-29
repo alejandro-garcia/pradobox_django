@@ -2060,39 +2060,39 @@ class CobranzasApp {
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Vencido</p>
-                            <p class="text-xl font-semibold text-red-500">${this.formatCurrency(resumen.situacion.total_vencido, true) }</p>
+                            <p class="text-sm font-semibold text-red-500">${this.formatCurrency(resumen.situacion.total_vencido, true) }</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Cantidad</p>
-                            <p class="text-xl font-semibold text-red-500">${resumen.situacion.cantidad_documentos_vencidos}</p>
+                            <p class="text-sm font-semibold text-red-500">${resumen.situacion.cantidad_documentos_vencidos}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Días</p>
-                            <p class="text-xl font-semibold text-red-500">${resumen.situacion.dias_promedio_vencimiento}</p>
+                            <p class="text-sm font-semibold text-red-500">${resumen.situacion.dias_promedio_vencimiento}</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Total</p>
-                            <p class="text-xl font-semibold text-gray-700">${this.formatCurrency(resumen.situacion.total_neto, true)}</p>
+                            <p class="text-sm font-semibold text-gray-700">${this.formatCurrency(resumen.situacion.total_neto, true)}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Cantidad</p>
-                            <p class="text-xl font-semibold text-gray-700">${resumen.situacion.cantidad_documentos_total}</p>
+                            <p class="text-sm font-semibold text-gray-700">${resumen.situacion.cantidad_documentos_total}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Días</p>
-                            <p class="text-xl font-semibold text-gray-700">${resumen.situacion.dias_promedio_vencimiento_todos}</p>
+                            <p class="text-sm font-semibold text-gray-700">${resumen.situacion.dias_promedio_vencimiento_todos}</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Neto</p>
-                            <p class="text-xl font-semibold text-gray-700">${this.formatCurrency(resumen.situacion.total_vencido + resumen.situacion.total_por_vencer, true)}</p>
+                            <p class="text-sm font-semibold text-gray-700">${this.formatCurrency(resumen.situacion.total_vencido + resumen.situacion.total_por_vencer, true)}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Créditos</p>
-                            <p class="text-xl font-semibold text-red-500">${this.formatCurrency(Math.abs(resumen.situacion.total_creditos)*-1, true)}</p>
+                            <p class="text-sm font-semibold text-red-500">${this.formatCurrency(Math.abs(resumen.situacion.total_creditos)*-1, true)}</p>
                         </div>
                     </div>
                 </div>

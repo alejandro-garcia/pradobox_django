@@ -176,6 +176,8 @@ class CobranzasApp {
         const filterTotalOverdue = document.getElementById('filterTotalOverdue');
         const filterDaysPastDue = document.getElementById('filterDaysPastDue');
         const filterDaysSinceLastInvoice = document.getElementById('filterDaysSinceLastInvoice');
+        const orderField = document.getElementById('orderField');
+        const orderDesc = document.getElementById('orderDesc');
 
         let searchTimeout;
 
@@ -186,13 +188,13 @@ class CobranzasApp {
             totalOverdue: filterTotalOverdue ? filterTotalOverdue.value : 'all',
             daysPastDue: filterDaysPastDue ? filterDaysPastDue.value : 'all',
             daysSinceLastInvoice: filterDaysSinceLastInvoice ? filterDaysSinceLastInvoice.value : 'all',
+            orderField: orderField ? orderField.value : '',
+            orderDesc: orderDesc ? orderDesc.checked : false,
         });
 
         const onFiltersChanged = () => {
             const searchTerm = searchInput ? searchInput.value.trim() : '';
-            if (searchTerm.length === 0 || searchTerm.length >= 0) {
-                this.searchClientes(searchTerm, getFilters());
-            }
+            this.searchClientes(searchTerm, getFilters());
         };
 
         if (toggleFiltersBtn && searchFiltersDiv) {
@@ -204,14 +206,12 @@ class CobranzasApp {
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 const searchTerm = e.target.value.trim();
-                // Show/hide clear button
                 if (searchTerm.length > 0) {
                     clearBtn.classList.remove('hidden');
                 } else {
                     clearBtn.classList.add('hidden');
                 }
 
-                // Debounce
                 if (searchTimeout) {
                     clearTimeout(searchTimeout);
                 }
@@ -231,10 +231,10 @@ class CobranzasApp {
             });
         }
 
-        // React on select changes
-        [filterLastYearSales, filterOverdueDebt, filterTotalOverdue, filterDaysPastDue, filterDaysSinceLastInvoice]
+        // React on select/checkbox changes
+        [filterLastYearSales, filterOverdueDebt, filterTotalOverdue, filterDaysPastDue, filterDaysSinceLastInvoice, orderField, orderDesc]
             .filter(Boolean)
-            .forEach(sel => sel.addEventListener('change', onFiltersChanged));
+            .forEach(el => el.addEventListener('change', onFiltersChanged));
     }
 
     navigateTo(view) {
@@ -970,19 +970,18 @@ class CobranzasApp {
             
             if (this.offlineMode) {
                 clientes = await window.indexedDBService.getClientes();
-                // Transform and filter locally
-                clientes = clientes
-                    .map(cliente => this.clientToDomain(cliente));
+                clientes = clientes.map(c => this.clientToDomain(c));
 
-                // Apply name filter
+                // name filter
                 if (searchTerm && searchTerm.length >= 3) {
-                    clientes = clientes.filter(c => c.nombre.toLowerCase().includes(searchTerm.toLowerCase()));
+                    const term = searchTerm.toLowerCase();
+                    clientes = clientes.filter(c => c.nombre.toLowerCase().includes(term));
                 }
 
-                // Apply filters (criteria)
+                // bucket filters
                 if (filters) {
                     const inBucket = (value, bucket) => {
-                        if (bucket === 'all') return true;
+                        if (bucket === 'all' || !bucket) return true;
                         const map = {
                             lessTen: [0, 10],
                             lestHundred: [11, 100],
@@ -993,13 +992,13 @@ class CobranzasApp {
                         const range = map[bucket];
                         if (!range) return true;
                         const [min, max] = range;
-                        if (min !== null && Number(value) < min) return false;
-                        if (max !== null && Number(value) > max) return false;
+                        const val = Number(value || 0);
+                        if (min !== null && val < min) return false;
+                        if (max !== null && val > max) return false;
                         return true;
                     };
-
                     const inDaysBucket = (value, bucket) => {
-                        if (bucket === 'all') return true;
+                        if (bucket === 'all' || !bucket) return true;
                         const map = {
                             upToSeven: [0, 7],
                             upToFourteen: [8, 14],
@@ -1010,19 +1009,43 @@ class CobranzasApp {
                         const range = map[bucket];
                         if (!range) return true;
                         const [min, max] = range;
-                        if (min !== null && Number(value ?? 0) < min) return false;
-                        if (max !== null && Number(value ?? 0) > max) return false;
+                        const val = Number(value || 0);
+                        if (min !== null && val < min) return false;
+                        if (max !== null && val > max) return false;
                         return true;
                     };
 
                     clientes = clientes.filter(c => {
-                        const okSales = inBucket((c.ventas_ultimo_trimestre || 0), filters.lastYearSales);
-                        const okOverdueDebt = inBucket((c.vencido || 0), filters.overdueDebt);
-                        const okTotal = inBucket((c.total || 0), filters.totalOverdue);
-                        // daysPastDue: not available per client in local model; skip for now
-                        const okDaysSinceLastInv = inDaysBucket((c.dias_ult_fact || 0), filters.daysSinceLastInvoice);
-                        return okSales && okOverdueDebt && okTotal && okDaysSinceLastInv;
+                        const okSales = inBucket(c.ventas_ultimo_trimestre, filters.lastYearSales);
+                        const okOverdue = inBucket(c.vencido, filters.overdueDebt);
+                        const okTotal = inBucket(c.total, filters.totalOverdue);
+                        const okDaysSince = inDaysBucket(c.dias_ult_fact, filters.daysSinceLastInvoice);
+                        // daysPastDue not available per-client; ignored for now
+                        return okSales && okOverdue && okTotal && okDaysSince;
                     });
+
+                    // ordering (offline)
+                    if (filters.orderField) {
+                        const fieldMap = {
+                            lastYearSales: 'ventas_ultimo_trimestre',
+                            overdueDebt: 'vencido',
+                            totalOverdue: 'total',
+                            daysSinceLastInvoice: 'dias_ult_fact',
+                        };
+                        const f = fieldMap[filters.orderField];
+                        if (f) {
+                            const desc = !!filters.orderDesc;
+                            clientes.sort((a, b) => {
+                                const av = a[f] ?? 0;
+                                const bv = b[f] ?? 0;
+                                if (av < bv) return desc ? 1 : -1;
+                                if (av > bv) return desc ? -1 : 1;
+                                // then by name for stability
+                                const an = (a.nombre || '').localeCompare(b.nombre || '');
+                                return an;
+                            });
+                        }
+                    }
                 }
             } else {
                 const user = window.authService.getCurrentUser();
@@ -1030,23 +1053,24 @@ class CobranzasApp {
                 const params = new URLSearchParams();
                 if (searchTerm) params.set('search', searchTerm);
                 if (filters) {
-                    Object.entries(filters).forEach(([k, v]) => { if (v && v !== 'all') params.set(k, v); });
+                    Object.entries(filters).forEach(([k, v]) => {
+                        if (k === 'orderDesc') {
+                            if (v) params.set('orderDesc', 'true');
+                        } else if (v && v !== 'all' && v !== '') {
+                            params.set(k, v);
+                        }
+                    });
                 }
 
-                // Decide endpoint
-                const hasAnyFilter = filters && Object.values(filters).some(v => v && v !== 'all');
+                const hasAnyFilter = filters && Object.entries(filters).some(([k, v]) => {
+                    if (k === 'orderDesc') return !!v;
+                    return v && v !== 'all' && v !== '';
+                });
                 const endpoint = hasAnyFilter ? `${this.apiBaseUrl}/clientes/vendedor/${sellerCode}/filter` : `${this.apiBaseUrl}/clientes/vendedor/${sellerCode}`;
                 const url = params.toString() ? `${endpoint}?${params.toString()}` : endpoint;
 
-                const response = await fetch(url, {
-                    headers: window.authService.getAuthHeaders()
-                });
-                
-                if (response.status === 401) {
-                    window.authService.logout();
-                    return;
-                }
-                
+                const response = await fetch(url, { headers: window.authService.getAuthHeaders() });
+                if (response.status === 401) { window.authService.logout(); return; }
                 clientes = await response.json();
             }
 
@@ -1234,7 +1258,7 @@ class CobranzasApp {
                     // Simular estructura completa para modo offline
                     // documento = {
                     //     ...documento,
-                    //     cliente_nombre: 'Cliente Local',
+                    //     cliente_nombre: 'Cliente Local', // En IndexedDB necesitaríamos hacer join
                     //     vendedor_nombre: 'Vendedor Local',
                     //     productos: [],
                     //     subtotal: documento.saldo,
@@ -1495,7 +1519,7 @@ class CobranzasApp {
 
                 fab.addEventListener('click', async () => {
                     const filename = `Factura_${documento.numero}.pdf`;
-                    const url = `${this.apiBaseUrl}/cobranzas/documento/${documentoKey}/pdf/`;
+                    const url = `${this.apiBaseUrl}/cobranzas/detalle/${documentoKey}/pdf/`;
                     setLoading(true);
                     try {
                         const response = await fetch(url, { headers: window.authService.getAuthHeaders() });

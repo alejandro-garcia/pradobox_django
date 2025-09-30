@@ -54,3 +54,5 @@ class ClientFilterCriteria:
     totalOverdue: Optional[str] = None
     daysPastDue: Optional[str] = None
     daysSinceLastInvoice: Optional[str] = None
+    orderField: Optional[str] = None
+    orderDesc: Optional[bool] = None

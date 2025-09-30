@@ -137,7 +137,22 @@ class DjangoClienteRepository(ClienteRepository):
                 qs = apply_days_bucket(qs, 'dias_ult_fact', criteria.daysSinceLastInvoice)
             # criteria.daysPastDue is not available at client level; would require join/aggregate on documents
 
-        qs = qs.order_by('dias_ult_fact', 'nombre')
+        # Ordering
+        if criteria and criteria.orderField:
+            field_map = {
+                'lastYearSales': 'ventas_ultimo_trimestre',
+                'overdueDebt': 'vencido',
+                'totalOverdue': 'total',
+                'daysSinceLastInvoice': 'dias_ult_fact',
+            }
+            field = field_map.get(criteria.orderField)
+            if field:
+                prefix = '-' if (criteria.orderDesc is True) else ''
+                qs = qs.order_by(f"{prefix}{field}", 'nombre')
+            else:
+                qs = qs.order_by('dias_ult_fact', 'nombre')
+        else:
+            qs = qs.order_by('dias_ult_fact', 'nombre')
 
         return [self._to_domain(model) for model in qs]
     

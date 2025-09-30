@@ -80,6 +80,8 @@ def clients_by_seller_filter(request, seller_id):
         totalOverdue=qp('totalOverdue'),
         daysPastDue=qp('daysPastDue'),
         daysSinceLastInvoice=qp('daysSinceLastInvoice'),
+        orderField=(request.GET.get('orderField') or None),
+        orderDesc=(request.GET.get('orderDesc') in ['1', 'true', 'True'])
     )
 
     search_term = request.GET.get('search', '').strip()

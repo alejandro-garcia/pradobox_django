@@ -4,6 +4,15 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/static/sw.js')
             .then((registration) => {
                 console.log('SW registered: ', registration);
+
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', () => {
+                      if (newWorker.state === 'activated') {
+                        window.location.reload(); // recarga la página al activar el nuevo SW
+                      }
+                    });
+                });
             })
             .catch((registrationError) => {
                 console.log('SW registration failed: ', registrationError);

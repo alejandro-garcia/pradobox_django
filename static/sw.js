@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cobranzas-app-v2';
+const CACHE_NAME = 'cobranzas-app-v3'; // 🔄 cambia la versión en cada despliegue
 const urlsToCache = [
     '/',
     '/static/js/app.js',
@@ -8,8 +8,9 @@ const urlsToCache = [
     'https://cdn.jsdelivr.net/npm/chart.js'
 ];
 
-// Install event
+// Install event → cachea recursos y activa de inmediato el nuevo SW
 self.addEventListener('install', (event) => {
+    self.skipWaiting(); // fuerza la activación inmediata
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
@@ -18,28 +19,29 @@ self.addEventListener('install', (event) => {
     );
 });
 
-// Fetch event
+// Fetch event → primero busca en caché, si no existe lo trae de la red
 self.addEventListener('fetch', (event) => {
     event.respondWith(
         caches.match(event.request)
             .then((response) => {
-                // Return cached version or fetch from network
                 return response || fetch(event.request);
             })
     );
 });
 
-// Activate event
+// Activate event → limpia caches antiguas y toma control de los clientes
 self.addEventListener('activate', (event) => {
     event.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
+        (async () => {
+            const cacheNames = await caches.keys();
+            await Promise.all(
                 cacheNames.map((cacheName) => {
                     if (cacheName !== CACHE_NAME) {
                         return caches.delete(cacheName);
                     }
                 })
             );
-        })
+            await self.clients.claim(); // controla todas las pestañas sin esperar reload manual
+        })()
     );
 });

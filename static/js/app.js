@@ -9,6 +9,8 @@ class CobranzasApp {
         this.dashboardLoaded = false;
         this.loadingDashboard = false;
         this.sqlConfig = null;
+        // Stores last applied filters. UI changes won't apply until user clicks Apply.
+        this.activeFilters = null;
 
         // Escuchar cambios de autenticación
         window.addEventListener('authStateChanged', (event) => {
@@ -178,6 +180,8 @@ class CobranzasApp {
         const filterDaysSinceLastInvoice = document.getElementById('filterDaysSinceLastInvoice');
         const orderField = document.getElementById('orderField');
         const orderDesc = document.getElementById('orderDesc');
+        const btnClearFilter = document.getElementById('btnClearFilter');
+        const btnApplyFilters = document.getElementById('btnApplyFilters');
 
         let searchTimeout;
 
@@ -192,10 +196,27 @@ class CobranzasApp {
             orderDesc: orderDesc ? orderDesc.checked : false,
         });
 
-        const onFiltersChanged = () => {
-            const searchTerm = searchInput ? searchInput.value.trim() : '';
-            this.searchClientes(searchTerm, getFilters());
-        };
+        // Apply button: persist filters and execute search
+        if (btnApplyFilters) {
+            btnApplyFilters.addEventListener('click', () => {
+                this.activeFilters = getFilters();
+                const searchTerm = searchInput ? searchInput.value.trim() : '';
+                this.searchClientes(searchTerm, this.activeFilters);
+            });
+        }
+
+        // Clear button: reset UI to defaults (does NOT auto-apply)
+        if (btnClearFilter) {
+            btnClearFilter.addEventListener('click', () => {
+                if (filterLastYearSales) filterLastYearSales.value = 'all';
+                if (filterOverdueDebt) filterOverdueDebt.value = 'all';
+                if (filterTotalOverdue) filterTotalOverdue.value = 'all';
+                if (filterDaysPastDue) filterDaysPastDue.value = 'all';
+                if (filterDaysSinceLastInvoice) filterDaysSinceLastInvoice.value = 'all';
+                if (orderField) orderField.value = '';
+                if (orderDesc) orderDesc.checked = false;
+            });
+        }
 
         if (toggleFiltersBtn && searchFiltersDiv) {
             toggleFiltersBtn.addEventListener('click', () => {
@@ -217,7 +238,8 @@ class CobranzasApp {
                 }
                 searchTimeout = setTimeout(() => {
                     if (searchTerm.length >= 3 || searchTerm.length === 0) {
-                        this.searchClientes(searchTerm, getFilters());
+                        // Use last applied filters, not the current UI state
+                        this.searchClientes(searchTerm, this.activeFilters);
                     }
                 }, 300);
             });
@@ -227,14 +249,9 @@ class CobranzasApp {
             clearBtn.addEventListener('click', () => {
                 searchInput.value = '';
                 clearBtn.classList.add('hidden');
-                this.searchClientes('', getFilters());
+                this.searchClientes('', this.activeFilters);
             });
         }
-
-        // React on select/checkbox changes
-        [filterLastYearSales, filterOverdueDebt, filterTotalOverdue, filterDaysPastDue, filterDaysSinceLastInvoice, orderField, orderDesc]
-            .filter(Boolean)
-            .forEach(el => el.addEventListener('change', onFiltersChanged));
     }
 
     navigateTo(view) {
@@ -592,30 +609,117 @@ class CobranzasApp {
             
             if (this.offlineMode) {
                 clientes = await window.indexedDBService.getClientes();
-                // Transform to match API format
-                clientes = clientes.map(cliente => this.clientToDomain(cliente));
+                clientes = clientes.map(c => this.clientToDomain(c));
+
+                // name filter
+                if (this.searchTerm && this.searchTerm.length >= 3) {
+                    const term = this.searchTerm.toLowerCase();
+                    clientes = clientes.filter(c => c.nombre.toLowerCase().includes(term));
+                }
+
+                // bucket filters
+                if (this.activeFilters) {
+                    const inBucket = (value, bucket) => {
+                        if (bucket === 'all' || !bucket) return true;
+                        const map = {
+                            lessTen: [0, 10],
+                            lestHundred: [11, 100],
+                            lestThousand: [101, 1000],
+                            lestTenThousand: [1001, 10000],
+                            overTenThousand: [10001, null],
+                        };
+                        const range = map[bucket];
+                        if (!range) return true;
+                        const [min, max] = range;
+                        const val = Number(value || 0);
+                        if (min !== null && val < min) return false;
+                        if (max !== null && val > max) return false;
+                        return true;
+                    };
+                    const inDaysBucket = (value, bucket) => {
+                        if (bucket === 'all' || !bucket) return true;
+                        const map = {
+                            upToSeven: [0, 7],
+                            upToFourteen: [8, 14],
+                            upToThirty: [15, 30],
+                            upToSixty: [31, 60],
+                            upToNinety: [61, 90],
+                        };
+                        const range = map[bucket];
+                        if (!range) return true;
+                        const [min, max] = range;
+                        const val = Number(value || 0);
+                        if (min !== null && val < min) return false;
+                        if (max !== null && val > max) return false;
+                        return true;
+                    };
+
+                    clientes = clientes.filter(c => {
+                        const okSales = inBucket(c.ventas_ultimo_trimestre, this.activeFilters.lastYearSales);
+                        const okOverdue = inBucket(c.vencido, this.activeFilters.overdueDebt);
+                        const okTotal = inBucket(c.total, this.activeFilters.totalOverdue);
+                        const okDaysSince = inDaysBucket(c.dias_ult_fact, this.activeFilters.daysSinceLastInvoice);
+                        // daysPastDue not available per-client; ignored for now
+                        return okSales && okOverdue && okTotal && okDaysSince;
+                    });
+
+                    // ordering (offline)
+                    if (this.activeFilters.orderField) {
+                        const fieldMap = {
+                            lastYearSales: 'ventas_ultimo_trimestre',
+                            overdueDebt: 'vencido',
+                            totalOverdue: 'total',
+                            daysSinceLastInvoice: 'dias_ult_fact',
+                        };
+                        const f = fieldMap[this.activeFilters.orderField];
+                        if (f) {
+                            const desc = !!this.activeFilters.orderDesc;
+                            clientes.sort((a, b) => {
+                                const av = a[f] ?? 0;
+                                const bv = b[f] ?? 0;
+                                if (av < bv) return desc ? 1 : -1;
+                                if (av > bv) return desc ? -1 : 1;
+                                // then by name for stability
+                                const an = (a.nombre || '').localeCompare(b.nombre || '');
+                                return an;
+                            });
+                        }
+                    }
+                }
             } else {
                 const user = window.authService.getCurrentUser();
                 const sellerCode = user.codigo_vendedor_profit || '-1'; 
 
-                const response = await fetch(`${this.apiBaseUrl}/clientes/vendedor/${sellerCode}`, {
-                    headers: window.authService.getAuthHeaders()
-                });
-                
-                if (response.status === 401) {
-                    window.authService.logout();
-                    return;
+                const params = new URLSearchParams();
+                if (this.searchTerm) params.set('search', this.searchTerm);
+                if (this.activeFilters) {
+                    Object.entries(this.activeFilters).forEach(([k, v]) => {
+                        if (k === 'orderDesc') {
+                            if (v) params.set('orderDesc', 'true');
+                        } else if (v && v !== 'all' && v !== '') {
+                            params.set(k, v);
+                        }
+                    });
                 }
-                
+
+                const hasAnyFilter = this.activeFilters && Object.entries(this.activeFilters).some(([k, v]) => {
+                    if (k === 'orderDesc') return !!v;
+                    return v && v !== 'all' && v !== '';
+                });
+                const endpoint = hasAnyFilter ? `${this.apiBaseUrl}/clientes/vendedor/${sellerCode}/filter` : `${this.apiBaseUrl}/clientes/vendedor/${sellerCode}`;
+                const url = params.toString() ? `${endpoint}?${params.toString()}` : endpoint;
+
+                const response = await fetch(url, { headers: window.authService.getAuthHeaders() });
+                if (response.status === 401) { window.authService.logout(); return; }
                 clientes = await response.json();
             }
 
             this.displayClientes(clientes);
-            this.updateSearchResults(clientes.length, '');
+            this.updateSearchResults(clientes.length, this.searchTerm);
 
         } catch (error) {
             console.error('Error loading clientes:', error);
-            this.showError('Error cargando los clientes...' + error.message);
+            this.showError('Error buscando clientes...' + error.message);
             this.displayClientes([]);
         } finally {
             this.showClientesLoading(false);
@@ -1993,18 +2097,8 @@ class CobranzasApp {
             const tipoColor = this.getTipoColor(doc.tipo);
             const tipoAbrev = this.getTipoAbreviacion(doc.tipo);
             const timeAgo = this.getTimeAgo(doc.fecha_emision);
-
-            let diasCredito =  ''; 
-            let diasVencido = ''; 
-
-            if (doc.tipo != 'COB') {
-                diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
-                diasCredito = diasCredito != null? diasCredito.toString() + 'd': '';
-
-                diasVencido = doc.dias_vencimiento;
-                diasVencido = diasVencido != null? Math.abs(diasVencido).toString() + 'd': '';
-            } 
-
+            const diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
+            const diasVencido = doc.dias_vencimiento;
             const isOverdue = doc.esta_vencido;
             
             return `

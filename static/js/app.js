@@ -2426,7 +2426,18 @@ class CobranzasApp {
     }
 
     formatDate(dateString) {
-        const date = new Date(dateString);
+        let date;
+
+        if (dateString.indexOf('-') != -1) {
+            if (dateString.indexOf('T') != -1) {
+                dateString = dateString.split('T')[0];
+            }
+            const [year, month, day] = dateString.split('-').map(Number);
+        	date = new Date(year, month - 1, day); // mes empieza en 0
+        } else {
+            date = new Date(dateString);
+        }
+        
         return date.toLocaleDateString('es-VE', {
             day: '2-digit',
             month: '2-digit',

@@ -12,6 +12,9 @@ class CobranzasApp {
         // Stores last applied filters. UI changes won't apply until user clicks Apply.
         this.activeFilters = null;
 
+        // Simple navigation stack to support Back button
+        this.viewHistory = [];
+
         // Escuchar cambios de autenticación
         window.addEventListener('authStateChanged', (event) => {
             if (event.detail.authenticated) {
@@ -83,9 +86,9 @@ class CobranzasApp {
             });
         });
 
-        // Back button
+        // Back button now navigates to the previous view
         document.getElementById('backBtn').addEventListener('click', () => {
-            this.navigateTo('dashboard');
+            this.goBack();
         });
 
         // Refresh button
@@ -254,7 +257,19 @@ class CobranzasApp {
         }
     }
 
-    navigateTo(view) {
+    navigateTo(view, options = {}) {
+        const push = options.push !== false; // default: push into history
+        // Manage history stack
+        if (push && this.currentView && this.currentView !== view) {
+            // Avoid consecutive duplicates
+            const last = this.viewHistory[this.viewHistory.length - 1];
+            if (last !== this.currentView) {
+                this.viewHistory.push(this.currentView);
+            }
+        }
+        // Update current view
+        this.currentView = view;
+
         // Update navigation state
         document.querySelectorAll('.nav-item').forEach(item => {
             item.classList.remove('active', 'text-primary');
@@ -301,8 +316,6 @@ class CobranzasApp {
         } else {
             backBtn.classList.remove('hidden');
         }
-
-        this.currentView = view;
 
         // Load view data
         switch (view) {
@@ -2465,6 +2478,17 @@ class CobranzasApp {
         setTimeout(() => {
             notificationDiv.remove();
         }, 3000);
+    }
+
+    goBack() {
+        if (this.viewHistory && this.viewHistory.length > 0) {
+            const previousView = this.viewHistory.pop();
+            // Replace current view without pushing a new history entry
+            this.navigateTo(previousView, { push: false });
+        } else {
+            // Fallback to dashboard if no history
+            this.navigateTo('dashboard', { push: false });
+        }
     }
 }
 

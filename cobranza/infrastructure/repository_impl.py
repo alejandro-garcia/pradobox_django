@@ -379,9 +379,9 @@ class DjangoDocumentoRepository(DocumentoRepository):
             documento.cliente_nombre = model.cliente.nombre
             documento.vendedor_nombre = model.vendedor.nombre  
             documento.productos = self._get_productos_documento(empresa, tipo, doc_id)
-            documento.subtotal = model.monto
+            documento.subtotal = model.monto_bruto
             documento.descuentos = Decimal('0')  # TODO: obtener de tabla de descuentos
-            documento.impuestos = Decimal('0')   # TODO: obtener de tabla de impuestos
+            documento.impuestos = model.monto_impuesto
             documento.total = model.monto
             documento.saldo = model.saldo
             documento.comentarios = model.descripcion or ''

@@ -1444,6 +1444,7 @@ class CobranzasApp {
                         }))
                     }
                     
+                    //monto: doc.monto_net,
                     documento = {
                         cliente_id: doc.co_cli, 
                         vendedor_id: doc.co_ven, 
@@ -1451,13 +1452,15 @@ class CobranzasApp {
                         fecha_vencimiento: doc.fec_venc, 
                         numero: doc.nro_doc,
                         tipo: doc.tipo_doc, 
-                        monto: doc.monto_net,
                         saldo: doc.saldo, 
                         cliente_nombre: clientesDict[doc.co_cli] || 'Cliente: ' + doc.co_cli, 
                         dias_vencimiento: this.calculateDaysOverdue(doc.fec_venc),
                         esta_vencido: new Date(doc.fec_venc) < new Date(),
                         vendedor_nombre,
-                        productos
+                        productos,
+                        subtotal: doc.monto_bru,
+                        impuestos: doc.monto_imp,
+                        total: doc.monto_net
                     }
                     
                 }
@@ -1622,12 +1625,12 @@ class CobranzasApp {
                     
                     <div class="flex justify-between">
                         <span class="text-gray-900 font-medium">Total</span>
-                        <span class="font-bold text-lg">${this.formatCurrency(documento.total || documento.monto, true)}</span>
+                        <span class="font-bold text-lg">${this.formatCurrency(documento.total || 0, true)}</span>
                     </div>
                     
                     <div class="flex justify-between">
                         <span class="text-red-600 font-medium">Pendiente</span>
-                        <span class="font-bold text-lg text-red-600">${this.formatCurrency(documento.saldo || documento.monto, true)}</span>
+                        <span class="font-bold text-lg text-red-600">${this.formatCurrency(documento.saldo || 0, true)}</span>
                     </div>
                 </div>
             </div>

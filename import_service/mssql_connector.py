@@ -107,7 +107,9 @@ class MSSQLConnector:
                 monto_net,
                 saldo,
                 anulado,
-                empresa
+                empresa,
+                monto_bru,
+                monto_imp
             FROM docum_cc 
             WHERE saldo <> 0 AND anulado = 0
             and ltrim(rtrim(co_ven)) in ({placeholders})

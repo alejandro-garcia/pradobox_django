@@ -37,6 +37,10 @@ class DocumentoModel(models.Model):
     empresa = models.IntegerField(db_column='empresa', blank=True, null=True)
     vendedor = models.ForeignKey(VendedorModel, db_column='co_ven',on_delete=models.CASCADE, related_name='documentos_vendedor', blank=True, null=True)
     forma_pag = models.CharField(db_column='forma_pag', max_length=6, blank=True, null=True)
+
+    monto_impuesto = models.DecimalField(db_column='monto_imp', max_digits=12, decimal_places=2, blank=True, null=True)
+    monto_bruto = models.DecimalField(db_column='monto_bru', max_digits=12, decimal_places=2, blank=True, null=True)
+
     #created_at = models.DateTimeField(db_column='fe_us_in', auto_now_add=True)
     #updated_at = models.DateTimeField(db_column='fe_us_mo', auto_now=True)
     

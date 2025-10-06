@@ -55,6 +55,17 @@ class CobranzasApp {
     async initializeIndexedDB() {
         try {
             await window.indexedDBService.init();
+
+            //Obtener version de cache
+            debugger;
+            if (caches) {
+                const cacheNames = await caches.keys();
+                if (cacheNames.length > 1) {
+                    let cacheVersion = cacheNames[cacheNames.length - 1];
+                    await window.indexedDBService.setSyncMetadata('sw_version', cacheVersion);
+                }
+            }
+
             console.log('IndexedDB initialized successfully');
         } catch (error) {
             console.error('Error initializing IndexedDB:', error);
@@ -1311,6 +1322,12 @@ class CobranzasApp {
             } else {
                 document.getElementById('lastSync').textContent = 'Nunca';
             }
+
+            if (info.sw_version){ 
+                document.getElementById('swVersion').textContent = info.sw_version;
+            } else {
+                document.getElementById('swVersion').textContent = 'N/A';
+            }
         } catch (error) {
             console.error('Error updating storage info:', error);
         }
@@ -2169,7 +2186,7 @@ class CobranzasApp {
                             <span class="text-gray-900">${(doc.fecha_vencimiento) ? this.formatDate(doc.fecha_vencimiento): ""}</span>
                         </div>
                         <div class="text-right">
-                            <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'} pr-10">${diasVencido}</span>
+                            <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'} pr-10">${(diasVencido != null && diasVencido != undefined) ? diasVencido : ""}</span>
                         </div>
                         <div class="col-span-2 text-right">
                             <span class="text-xs text-red-500">falta</span>

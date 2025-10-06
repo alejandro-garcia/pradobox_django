@@ -704,13 +704,15 @@ class IndexedDBService {
         //const renglonees = await this.getRenglones();
         const renglones_count = await this.getDocLinesCount();
         const lastSync = await this.getSyncMetadata('last_sync');
+        const swVersion = await this.getSyncMetadata('sw_version');
 
         return {
             clientes_count: clientes.length,
             documentos_count: documentos.length,
             renglones_count: renglones_count,
             last_sync: lastSync,
-            storage_size: await this.calculateStorageSize()
+            storage_size: await this.calculateStorageSize(),
+            sw_version: swVersion
         };
     }
 

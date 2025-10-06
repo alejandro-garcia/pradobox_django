@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cobranzas-app-v7'; // 🔄 cambia la versión en cada despliegue
+const CACHE_NAME = 'cobranzas-app-v9'; // 🔄 cambia la versión en cada despliegue
 const urlsToCache = [
     '/',
     '/static/js/app.js',

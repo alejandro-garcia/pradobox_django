@@ -630,6 +630,19 @@ class CobranzasApp {
                     clientes = clientes.filter(c => c.nombre.toLowerCase().includes(term));
                 }
 
+                if (!this.activeFilters) {
+                    console.log('No order field set, defaulting to daysSinceLastInvoice');
+                    
+                    this.activeFilters = {
+                        lastYearSales: 'all',
+                        overdueDebt: 'all',
+                        totalOverdue: 'all',
+                        daysSinceLastInvoice: 'all',
+                        orderField: 'daysSinceLastInvoice',
+                        orderDesc: false,
+                    };
+                }
+
                 // bucket filters
                 if (this.activeFilters) {
                     const inBucket = (value, bucket) => {
@@ -676,7 +689,6 @@ class CobranzasApp {
                         return okSales && okOverdue && okTotal && okDaysSince;
                     });
 
-                    // ordering (offline)
                     if (this.activeFilters.orderField) {
                         const fieldMap = {
                             lastYearSales: 'ventas_ultimo_trimestre',
@@ -1142,6 +1154,12 @@ class CobranzasApp {
                     });
 
                     // ordering (offline)
+                    if (!filters.orderField) {
+                        console.log('No order field set, defaulting to daysSinceLastInvoice');
+                        filters.orderField = 'daysSinceLastInvoice';
+                        filters.orderDesc = false;    
+                    }
+
                     if (filters.orderField) {
                         const fieldMap = {
                             lastYearSales: 'ventas_ultimo_trimestre',

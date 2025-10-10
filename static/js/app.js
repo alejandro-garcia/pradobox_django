@@ -1651,7 +1651,8 @@ class CobranzasApp {
 
             const hasKeys = (documento.empresa !== undefined) && (documento.tipo) && (documento.numero !== undefined);
             if (!this.offlineMode && hasKeys) {
-                const documentoKey = `${documento.empresa}_${documento.tipo}_${documento.numero}`;
+                let tipo_doc = (documento.tipo.indexOf("/") > -1) ? documento.tipo.replace("/", "") : documento.tipo;
+                const documentoKey = `${documento.empresa}_${tipo_doc}_${documento.numero}`;
                 const fab = document.createElement('button');
                 fab.id = 'fabSharePdf';
                 fab.type = 'button';
@@ -1678,7 +1679,7 @@ class CobranzasApp {
                 };
 
                 fab.addEventListener('click', async () => {
-                    const filename = `Factura_${documento.numero}.pdf`;
+                    const filename = `${tipo_doc}_${documento.numero}.pdf`;
                     const url = `${this.apiBaseUrl}/cobranzas/detalle/${documentoKey}/pdf/`;
                     setLoading(true);
                     try {

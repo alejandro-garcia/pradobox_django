@@ -415,7 +415,12 @@ class CobranzasApp {
 
     getTimeAgo(fecha) {
         const now = new Date();
-        const date = new Date(fecha);
+        const date = this.stringToDate(fecha);
+
+        // Normaliza ambas fechas al inicio del día local
+        now.setHours(0, 0, 0, 0);
+        date.setHours(0, 0, 0, 0);
+
         const diffTime = Math.abs(now - date);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         
@@ -2474,6 +2479,30 @@ class CobranzasApp {
         if (user) {
             document.getElementById('userInfo').textContent = user.nombre_completo || user.username;
         }
+    }
+
+    stringToDate(dateString) {
+        if (dateString instanceof Date) {
+            return dateString;
+        }
+
+        if (typeof dateString !== 'string') {
+            return null;
+        }
+
+        let date;
+
+        if (dateString.indexOf('-') != -1) {
+            if (dateString.indexOf('T') != -1) {
+                dateString = dateString.split('T')[0];
+            }
+            const [year, month, day] = dateString.split('-').map(Number);
+        	date = new Date(year, month - 1, day); // mes empieza en 0
+        } else {
+            date = new Date(dateString);
+        }
+
+        return date;
     }
 
     formatDate(dateString) {

@@ -2130,6 +2130,7 @@ class CobranzasApp {
                 this.LoadClientPendingDocs(clienteId);
             };
 
+            window.scrollTo({ top: 0, behavior: 'auto' });
         } catch (error) {
             console.error('Error loading cliente detail:', error);
             this.showError('Error cargando los detalles del cliente...' + error.message);

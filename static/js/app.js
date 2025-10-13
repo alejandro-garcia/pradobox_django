@@ -27,6 +27,7 @@ class CobranzasApp {
         // Verificar autenticación e inicializar
         this.checkAuthAndInit();
         //this.init();
+        this.lastScrollTop = 0;
     }
 
     async checkAuthAndInit() {
@@ -270,6 +271,8 @@ class CobranzasApp {
 
     navigateTo(view, options = {}) {
         const push = options.push !== false; // default: push into history
+        const isBack = (options.hasOwnProperty("isBack") ?  options.isBack: false); 
+
         // Manage history stack
         if (push && this.currentView && this.currentView !== view) {
             // Avoid consecutive duplicates
@@ -334,7 +337,11 @@ class CobranzasApp {
                 this.loadDashboard();
                 break;
             case 'clientes':
-                this.loadClientes();
+                if (!isBack) {
+                    this.loadClientes();
+                } else {
+                    window.scrollTo({ top: this.lastScrollTop, behavior: 'auto' });
+                }
                 break;
             case 'documentos-pendientes':
                 this.loadDocumentosPendientes();
@@ -2021,6 +2028,8 @@ class CobranzasApp {
 
     async showClienteDetail(clienteId) {
         try {
+            this.lastScrollTop = window.scrollY || window.pageYOffset;
+
             if (this.offlineMode) {
                 // OFFLINE: obtener datos desde IndexedDB
                 const clientes = await window.indexedDBService.getClientes();
@@ -2553,10 +2562,10 @@ class CobranzasApp {
         if (this.viewHistory && this.viewHistory.length > 0) {
             const previousView = this.viewHistory.pop();
             // Replace current view without pushing a new history entry
-            this.navigateTo(previousView, { push: false });
+            this.navigateTo(previousView, { push: false, isBack: true });
         } else {
             // Fallback to dashboard if no history
-            this.navigateTo('dashboard', { push: false });
+            this.navigateTo('dashboard', { push: false, isBack: true });
         }
     }
 }

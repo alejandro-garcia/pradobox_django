@@ -1374,6 +1374,52 @@ class CobranzasApp {
         }
     }
 
+    // 🚀 Forzar reinicio completo del Service Worker y limpiar cachés
+    async forceRestartServiceWorker() {
+        if (!('serviceWorker' in navigator)) return;
+
+        try {
+            const registration = await navigator.serviceWorker.getRegistration();
+            if (!registration) {
+                console.warn('⚠️ No hay Service Worker registrado.');
+                return;
+            }
+
+            console.log('🔄 Verificando nueva versión del Service Worker...');
+            await registration.update();
+
+            // 🔹 Limpieza manual de todos los cachés antes de activar el nuevo SW
+            console.log('🧹 Eliminando cachés antiguos...');
+            const cacheKeys = await caches.keys();
+            for (const key of cacheKeys) {
+                await caches.delete(key);
+                console.log(`🗑️ Cache eliminada: ${key}`);
+            }
+
+            // 🔹 Si hay un SW en estado "waiting", lo activamos inmediatamente
+            if (registration.waiting) {
+                console.log('⚙️ Activando nuevo Service Worker...');
+                registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+
+                registration.waiting.addEventListener('statechange', (e) => {
+                    if (e.target.state === 'activated') {
+                        console.log('✅ Nuevo SW activado. Recargando...');
+                        window.location.reload(true);
+                    }
+                });
+            } else if (registration.active) {
+                console.log('🟢 No hay nuevo SW esperando, recargando igualmente...');
+                window.location.reload(true);
+            } else {
+                console.log('ℹ️ No hay SW activo aún.');
+            }
+
+        } catch (error) {
+            console.error('❌ Error al forzar reinicio del SW:', error);
+        }
+    }
+
+
     async clearAllCaches() {
         // Eliminar caches de service worker
         const cacheNames = await caches.keys();
@@ -1386,6 +1432,8 @@ class CobranzasApp {
 
         // Eliminar sessionStorage
         sessionStorage.clear();
+
+        this.forceRestartServiceWorker();
 
         // // Eliminar IndexedDB
         // if (window.indexedDB) {

@@ -2093,6 +2093,8 @@ class CobranzasApp {
                     this.LoadClientPendingDocs(clienteId);
                 };
 
+                window.scrollTo({ top: 0, behavior: 'auto' });
+
                 return;
             }
 

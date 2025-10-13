@@ -677,12 +677,15 @@ class IndexedDBService {
     }
 
     async clearAllData() {
-        const transaction = this.db.transaction(['clientes', 'documentos', 'sync_metadata'], 'readwrite');
+        const transaction = this.db.transaction(['clientes', 'documentos', 'sync_metadata','renglones','ventas_mensuales','vendedores'], 'readwrite');
         
         await Promise.all([
             transaction.objectStore('clientes').clear(),
             transaction.objectStore('documentos').clear(),
-            transaction.objectStore('sync_metadata').clear()
+            transaction.objectStore('sync_metadata').clear(),
+            transaction.objectStore('renglones').clear(),
+            transaction.objectStore('ventas_mensuales').clear(),
+            transaction.objectStore('vendedores').clear()
         ]);
 
         return transaction.complete;

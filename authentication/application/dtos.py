@@ -26,3 +26,16 @@ class UsuarioResponse:
     codigo_vendedor_profit: str
     is_active: bool
     last_login: Optional[datetime]
+
+
+@dataclass
+class ChangePasswordRequest:
+    user_id: str
+    old_password: str
+    new_password: str
+
+
+@dataclass
+class ChangePasswordResponse:
+    success: bool
+    message: Optional[str] = None

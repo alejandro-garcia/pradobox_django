@@ -287,6 +287,28 @@ class AuthService {
             'Content-Type': 'application/json'
         };
     }
+
+    async changePassword(oldPassword, newPassword) {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/change-password/`, {
+                method: 'POST',
+                headers: {
+                    ...this.getAuthHeaders(),
+                    'X-CSRFToken': this.getCsrfToken() || ''
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ old_password: oldPassword, new_password: newPassword })
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                return { success: false, message: data.message || 'No se pudo cambiar la contraseña' };
+            }
+            return { success: true, message: data.message || 'Contraseña actualizada' };
+        } catch (err) {
+            console.error('Error cambiando contraseña:', err);
+            return { success: false, message: 'Error de conexión' };
+        }
+    }
 }
 
 // Instancia global del servicio de autenticación

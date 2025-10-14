@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cobranzas-app-v21';
+const CACHE_NAME = 'cobranzas-app-v22';
 const urlsToCache = [
     '/',
     '/static/js/app.js',

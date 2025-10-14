@@ -5,7 +5,7 @@ from shared.application.use_case import UseCase
 from shared.domain.exceptions import ValidationException
 from ..domain.entities import Usuario, SesionUsuario
 from ..domain.repository import UsuarioRepository
-from .dtos import LoginRequest, LoginResponse, UsuarioResponse
+from .dtos import LoginRequest, LoginResponse, UsuarioResponse, ChangePasswordRequest, ChangePasswordResponse
 import jwt
 from django.conf import settings
 
@@ -98,3 +98,26 @@ class ValidateTokenUseCase(UseCase[str, Optional[UsuarioResponse]]):
             return None
         except jwt.InvalidTokenError:
             return None
+
+
+class ChangePasswordUseCase(UseCase[ChangePasswordRequest, ChangePasswordResponse]):
+    def __init__(self, usuario_repository: UsuarioRepository):
+        self.usuario_repository = usuario_repository
+
+    def execute(self, request: ChangePasswordRequest) -> ChangePasswordResponse:
+        if not request.user_id or not request.old_password or not request.new_password:
+            return ChangePasswordResponse(success=False, message="Datos incompletos")
+        
+        if len(request.new_password) < 8:
+            return ChangePasswordResponse(success=False, message="La nueva contraseña debe tener al menos 8 caracteres")
+        
+        changed = self.usuario_repository.change_password(
+            usuario_id=request.user_id,
+            old_password=request.old_password,
+            new_password=request.new_password
+        )
+        
+        if not changed:
+            return ChangePasswordResponse(success=False, message="La contraseña actual no es correcta")
+        
+        return ChangePasswordResponse(success=True, message="Contraseña actualizada correctamente")

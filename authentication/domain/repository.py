@@ -21,3 +21,8 @@ class UsuarioRepository(Repository[Usuario, str]):
     @abstractmethod
     def update_last_login(self, usuario_id: str) -> None:
         pass
+
+    @abstractmethod
+    def change_password(self, usuario_id: str, old_password: str, new_password: str) -> bool:
+        """Return True if password was changed, False if old password did not match."""
+        pass

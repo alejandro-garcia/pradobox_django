@@ -1,6 +1,7 @@
 from typing import Optional, List
 from django.contrib.auth import authenticate
 from django.utils import timezone
+from django.contrib.auth.hashers import check_password
 from ..domain.entities import Usuario
 from ..domain.repository import UsuarioRepository
 from .models import UsuarioModel
@@ -46,6 +47,17 @@ class DjangoUsuarioRepository(UsuarioRepository):
             usuario_model.save(update_fields=['last_login'])
         except UsuarioModel.DoesNotExist:
             pass
+
+    def change_password(self, usuario_id: str, old_password: str, new_password: str) -> bool:
+        try:
+            usuario_model = UsuarioModel.objects.get(id=usuario_id)
+            if not usuario_model.check_password(old_password):
+                return False
+            usuario_model.set_password(new_password)
+            usuario_model.save(update_fields=['password'])
+            return True
+        except UsuarioModel.DoesNotExist:
+            return False
     
     def _to_domain(self, model: UsuarioModel) -> Usuario:
         return Usuario(

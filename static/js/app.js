@@ -136,6 +136,105 @@ class CobranzasApp {
         
         // Client search functionality
         this.setupClientSearchEventListeners();
+
+        // User menu toggle (click on user name)
+        const userInfoEl = document.getElementById('userInfo');
+        const userMenu = document.getElementById('userMenu');
+        const userMenuWrapper = document.getElementById('userMenuWrapper');
+        if (userInfoEl && userMenu && userMenuWrapper) {
+            userInfoEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userMenu.classList.toggle('hidden');
+            });
+            // Close on outside click
+            document.addEventListener('click', (e) => {
+                if (!userMenuWrapper.contains(e.target)) {
+                    userMenu.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Open Change Password Modal
+        const changePwdItem = document.getElementById('changePasswordMenuItem');
+        if (changePwdItem) {
+            changePwdItem.addEventListener('click', () => {
+                if (userMenu) userMenu.classList.add('hidden');
+                const modal = document.getElementById('changePasswordModal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }
+            });
+        }
+        
+        // Modal actions: cancel and confirm
+        const cancelChangePasswordBtn = document.getElementById('cancelChangePasswordBtn');
+        const confirmChangePasswordBtn = document.getElementById('confirmChangePasswordBtn');
+        const oldPasswordInput = document.getElementById('oldPasswordInput');
+        const newPasswordInput = document.getElementById('newPasswordInput');
+        const confirmPasswordInput = document.getElementById('confirmPasswordInput');
+        const changePasswordError = document.getElementById('changePasswordError');
+        const changePasswordModal = document.getElementById('changePasswordModal');
+
+        const closeChangePasswordModal = () => {
+            if (changePasswordModal) {
+                changePasswordModal.classList.add('hidden');
+                changePasswordModal.classList.remove('flex');
+            }
+            if (oldPasswordInput) oldPasswordInput.value = '';
+            if (newPasswordInput) newPasswordInput.value = '';
+            if (confirmPasswordInput) confirmPasswordInput.value = '';
+            if (changePasswordError) {
+                changePasswordError.textContent = '';
+                changePasswordError.classList.add('hidden');
+            }
+        };
+        
+        if (cancelChangePasswordBtn) {
+            cancelChangePasswordBtn.addEventListener('click', () => closeChangePasswordModal());
+        }
+        
+        if (confirmChangePasswordBtn) {
+            confirmChangePasswordBtn.addEventListener('click', async () => {
+                const oldPwd = oldPasswordInput ? oldPasswordInput.value : '';
+                const newPwd = newPasswordInput ? newPasswordInput.value : '';
+                const confirmPwd = confirmPasswordInput ? confirmPasswordInput.value : '';
+
+                if (!oldPwd || !newPwd || !confirmPwd) {
+                    if (changePasswordError) {
+                        changePasswordError.textContent = 'Completa todos los campos';
+                        changePasswordError.classList.remove('hidden');
+                    }
+                    return;
+                }
+                if (newPwd !== confirmPwd) {
+                    if (changePasswordError) {
+                        changePasswordError.textContent = 'Las contraseñas no coinciden';
+                        changePasswordError.classList.remove('hidden');
+                    }
+                    return;
+                }
+                if (newPwd.length < 8) {
+                    if (changePasswordError) {
+                        changePasswordError.textContent = 'La nueva contraseña debe tener al menos 8 caracteres';
+                        changePasswordError.classList.remove('hidden');
+                    }
+                    return;
+                }
+
+                // Call backend API via auth service
+                const result = await window.authService.changePassword(oldPwd, newPwd);
+                if (result.success) {
+                    this.showSuccess(result.message || 'Contraseña actualizada correctamente');
+                    closeChangePasswordModal();
+                } else {
+                    if (changePasswordError) {
+                        changePasswordError.textContent = result.message || 'No se pudo cambiar la contraseña';
+                        changePasswordError.classList.remove('hidden');
+                    }
+                }
+            });
+        }
     }
 
     setupImportEventListeners() {

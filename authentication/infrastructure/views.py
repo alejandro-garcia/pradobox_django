@@ -3,8 +3,8 @@ from rest_framework.decorators import api_view, authentication_classes, permissi
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
-from ..application.use_cases import LoginUseCase, ValidateTokenUseCase
-from ..application.dtos import LoginRequest
+from ..application.use_cases import LoginUseCase, ValidateTokenUseCase, ChangePasswordUseCase
+from ..application.dtos import LoginRequest, ChangePasswordRequest
 from .repository_impl import DjangoUsuarioRepository
 from shared.infrastructure.logging_impl import get_logger
 logger = get_logger(__name__)
@@ -98,3 +98,39 @@ def logout_view(request):
         'success': True,
         'message': 'Logout exitoso'
     })
+
+
+@csrf_exempt
+@api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def change_password_view(request):
+    """
+    Cambia la contraseña del usuario autenticado usando JWT en Authorization header.
+    Body: { old_password, new_password }
+    """
+    repository = get_usuario_repository()
+
+    # Obtener token del header Authorization: Bearer <token>
+    auth_header = request.headers.get('Authorization', '')
+    token = ''
+    if auth_header.startswith('Bearer '):
+        token = auth_header.split(' ', 1)[1]
+
+    if not token:
+        return Response({'success': False, 'message': 'No autorizado'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    # Validar token y obtener usuario
+    validate_uc = ValidateTokenUseCase(repository)
+    usuario = validate_uc.execute(token)
+    if not usuario:
+        return Response({'success': False, 'message': 'Token inválido o expirado'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    old_password = request.data.get('old_password', '')
+    new_password = request.data.get('new_password', '')
+
+    use_case = ChangePasswordUseCase(repository)
+    result = use_case.execute(ChangePasswordRequest(user_id=usuario.id, old_password=old_password, new_password=new_password))
+
+    status_code = status.HTTP_200_OK if result.success else status.HTTP_400_BAD_REQUEST
+    return Response({'success': result.success, 'message': result.message}, status=status_code)

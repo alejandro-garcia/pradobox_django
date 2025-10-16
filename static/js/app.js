@@ -2773,6 +2773,51 @@ class CobranzasApp {
     }
 
     buildContactsViewHTML(cliente, contacts) {
+        // Select primary contact (first in array)
+        const contact = Array.isArray(contacts) && contacts.length > 0 ? contacts[0] : null;
+
+        // Mappers for type labels
+        const phoneTypeLabel = {
+            work: 'Trabajo',
+            mobile: 'Móvil',
+            fax: 'Fax',
+            home: 'Casa',
+            skype: 'Skype',
+            other: 'Otro'
+        };
+        const mailTypeLabel = { work: 'Trabajo', personal: 'Personal', other: 'Otro' };
+
+        // Phones HTML
+        const phonesHTML = contact && Array.isArray(contact.phones) && contact.phones.length
+            ? contact.phones.map(p => `
+                <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                    <span class="text-gray-800">📞${p.phone}</span>
+                    <span class="text-gray-500 text-sm">${phoneTypeLabel[p.phone_type] || 'Otro'}</span>
+                </div>`).join('')
+            : '<p class="text-gray-500 text-sm">No hay teléfonos registrados</p>';
+
+        // Emails HTML
+        const emailsHTML = contact && Array.isArray(contact.emails) && contact.emails.length
+            ? contact.emails.map(e => `
+                <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                    <span class="text-gray-800">✉️${e.email}</span>
+                    <span class="text-gray-500 text-sm">${mailTypeLabel[e.mail_type] || 'Otro'}</span>
+                </div>`).join('')
+            : '<p class="text-gray-500 text-sm">No hay emails registrados</p>';
+
+        // Addresses HTML
+        const addressesHTML = contact && Array.isArray(contact.addresses) && contact.addresses.length
+            ? contact.addresses.map(a => {
+                const addressText = (a.address || '').replace(/\r?\n/g, '<br/>');
+                const meta = [a.state || '', a.zipcode || ''].filter(Boolean).join(' · ');
+                return `
+                    <div class="py-2 border-b border-gray-100 last:border-b-0">
+                        <div class="text-gray-800">📍${addressText}</div>
+                        <div class="text-gray-500 text-sm">${meta}</div>
+                    </div>`;
+            }).join('')
+            : '<p class="text-gray-500 text-sm">No hay direcciones registradas</p>';
+
         const header = `
             <div class="bg-primary text-white rounded-lg p-6">
                 <h2 class="text-lg font-bold">${cliente?.nombre || 'Contacto'}</h2>
@@ -2783,7 +2828,7 @@ class CobranzasApp {
             <div class="bg-white rounded-lg shadow-md p-6">
                 <h3 class="text-sm font-semibold text-gray-800 mb-2">TELÉFONOS</h3>
                 <div id="contactPhonesList" class="space-y-2">
-                    ${contacts.length === 0 ? '<p class="text-gray-500 text-sm">No hay teléfonos registrados</p>' : ''}
+                    ${phonesHTML}
                 </div>
             </div>`;
 
@@ -2791,7 +2836,7 @@ class CobranzasApp {
             <div class="bg-white rounded-lg shadow-md p-6">
                 <h3 class="text-sm font-semibold text-gray-800 mb-2">EMAILS</h3>
                 <div id="contactEmailsList" class="space-y-2">
-                    ${contacts.length === 0 ? '<p class="text-gray-500 text-sm">No hay emails registrados</p>' : ''}
+                    ${emailsHTML}
                 </div>
             </div>`;
 
@@ -2799,7 +2844,7 @@ class CobranzasApp {
             <div class="bg-white rounded-lg shadow-md p-6">
                 <h3 class="text-sm font-semibold text-gray-800 mb-2">DIRECCIONES</h3>
                 <div id="contactAddressesList" class="space-y-2">
-                    ${contacts.length === 0 ? '<p class="text-gray-500 text-sm">No hay direcciones registradas</p>' : ''}
+                    ${addressesHTML}
                 </div>
             </div>`;
 

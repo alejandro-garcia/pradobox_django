@@ -11,5 +11,6 @@ urlpatterns = [
     path('api/dashboard/', include('dashboard.infrastructure.urls')),
     path('api/import/', include('import_service.urls')),
     path('api/auth/', include('authentication.infrastructure.urls')),
+    path('api/contactos/', include('contactos.infrastructure.urls')),
     path('', ensure_csrf_cookie(TemplateView.as_view(template_name='index.html')), name='home'),
 ]

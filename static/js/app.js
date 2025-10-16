@@ -417,7 +417,8 @@ class CobranzasApp {
             'mas': 'Más',
             'docs-pdtes-cliente': 'Cobrables',
             'cliente-detail': 'Detalle del Cliente',
-            'sync': 'Sincronizar'
+            'sync': 'Sincronizar',
+            'contacts': 'Contactos'
         };
 
         document.getElementById('pageTitle').textContent = titles[view] || 'Cobranzas';
@@ -461,6 +462,9 @@ class CobranzasApp {
                 break;
             case 'mas':
                 this.updateStorageInfo();
+                break;
+            case 'contacts':
+                // Contacts view content is injected before navigation
                 break;
             // Add other views as needed
         }
@@ -1278,6 +1282,7 @@ class CobranzasApp {
                     // ordering (offline)
                     if (!filters.orderField) {
                         console.log('No order field set, defaulting to daysSinceLastInvoice');
+                        
                         filters.orderField = 'daysSinceLastInvoice';
                         filters.orderDesc = false;    
                     }
@@ -2288,6 +2293,13 @@ class CobranzasApp {
                 this.LoadClientPendingDocs(clienteId);
             };
 
+            document.getElementById('clientContacts').onclick = () => {
+                this.currentClientId = clienteId;
+                this.openContactsForClient(clienteId, cliente);
+                //this.LoadClientContacts(clienteId);
+            };
+            
+
             window.scrollTo({ top: 0, behavior: 'auto' });
         } catch (error) {
             console.error('Error loading cliente detail:', error);
@@ -2716,6 +2728,99 @@ class CobranzasApp {
             // Fallback to dashboard if no history
             this.navigateTo('dashboard', { push: false, isBack: true });
         }
+    }
+
+    async openContactsForClient(clientId, cliente) {
+        try {
+            // Placeholder data until backend is wired
+            //const contacts = [];
+
+            const contactsResponse = await fetch(`${this.apiBaseUrl}/contactos/${clientId}`, {
+                headers: window.authService.getAuthHeaders()
+            });
+            const contacts = await contactsResponse.json();
+
+            const contactsView = document.getElementById('contacts-view');
+            if (!contactsView) {
+                console.error('contacts-view container not found');
+                return;
+            }
+            contactsView.innerHTML = this.buildContactsViewHTML(cliente, contacts);
+
+            // Wire floating action buttons
+            const fabNew = document.getElementById('fabNewContact');
+            if (fabNew) {
+                fabNew.onclick = (e) => {
+                    e.stopPropagation();
+                    this.showSuccess('Create Contact tapped (to be implemented)');
+                };
+            }
+            const fabEdit = document.getElementById('fabEditContact');
+            if (fabEdit) {
+                fabEdit.onclick = (e) => {
+                    e.stopPropagation();
+                    this.showSuccess('Edit Contact tapped (to be implemented)');
+                };
+            }
+
+            this.navigateTo('contacts');
+            document.getElementById('pageTitle').textContent = 'Contactos';
+            window.scrollTo({ top: 0, behavior: 'auto' });
+        } catch (err) {
+            console.error('Error opening contacts:', err);
+            this.showError('No fue posible abrir los contactos');
+        }
+    }
+
+    buildContactsViewHTML(cliente, contacts) {
+        const header = `
+            <div class="bg-primary text-white rounded-lg p-6">
+                <h2 class="text-lg font-bold">${cliente?.nombre || 'Contacto'}</h2>
+                <p class="text-sm opacity-90">Contactos del cliente</p>
+            </div>`;
+
+        const phonesSection = `
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-sm font-semibold text-gray-800 mb-2">TELÉFONOS</h3>
+                <div id="contactPhonesList" class="space-y-2">
+                    ${contacts.length === 0 ? '<p class="text-gray-500 text-sm">No hay teléfonos registrados</p>' : ''}
+                </div>
+            </div>`;
+
+        const emailsSection = `
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-sm font-semibold text-gray-800 mb-2">EMAILS</h3>
+                <div id="contactEmailsList" class="space-y-2">
+                    ${contacts.length === 0 ? '<p class="text-gray-500 text-sm">No hay emails registrados</p>' : ''}
+                </div>
+            </div>`;
+
+        const addressesSection = `
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-sm font-semibold text-gray-800 mb-2">DIRECCIONES</h3>
+                <div id="contactAddressesList" class="space-y-2">
+                    ${contacts.length === 0 ? '<p class="text-gray-500 text-sm">No hay direcciones registradas</p>' : ''}
+                </div>
+            </div>`;
+
+        const fabs = `
+            <div class="fixed bottom-20 right-6 flex flex-col gap-3">
+                <button id="fabEditContact" class="rounded-full w-14 h-14 bg-primary text-white shadow-lg flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2m2 0h2M4 7h16M4 15h16M4 11h16M4 19h16"/></svg>
+                </button>
+                <button id="fabNewContact" class="rounded-full w-14 h-14 bg-blue-600 text-white shadow-lg flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
+                </button>
+            </div>`;
+
+        return `
+            <div class="space-y-4">
+                ${header}
+                ${phonesSection}
+                ${emailsSection}
+                ${addressesSection}
+                ${fabs}
+            </div>`;
     }
 }
 

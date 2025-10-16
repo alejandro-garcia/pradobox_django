@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'dashboard',
     'import_service',
     'authentication',
-    'vendedor'
+    'vendedor',
+    'contactos'
 ]
 
 # 'shared.infrastructure.middleware.RequestIdMiddleware',

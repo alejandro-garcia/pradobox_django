@@ -58,3 +58,14 @@ class MoneySigned:
         if self.currency != other.currency:
             raise ValueError("Cannot subtract different currencies")
         return MoneySigned(self.amount - other.amount, self.currency)
+
+
+
+@dataclass(frozen=True)
+class ContactId:
+    value: str
+    
+    def __post_init__(self):
+        if not self.value or len(self.value.strip()) == 0:
+            raise ValueError("Contact ID cannot be empty")
+

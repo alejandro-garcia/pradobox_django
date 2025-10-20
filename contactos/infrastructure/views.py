@@ -6,9 +6,13 @@ from ..application.use_cases import (
     GetContactsByClientUseCase,
     CreateContactUseCase,
     UpdateContactUseCase,
+    UpdateContactPhoneUseCase,
+    DeleteContactPhoneUseCase,
+    CreateContactPhoneUseCase
 )
-from .repository_impl import DjangoContactRepository
+from .repository_impl import DjangoContactPhoneRepository, DjangoContactRepository
 from ..domain.entities import Contact, ContactPhone, ContactEmail, ContactAddress
+from cliente.infrastructure.models import ClienteModel
 
 
 repo = DjangoContactRepository()
@@ -54,6 +58,24 @@ def _serialize_contact(c: Contact) -> dict:
 def contacts_by_client_view(request, client_id: str):
     use_case = GetContactsByClientUseCase(repo)
     contacts = use_case.execute(client_id)
+    if not contacts:
+        try:
+            client = ClienteModel.objects.get(id=client_id)
+            contact = Contact(
+                id=0,
+                client_id=client_id,
+                name=client.nombre,
+                first_name='',
+                last_name='',
+                phones=[],
+                emails=[],
+                addresses=[]
+            )
+            CreateContactUseCase(repo).execute(contact)
+        except ClienteModel.DoesNotExist as e:
+            print(str(e))
+        except Exception as e:
+            print(str(e))
     return Response([_serialize_contact(c) for c in contacts])
 
 
@@ -81,3 +103,34 @@ def update_contact_view(request, contact_id: int):
     use_case = UpdateContactUseCase(repo)
     updated = use_case.execute(contact_id, data)
     return Response(_serialize_contact(updated))
+
+@api_view(['POST'])
+def create_phone_view(request):
+    data = request.data or {}
+    use_case = CreateContactPhoneUseCase(repo)
+    created = use_case.execute(data)
+    return Response(_serialize_contact_phone(created), status=status.HTTP_201_CREATED)
+
+@api_view(['POST'])
+def update_phone_view(request, phone_id: int):
+    data = request.data or {}
+    repo = DjangoContactPhoneRepository()
+    use_case = UpdateContactPhoneUseCase(repo)
+    updated = use_case.execute(phone_id, data)
+    return Response(_serialize_contact_phone(updated))
+
+@api_view(['DELETE'])
+def delete_phone_view(request, phone_id: int):
+    use_case = DeleteContactPhoneUseCase(repo)
+    use_case.execute(phone_id)
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+def _serialize_contact_phone(cp: ContactPhone) -> dict:
+    result = {
+        'id': cp.id,
+        'phone': cp.phone,
+        'phone_type': cp.phone_type,
+    }
+    return result
+
+

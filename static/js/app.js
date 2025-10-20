@@ -89,6 +89,15 @@ class CobranzasApp {
         });
     }
 
+    closeEditFieldModal(typeId) {
+        const modal = document.getElementById('editFieldModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.getElementById(typeId).classList.add('hidden');
+        }
+    }
+
     setupEventListeners() {
         // Navigation
         document.querySelectorAll('.nav-item').forEach(item => {
@@ -1676,6 +1685,7 @@ class CobranzasApp {
         const diasDesdeEmision = this.dateDiffInDays(new Date(documento.fecha_emision), new Date());
         const fechaEmisionFormatted = this.formatDateWithDay(new Date(documento.fecha_emision));
         const isOverdue = documento.esta_vencido;
+        debugger;
         
         const content = `
             <!-- Encabezado (fondo azul) -->
@@ -1810,6 +1820,7 @@ class CobranzasApp {
 
             const hasKeys = (documento.empresa !== undefined) && (documento.tipo) && (documento.numero !== undefined);
             if (!this.offlineMode && hasKeys) {
+                debugger;
                 let tipo_doc = (documento.tipo.indexOf("/") > -1) ? documento.tipo.replace("/", "") : documento.tipo;
                 const documentoKey = `${documento.empresa}_${tipo_doc}_${documento.numero}`;
                 const fab = document.createElement('button');
@@ -2730,6 +2741,21 @@ class CobranzasApp {
         }
     }
 
+    toggleContactEditButtons() {
+        const editPhoneBtns = document.querySelectorAll('#editPhoneBtn');
+        const deletePhoneBtns = document.querySelectorAll('#deletePhoneBtn');
+        const addPhoneBtn = document.getElementById('addPhoneBtn');
+        const addEmailBtn = document.getElementById('addEmailBtn');
+        const addAddressBtn = document.getElementById('addAddressBtn');
+
+        editPhoneBtns.forEach(btn => btn.classList.toggle('hidden'));
+        deletePhoneBtns.forEach(btn => btn.classList.toggle('hidden'));
+
+        addPhoneBtn.classList.toggle('hidden');
+        addEmailBtn.classList.toggle('hidden');
+        addAddressBtn.classList.toggle('hidden');
+    }
+
     async openContactsForClient(clientId, cliente) {
         try {
             // Placeholder data until backend is wired
@@ -2747,19 +2773,14 @@ class CobranzasApp {
             }
             contactsView.innerHTML = this.buildContactsViewHTML(cliente, contacts);
 
-            // Wire floating action buttons
-            const fabNew = document.getElementById('fabNewContact');
-            if (fabNew) {
-                fabNew.onclick = (e) => {
-                    e.stopPropagation();
-                    this.showSuccess('Create Contact tapped (to be implemented)');
-                };
-            }
             const fabEdit = document.getElementById('fabEditContact');
             if (fabEdit) {
                 fabEdit.onclick = (e) => {
                     e.stopPropagation();
-                    this.showSuccess('Edit Contact tapped (to be implemented)');
+
+                    window.cobranzasApp.toggleContactEditButtons();
+
+                    //this.showSuccess('Edit Contact tapped (to be implemented)');
                 };
             }
 
@@ -2770,6 +2791,83 @@ class CobranzasApp {
             console.error('Error opening contacts:', err);
             this.showError('No fue posible abrir los contactos');
         }
+    }
+
+    async editPhone(phoneId, currentValue = '', currentPhoneType = '') {
+        debugger;
+        // Placeholder for phone editing logic
+        console.log(`Editing phone with ID: ${phoneId}`);
+        this.showSuccess(`Editing phone with ID: ${phoneId} clicked FUNCION EN DESARROLLO`);
+
+        const modal = document.getElementById('editFieldModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.getElementById('editFieldTitle').textContent = 'Editar Telefono';
+            document.getElementById('editFieldInput').value = currentValue;
+            document.getElementById('phoneTypeSelect').classList.remove('hidden');
+            document.getElementById('phoneTypeSelect').value = currentPhoneType;
+        }
+
+        btnUpdateEditField.onclick = async (e) => {
+            e.stopPropagation();
+
+
+            try {
+                const newValue = document.getElementById('editFieldInput').value;
+                if (newValue !== currentValue) {
+                    // Update phone logic here
+                    const phoneType = document.getElementById('phoneTypeSelect').value;
+                    
+                    await fetch(`${this.apiBaseUrl}/contactos/tlf/${phoneId}/`, {
+                        method: 'POST',
+                        headers: window.authService.getAuthHeaders(),
+                        body: JSON.stringify({ phone: newValue, phone_type: phoneType  })
+                    });
+
+                    console.log(`Updating phone with ID: ${phoneId} to: ${newValue}`);
+                    //this.showSuccess(`Updating phone with ID: ${phoneId} to: ${newValue} clicked FUNCION EN DESARROLLO`);
+                }
+            } catch (err) {
+                debugger; 
+                console.error('Error updating phone:', err);
+                this.showError('No fue posible actualizar el telefono');
+            }
+
+            this.closeEditFieldModal('phoneTypeSelect');
+        };
+    }
+
+    async deletePhone(phoneId) {
+        debugger;
+        // Placeholder for phone deletion logic
+        console.log(`Deleting phone with ID: ${phoneId}`);
+        this.showSuccess(`Deleting phone with ID: ${phoneId} clicked`);
+    }
+
+    //TODO: agregar metodos para editar y eliminar emails y direcciones
+    async editMail(mailId){
+        debugger;
+        console.log(`Editing mail with ID: ${mailId}`);
+        this.showSuccess(`Editing mail with ID: ${mailId} clicked FUNCION EN DESARROLLO`);
+    }
+
+    async deleteMail(mailId){
+        debugger;
+        console.log(`Deleting mail with ID: ${mailId}`);
+        this.showSuccess(`Deleting mail with ID: ${mailId} clicked`);
+    }
+
+    async editAddress(addressId){
+        debugger;
+        console.log(`Editing address with ID: ${addressId}`);
+        this.showSuccess(`Editing address with ID: ${addressId} clicked FUNCION EN DESARROLLO`);
+    }
+
+    async deleteAddress(addressId){
+        debugger;
+        console.log(`Deleting address with ID: ${addressId}`);
+        this.showSuccess(`Deleting address with ID: ${addressId} clicked`);
     }
 
     buildContactsViewHTML(cliente, contacts) {
@@ -2792,7 +2890,15 @@ class CobranzasApp {
             ? contact.phones.map(p => `
                 <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                     <span class="text-gray-800">📞${p.phone}</span>
-                    <span class="text-gray-500 text-sm">${phoneTypeLabel[p.phone_type] || 'Otro'}</span>
+                    <div class="flex items-center gap-3">
+                        <span class="text-gray-500 text-sm">${phoneTypeLabel[p.phone_type] || 'Otro'}</span>
+                        <svg id="editPhoneBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editPhone(${p.id}, '${p.phone}', '${p.phone_type}')">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                        </svg>
+                        <svg id="deletePhoneBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.deletePhone(${p.id})">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>   
+                    </div>
                 </div>`).join('')
             : '<p class="text-gray-500 text-sm">No hay teléfonos registrados</p>';
 
@@ -2801,7 +2907,15 @@ class CobranzasApp {
             ? contact.emails.map(e => `
                 <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                     <span class="text-gray-800">✉️${e.email}</span>
-                    <span class="text-gray-500 text-sm">${mailTypeLabel[e.mail_type] || 'Otro'}</span>
+                    <div class="flex items-center gap-3">
+                        <span class="text-gray-500 text-sm">${mailTypeLabel[e.mail_type] || 'Otro'}</span>
+                        <svg id="editEmailBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editEmail(${e.id})">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                        </svg>
+                        <svg id="deleteEmailBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.deleteEmail(${e.id})">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>   
+                    </div>
                 </div>`).join('')
             : '<p class="text-gray-500 text-sm">No hay emails registrados</p>';
 
@@ -2811,9 +2925,17 @@ class CobranzasApp {
                 const addressText = (a.address || '').replace(/\r?\n/g, '<br/>');
                 const meta = [a.state || '', a.zipcode || ''].filter(Boolean).join(' · ');
                 return `
-                    <div class="py-2 border-b border-gray-100 last:border-b-0">
+                    <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                         <div class="text-gray-800">📍${addressText}</div>
                         <div class="text-gray-500 text-sm">${meta}</div>
+                        <div class="flex items-center gap-3">
+                            <svg id="editAddressBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editAddress(${a.id})">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                            </svg>
+                            <svg id="deleteAddressBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.deleteAddress(${a.id})">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>   
+                        </div>
                     </div>`;
             }).join('')
             : '<p class="text-gray-500 text-sm">No hay direcciones registradas</p>';
@@ -2826,7 +2948,14 @@ class CobranzasApp {
 
         const phonesSection = `
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-sm font-semibold text-gray-800 mb-2">TELÉFONOS</h3>
+                <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                    <h3 class="text-sm font-semibold text-gray-800 mb-2">TELÉFONOS</h3>
+                    <button id="addPhoneBtn" class="text-gray-500 hover:text-gray-700 hidden">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                    </button>
+                </div>
                 <div id="contactPhonesList" class="space-y-2">
                     ${phonesHTML}
                 </div>
@@ -2834,7 +2963,14 @@ class CobranzasApp {
 
         const emailsSection = `
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-sm font-semibold text-gray-800 mb-2">EMAILS</h3>
+                <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                    <h3 class="text-sm font-semibold text-gray-800 mb-2">EMAILS</h3>
+                    <button id="addEmailBtn" class="text-gray-500 hover:text-gray-700 hidden">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                    </button>
+                </div>
                 <div id="contactEmailsList" class="space-y-2">
                     ${emailsHTML}
                 </div>
@@ -2842,7 +2978,14 @@ class CobranzasApp {
 
         const addressesSection = `
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-sm font-semibold text-gray-800 mb-2">DIRECCIONES</h3>
+                <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                    <h3 class="text-sm font-semibold text-gray-800 mb-2">DIRECCIONES</h3>
+                    <button id="addAddressBtn" class="text-gray-500 hover:text-gray-700 hidden">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                    </button>
+                </div>
                 <div id="contactAddressesList" class="space-y-2">
                     ${addressesHTML}
                 </div>
@@ -2851,10 +2994,7 @@ class CobranzasApp {
         const fabs = `
             <div class="fixed bottom-20 right-6 flex flex-col gap-3">
                 <button id="fabEditContact" class="rounded-full w-14 h-14 bg-primary text-white shadow-lg flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2m2 0h2M4 7h16M4 15h16M4 11h16M4 19h16"/></svg>
-                </button>
-                <button id="fabNewContact" class="rounded-full w-14 h-14 bg-blue-600 text-white shadow-lg flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2m2 0h2M4 7h16M4 15h16M4 11h16M4 19h16"/></svg>
                 </button>
             </div>`;
 

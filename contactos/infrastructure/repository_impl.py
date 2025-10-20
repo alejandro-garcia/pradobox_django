@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from ..domain.entities import Contact, ContactPhone, ContactEmail, ContactAddress
-from ..domain.repository import ContactRepository
+from ..domain.repository import ContactRepository, ContactPhoneRepository
 from .models import ContactModel, ContactPhoneModel, ContactEmailModel, ContactAddressModel
 
 
@@ -55,3 +55,24 @@ class DjangoContactRepository(ContactRepository):
             addresses=addresses,
             client_id=c.client,
         )
+
+
+class DjangoContactPhoneRepository(ContactPhoneRepository):
+    def create(self, contact_phone: ContactPhone) -> ContactPhone:
+        cp = ContactPhoneModel.objects.create(contact=contact_phone.contact_id, phone=contact_phone.phone, phone_type=contact_phone.phone_type)
+        return ContactPhone(id=cp.id, phone=cp.phone, phone_type=cp.phone_type, contact_id=cp.contact_id)
+
+    def update(self, contact_phone_id: int, data: dict) -> ContactPhone:
+        cp = ContactPhoneModel.objects.get(pk=contact_phone_id)
+        for field in ['phone', 'phone_type']:
+            if field in data:
+                setattr(cp, field, data[field])
+        cp.save()
+        return ContactPhone(id=cp.id, phone=cp.phone, phone_type=cp.phone_type, contact_id=cp.contact_id)
+
+    def delete(self, contact_phone_id: int) -> None:
+        cp = ContactPhoneModel.objects.get(pk=contact_phone_id)
+        cp.delete()
+
+    def find_by_contact(self, contact_id: int) -> List[ContactPhone]:
+        return [ContactPhone(id=p.id, phone=p.phone, phone_type=p.phone_type, contact_id=p.contact_id) for p in ContactPhoneModel.objects.filter(contact=contact_id)]

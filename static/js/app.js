@@ -2812,13 +2812,12 @@ class CobranzasApp {
         btnUpdateEditField.onclick = async (e) => {
             e.stopPropagation();
 
-
             try {
                 const newValue = document.getElementById('editFieldInput').value;
                 if (newValue !== currentValue) {
                     // Update phone logic here
                     const phoneType = document.getElementById('phoneTypeSelect').value;
-                    
+
                     await fetch(`${this.apiBaseUrl}/contactos/tlf/${phoneId}/`, {
                         method: 'POST',
                         headers: window.authService.getAuthHeaders(),

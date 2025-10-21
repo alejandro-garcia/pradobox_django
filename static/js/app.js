@@ -977,6 +977,7 @@ class CobranzasApp {
             } else {
                 const user = window.authService.getCurrentUser();
                 const seller_code = user.codigo_vendedor_profit; 
+
                 // Load from API
                 const [documentosResponse, resumenResponse] = await Promise.all([
                     fetch(`${this.apiBaseUrl}/cobranzas/pendientes/vendedor/${seller_code}`, {
@@ -2359,7 +2360,7 @@ class CobranzasApp {
                     <!-- Fila 2: Fecha emisión, Días crédito, Monto -->
                     <div class="grid grid-cols-5 items-center mb-2 text-sm">
                         <div class="col-span-2 flex items-center space-x-1">
-                            <span class="text-gray-600">E </span>
+                            <span class="text-gray-600">E</span>
                             <span class="text-gray-900">${this.formatDate(doc.fecha_emision)}</span>
                         </div>
                         <div class="text-right">
@@ -2756,43 +2757,6 @@ class CobranzasApp {
         addAddressBtn.classList.toggle('hidden');
     }
 
-    async openContactsForClient(clientId, cliente) {
-        try {
-            // Placeholder data until backend is wired
-            //const contacts = [];
-
-            const contactsResponse = await fetch(`${this.apiBaseUrl}/contactos/${clientId}`, {
-                headers: window.authService.getAuthHeaders()
-            });
-            const contacts = await contactsResponse.json();
-
-            const contactsView = document.getElementById('contacts-view');
-            if (!contactsView) {
-                console.error('contacts-view container not found');
-                return;
-            }
-            contactsView.innerHTML = this.buildContactsViewHTML(cliente, contacts);
-
-            const fabEdit = document.getElementById('fabEditContact');
-            if (fabEdit) {
-                fabEdit.onclick = (e) => {
-                    e.stopPropagation();
-
-                    window.cobranzasApp.toggleContactEditButtons();
-
-                    //this.showSuccess('Edit Contact tapped (to be implemented)');
-                };
-            }
-
-            this.navigateTo('contacts');
-            document.getElementById('pageTitle').textContent = 'Contactos';
-            window.scrollTo({ top: 0, behavior: 'auto' });
-        } catch (err) {
-            console.error('Error opening contacts:', err);
-            this.showError('No fue posible abrir los contactos');
-        }
-    }
-
     async editPhone(phoneId, currentValue = '', currentPhoneType = '') {
         debugger;
         // Placeholder for phone editing logic
@@ -2818,11 +2782,20 @@ class CobranzasApp {
                     // Update phone logic here
                     const phoneType = document.getElementById('phoneTypeSelect').value;
 
-                    await fetch(`${this.apiBaseUrl}/contactos/tlf/${phoneId}/`, {
+                    const response = await fetch(`${this.apiBaseUrl}/contactos/tlf/${phoneId}/`, {
                         method: 'POST',
                         headers: window.authService.getAuthHeaders(),
                         body: JSON.stringify({ phone: newValue, phone_type: phoneType  })
                     });
+
+                    const data = await response.json();
+                    const phoneContainer = document.getElementById('contactPhonesList');
+                    if (data && phoneContainer) {
+                        const phoneElement = document.getElementById(`phone-${phoneId}`);
+                        if (phoneElement) {
+                            phoneElement.outerHTML = this.renderPhoneHTML(data);
+                        }
+                    }
 
                     console.log(`Updating phone with ID: ${phoneId} to: ${newValue}`);
                     //this.showSuccess(`Updating phone with ID: ${phoneId} to: ${newValue} clicked FUNCION EN DESARROLLO`);
@@ -2887,7 +2860,7 @@ class CobranzasApp {
         // Phones HTML
         const phonesHTML = contact && Array.isArray(contact.phones) && contact.phones.length
             ? contact.phones.map(p => `
-                <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                <div id="phone-${p.id}" class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                     <span class="text-gray-800">📞${p.phone}</span>
                     <div class="flex items-center gap-3">
                         <span class="text-gray-500 text-sm">${phoneTypeLabel[p.phone_type] || 'Otro'}</span>
@@ -2993,7 +2966,7 @@ class CobranzasApp {
         const fabs = `
             <div class="fixed bottom-20 right-6 flex flex-col gap-3">
                 <button id="fabEditContact" class="rounded-full w-14 h-14 bg-primary text-white shadow-lg flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2m2 0h2M4 7h16M4 15h16M4 11h16M4 19h16"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2m2 0h2M4 7h16M4 15h16M4 11h16"/></svg>
                 </button>
             </div>`;
 
@@ -3005,6 +2978,68 @@ class CobranzasApp {
                 ${addressesSection}
                 ${fabs}
             </div>`;
+    }
+
+    renderPhoneHTML(phone){
+        const phoneTypeLabel = {
+            work: 'Trabajo',
+            mobile: 'Móvil',
+            fax: 'Fax',
+            home: 'Casa',
+            skype: 'Skype',
+            other: 'Otro'
+        };
+
+        return  `
+            <div id="phone-${phone.id}" class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                <span class="text-gray-800">📞${phone.phone}</span>
+                <div class="flex items-center gap-3">
+                    <span class="text-gray-500 text-sm">${phoneTypeLabel[phone.phone_type] || 'Otro'}</span>
+                    <svg id="editPhoneBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editPhone(${phone.id}, '${phone.phone}', '${phone.phone_type}')">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                    </svg>
+                    <svg id="deletePhoneBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.deletePhone(${phone.id})">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>   
+                </div>
+            </div>`;
+    }
+
+    async openContactsForClient(clientId, cliente) {
+        try {
+            // Placeholder data until backend is wired
+            //const contacts = [];
+
+            const contactsResponse = await fetch(`${this.apiBaseUrl}/contactos/${clientId}`, {
+                headers: window.authService.getAuthHeaders()
+            });
+            const contacts = await contactsResponse.json();
+
+            const contactsView = document.getElementById('contacts-view');
+            if (!contactsView) {
+                console.error('contacts-view container not found');
+                return;
+            }
+            contactsView.innerHTML = this.buildContactsViewHTML(cliente, contacts);
+
+            const fabEdit = document.getElementById('fabEditContact');
+            if (fabEdit) {
+                fabEdit.onclick = (e) => {
+                    e.stopPropagation();
+
+                    window.cobranzasApp.toggleContactEditButtons();
+
+                    //this.showSuccess('Edit Contact tapped (to be implemented)');
+                };
+            }
+
+            this.navigateTo('contacts');
+            document.getElementById('pageTitle').textContent = 'Contactos';
+            window.scrollTo({ top: 0, behavior: 'auto' });
+        } catch (err) {
+            console.error('Error opening contacts:', err);
+            this.showError('No fue posible abrir los contactos');
+        }
     }
 }
 

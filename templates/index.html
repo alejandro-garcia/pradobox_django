@@ -566,6 +566,22 @@
             <div class="space-y-3">
                 <input type="text" id="editFieldInput" class="w-full border rounded-md px-3 py-2" placeholder="Valor"/>
             </div>  
+            <div id="addressExtraFields" class="hidden">
+                <div class="space-y-3">
+                    <input type="text" id="editAddressState" class="w-full border rounded-md px-3 py-2" placeholder="Valor"/>
+                </div> 
+                <div class="space-y-3">
+                    <input type="text" id="editAddressZipCode" class="w-full border rounded-md px-3 py-2" placeholder="Valor"/>
+                </div> 
+                <div class="space-y-3">
+                    <select id="editAddressCountry" class="w-full border rounded-md px-3 py-2">
+                        <option value="">Selecciona un pais</option>
+                        <option value="1">Venezuela</option>
+                        <option value="2">Colombia</option>
+                        <option value="99">Otro</option>
+                    </select>
+                </div> 
+            </div> 
 
             <!-- Phone Type -->
             <select id="phoneTypeSelect" class="w-full border rounded-md px-3 py-2 hidden">
@@ -577,7 +593,21 @@
                 <option value="skype">Skype</option>
                 <option value="other">Otro</option>
             </select>
-            
+            <!-- Mail Type -->
+            <select id="mailTypeSelect" class="w-full border rounded-md px-3 py-2 hidden">
+                <option value="">Selecciona un tipo</option>
+                <option value="work">Trabajo</option>
+                <option value="personal">Personal</option>
+                <option value="other">Otro</option>
+            </select>
+            <!-- Address Type -->
+            <select id="addressTypeSelect" class="w-full border rounded-md px-3 py-2 hidden">
+                <option value="">Selecciona un tipo</option>
+                <option value="work">Trabajo</option>
+                <option value="home">Casa</option>
+                <option value="other">Otro</option>
+            </select>
+
             <div class="mt-4 flex justify-end gap-2">
                 <button id="btnCancelEditField" class="px-4 py-2 rounded-md border" onclick="window.cobranzasApp.closeEditFieldModal()">Cancelar</button>
                 <button id="btnUpdateEditField" class="px-4 py-2 rounded-md bg-primary text-white">Actualizar</button>

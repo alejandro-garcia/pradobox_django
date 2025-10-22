@@ -8,4 +8,7 @@ urlpatterns = [
     path('tlf/', views.create_phone_view, name='create-phone'),
     path('tlf/<int:phone_id>/', views.update_phone_view, name='update-phone'),
     path('tlf/<int:phone_id>/delete/', views.delete_phone_view, name='delete-phone'),
+    path('mail/', views.create_mail_view, name='create-mail'),
+    path('mail/<int:mail_id>/', views.update_mail_view, name='update-mail'),
+    path('mail/<int:mail_id>/delete/', views.delete_mail_view, name='delete-mail'),
 ]

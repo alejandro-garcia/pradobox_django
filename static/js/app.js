@@ -94,7 +94,12 @@ class CobranzasApp {
         if (modal) {
             modal.classList.add('hidden');
             modal.classList.remove('flex');
-            document.getElementById(typeId).classList.add('hidden');
+            if (typeId){
+                document.getElementById(typeId).classList.add('hidden');
+            } else {
+                document.getElementById('mailTypeSelect').classList.add('hidden');
+                document.getElementById('phoneTypeSelect').classList.add('hidden');
+            }
         }
     }
 
@@ -2748,9 +2753,19 @@ class CobranzasApp {
         const addPhoneBtn = document.getElementById('addPhoneBtn');
         const addEmailBtn = document.getElementById('addEmailBtn');
         const addAddressBtn = document.getElementById('addAddressBtn');
+        const editEmailBtns = document.querySelectorAll('#editEmailBtn');
+        const deleteEmailBtns = document.querySelectorAll('#deleteEmailBtn');
+        const editAddressBtns = document.querySelectorAll('#editAddressBtn');
+        const deleteAddressBtns = document.querySelectorAll('#deleteAddressBtn');
 
         editPhoneBtns.forEach(btn => btn.classList.toggle('hidden'));
         deletePhoneBtns.forEach(btn => btn.classList.toggle('hidden'));
+
+        editEmailBtns.forEach(btn => btn.classList.toggle('hidden'));
+        deleteEmailBtns.forEach(btn => btn.classList.toggle('hidden'));
+
+        editAddressBtns.forEach(btn => btn.classList.toggle('hidden'));
+        deleteAddressBtns.forEach(btn => btn.classList.toggle('hidden'));
 
         addPhoneBtn.classList.toggle('hidden');
         addEmailBtn.classList.toggle('hidden');
@@ -2818,10 +2833,56 @@ class CobranzasApp {
     }
 
     //TODO: agregar metodos para editar y eliminar emails y direcciones
-    async editMail(mailId){
+    async editEmail(mailId, currentValue = '', currentMailType = ''){
         debugger;
         console.log(`Editing mail with ID: ${mailId}`);
-        this.showSuccess(`Editing mail with ID: ${mailId} clicked FUNCION EN DESARROLLO`);
+        //this.showSuccess(`Editing mail with ID: ${mailId} clicked FUNCION EN DESARROLLO`);
+
+        const modal = document.getElementById('editFieldModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.getElementById('editFieldTitle').textContent = 'Editar Telefono';
+            document.getElementById('editFieldInput').value = currentValue;
+            document.getElementById('mailTypeSelect').classList.remove('hidden');
+            document.getElementById('mailTypeSelect').value = currentMailType;
+        }
+
+        btnUpdateEditField.onclick = async (e) => {
+            e.stopPropagation();
+
+            try {
+                const newValue = document.getElementById('editFieldInput').value;
+                if (newValue !== currentValue) {
+                    // Update phone logic here
+                    const mailType = document.getElementById('mailTypeSelect').value;
+
+                    const response = await fetch(`${this.apiBaseUrl}/contactos/mail/${mailId}/`, {
+                        method: 'POST',
+                        headers: window.authService.getAuthHeaders(),
+                        body: JSON.stringify({ email: newValue, mail_type: mailType  })
+                    });
+
+                    const data = await response.json();
+                    const mailContainer = document.getElementById('contactEmailsList');
+                    if (data && mailContainer) {
+                        const mailElement = document.getElementById(`mail-${mailId}`);
+                        if (mailElement) {
+                            mailElement.outerHTML = this.renderMailHTML(data);
+                        }
+                    }
+
+                    console.log(`Updating mail with ID: ${mailId} to: ${newValue}`);
+                    //this.showSuccess(`Updating mail with ID: ${mailId} to: ${newValue} clicked FUNCION EN DESARROLLO`);
+                }
+            } catch (err) {
+                debugger; 
+                console.error('Error updating Email:', err);
+                this.showError('No fue posible actualizar el Email');
+            }
+
+            this.closeEditFieldModal('mailTypeSelect');
+        };
     }
 
     async deleteMail(mailId){
@@ -2877,11 +2938,11 @@ class CobranzasApp {
         // Emails HTML
         const emailsHTML = contact && Array.isArray(contact.emails) && contact.emails.length
             ? contact.emails.map(e => `
-                <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                <div id="mail-${e.id}" class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                     <span class="text-gray-800">✉️${e.email}</span>
                     <div class="flex items-center gap-3">
                         <span class="text-gray-500 text-sm">${mailTypeLabel[e.mail_type] || 'Otro'}</span>
-                        <svg id="editEmailBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editEmail(${e.id})">
+                        <svg id="editEmailBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editEmail(${e.id}, '${e.email}', '${e.mail_type}')">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                         </svg>
                         <svg id="deleteEmailBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.deleteEmail(${e.id})">
@@ -3003,6 +3064,28 @@ class CobranzasApp {
                     </svg>   
                 </div>
             </div>`;
+    }
+
+    renderMailHTML(email){
+        const mailTypeLabel = {
+            work: 'Trabajo',
+            personal: 'Personal',
+            other: 'Otro'
+        };
+
+        return `
+            <div id="mail-${email.id}" class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                <span class="text-gray-800">✉️${email.email}</span>
+                <div class="flex items-center gap-3">
+                    <span class="text-gray-500 text-sm">${mailTypeLabel[email.mail_type] || 'Otro'}</span>
+                    <svg id="editEmailBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editEmail(${email.id}, '${email.email}', '${email.mail_type}')">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                    </svg>
+                    <svg id="deleteEmailBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.deleteEmail(${email.id})">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>   
+                </div>
+            </div>`;            
     }
 
     async openContactsForClient(clientId, cliente) {

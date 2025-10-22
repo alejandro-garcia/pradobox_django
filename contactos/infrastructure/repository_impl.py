@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from ..domain.entities import Contact, ContactPhone, ContactEmail, ContactAddress
-from ..domain.repository import ContactRepository, ContactPhoneRepository
+from ..domain.repository import ContactRepository, ContactPhoneRepository, ContactEmailRepository
 from .models import ContactModel, ContactPhoneModel, ContactEmailModel, ContactAddressModel
 
 
@@ -76,3 +76,24 @@ class DjangoContactPhoneRepository(ContactPhoneRepository):
 
     def find_by_contact(self, contact_id: int) -> List[ContactPhone]:
         return [ContactPhone(id=p.id, phone=p.phone, phone_type=p.phone_type, contact_id=p.contact_id) for p in ContactPhoneModel.objects.filter(contact=contact_id)]
+
+
+class DjangoContactEmailRepository(ContactEmailRepository):
+    def create(self, contact_email: ContactEmail) -> ContactEmail:
+        ce = ContactEmailModel.objects.create(contact=contact_email.contact_id, email=contact_email.email, mail_type=contact_email.mail_type)
+        return ContactEmail(id=ce.id, email=ce.email, mail_type=ce.mail_type, contact_id=ce.contact_id)
+    
+    def update(self, contact_email_id: int, data: dict) -> ContactEmail:
+        ce = ContactEmailModel.objects.get(pk=contact_email_id)
+        for field in ['email', 'mail_type']:
+            if field in data:
+                setattr(ce, field, data[field])
+        ce.save()
+        return ContactEmail(id=ce.id, email=ce.email, mail_type=ce.mail_type, contact_id=ce.contact_id)
+    
+    def delete(self, contact_email_id: int) -> None:
+        ce = ContactEmailModel.objects.get(pk=contact_email_id)
+        ce.delete()
+    
+    def find_by_contact(self, contact_id: int) -> List[ContactEmail]:
+        return [ContactEmail(id=e.id, email=e.email, mail_type=e.mail_type, contact_id=e.contact_id) for e in ContactEmailModel.objects.filter(contact=contact_id)]

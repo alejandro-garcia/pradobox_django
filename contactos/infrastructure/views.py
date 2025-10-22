@@ -8,11 +8,13 @@ from ..application.use_cases import (
     UpdateContactUseCase,
     UpdateContactPhoneUseCase,
     DeleteContactPhoneUseCase,
-    CreateContactPhoneUseCase
+    CreateContactPhoneUseCase,
+    UpdateContactEmailUseCase,        
 )
-from .repository_impl import DjangoContactPhoneRepository, DjangoContactRepository
+from .repository_impl import DjangoContactPhoneRepository, DjangoContactRepository, DjangoContactEmailRepository
 from ..domain.entities import Contact, ContactPhone, ContactEmail, ContactAddress
 from cliente.infrastructure.models import ClienteModel
+from typing import Optional
 
 
 repo = DjangoContactRepository()
@@ -53,6 +55,21 @@ def _serialize_contact(c: Contact) -> dict:
         ],
     }
 
+def _get_state(client: ClienteModel) -> Optional[str]:
+
+    if not client.ciudad or client.ciudad.strip() == '':
+        return None
+
+    ciudad = client.ciudad.strip().lower()
+
+    if ciudad in ['caracas', 'caraccas', 'caracaas', 'caraca', 'cararacas', 'caracs']:
+        return 'D.C.'
+    elif ciudad == 'maracaibo':
+        return 'Zulia'
+    elif ciudad == 'valencia':
+        return 'Carabobo'
+    else:
+        return None
 
 @api_view(['GET'])
 def contacts_by_client_view(request, client_id: str):
@@ -61,15 +78,34 @@ def contacts_by_client_view(request, client_id: str):
     if not contacts:
         try:
             client = ClienteModel.objects.get(id=client_id)
+
+            phone = None
+            email = None
+            address = None
+
+            if (client.telefono and len(client.telefono.strip()) > 0):
+                phone = ContactPhone(id=0, phone=client.telefono, phone_type='work', contact_id=0)
+
+            if (client.email and len(client.email.strip()) > 0):
+                email = ContactEmail(id=0, email=client.email, mail_type='work', contact_id=0)
+
+            if (client.direccion and len(client.direccion.strip()) > 0):
+                country_code = 1
+                zip = client.zip if client.zip and len(client.zip.strip()) > 0 else None 
+
+                state = _get_state(client)
+
+                address = ContactAddress(id=0, address=client.direccion, state=state, zipcode=zip, country_id=country_code, contact_id=0)
+
             contact = Contact(
                 id=0,
                 client_id=client_id,
                 name=client.nombre,
                 first_name='',
                 last_name='',
-                phones=[],
-                emails=[],
-                addresses=[]
+                phones=[phone] if phone else [],
+                emails=[email] if email else [],
+                addresses=[address] if address else []
             )
             CreateContactUseCase(repo).execute(contact)
         except ClienteModel.DoesNotExist as e:
@@ -125,11 +161,42 @@ def delete_phone_view(request, phone_id: int):
     use_case.execute(phone_id)
     return Response(status=status.HTTP_204_NO_CONTENT)
 
+
+@api_view(['POST'])
+def update_mail_view(request, mail_id: int):
+    data = request.data or {}
+    repo = DjangoContactEmailRepository()
+    use_case = UpdateContactEmailUseCase(repo)
+    updated = use_case.execute(mail_id, data)
+    return Response(_serialize_contact_mail(updated))
+
+@api_view(['DELETE'])
+def delete_mail_view(request, mail_id: int):
+    use_case = DeleteContactEmailUseCase(repo)
+    use_case.execute(mail_id)
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['POST'])
+def create_mail_view(request):
+    data = request.data or {}
+    use_case = CreateContactEmailUseCase(repo)
+    created = use_case.execute(data)
+    return Response(_serialize_contact_mail(created), status=status.HTTP_201_CREATED)
+
+
 def _serialize_contact_phone(cp: ContactPhone) -> dict:
     result = {
         'id': cp.id,
         'phone': cp.phone,
         'phone_type': cp.phone_type,
+    }
+    return result
+
+def _serialize_contact_mail(cm: ContactEmail) -> dict:
+    result = {
+        'id': cm.id,
+        'email': cm.email,
+        'mail_type': cm.mail_type,
     }
     return result
 

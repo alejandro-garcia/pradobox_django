@@ -9,12 +9,16 @@ from ..application.use_cases import (
     UpdateContactPhoneUseCase,
     DeleteContactPhoneUseCase,
     CreateContactPhoneUseCase,
-    UpdateContactEmailUseCase,        
+    UpdateContactEmailUseCase,
+    UpdateContactAddressUseCase,
+    DeleteContactAddressUseCase,
+    CreateContactAddressUseCase,
 )
-from .repository_impl import DjangoContactPhoneRepository, DjangoContactRepository, DjangoContactEmailRepository
+from .repository_impl import DjangoContactPhoneRepository, DjangoContactRepository, DjangoContactEmailRepository, DjangoContactAddressRepository
 from ..domain.entities import Contact, ContactPhone, ContactEmail, ContactAddress
 from cliente.infrastructure.models import ClienteModel
 from typing import Optional
+from datetime import timedelta
 
 
 repo = DjangoContactRepository()
@@ -75,9 +79,25 @@ def _get_state(client: ClienteModel) -> Optional[str]:
 def contacts_by_client_view(request, client_id: str):
     use_case = GetContactsByClientUseCase(repo)
     contacts = use_case.execute(client_id)
+    client = ClienteModel.objects.get(id=client_id)
+
+    is_updated = False
     if not contacts:
+        is_updated = True
+    else: 
+        update_at_utc = client.updated_at + timedelta(hours=4) 
+        
+        is_updated = update_at_utc > contacts[0].updated_at
+        
+        if is_updated:
+            DjangoContactPhoneRepository().delete_by_contact_id(contacts[0].id)
+            DjangoContactEmailRepository().delete_by_contact_id(contacts[0].id)
+            DjangoContactAddressRepository().delete_by_contact_id(contacts[0].id)
+            repo.delete(contacts[0].id)
+
+    if is_updated:
         try:
-            client = ClienteModel.objects.get(id=client_id)
+            #client = ClienteModel.objects.get(id=client_id)
 
             phone = None
             email = None
@@ -107,7 +127,10 @@ def contacts_by_client_view(request, client_id: str):
                 emails=[email] if email else [],
                 addresses=[address] if address else []
             )
-            CreateContactUseCase(repo).execute(contact)
+
+            new_contact = CreateContactUseCase(repo).execute(contact)
+            contacts.append(new_contact)
+
         except ClienteModel.DoesNotExist as e:
             print(str(e))
         except Exception as e:
@@ -183,6 +206,26 @@ def create_mail_view(request):
     created = use_case.execute(data)
     return Response(_serialize_contact_mail(created), status=status.HTTP_201_CREATED)
 
+@api_view(['POST'])
+def create_address_view(request):
+    data = request.data or {}
+    use_case = CreateContactAddressUseCase(repo)
+    created = use_case.execute(data)
+    return Response(_serialize_contact_address(created), status=status.HTTP_201_CREATED)
+
+@api_view(['POST'])
+def update_address_view(request, address_id: int):
+    data = request.data or {}
+    use_case = UpdateContactAddressUseCase(repo)
+    updated = use_case.execute(address_id, data)
+    return Response(_serialize_contact_address(updated))
+
+@api_view(['DELETE'])
+def delete_address_view(request, address_id: int):
+    use_case = DeleteContactAddressUseCase(repo)
+    use_case.execute(address_id)
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 def _serialize_contact_phone(cp: ContactPhone) -> dict:
     result = {
@@ -200,4 +243,12 @@ def _serialize_contact_mail(cm: ContactEmail) -> dict:
     }
     return result
 
-
+def _serialize_contact_address(ca: ContactAddress) -> dict:
+    result = {
+        'id': ca.id,
+        'address': ca.address,
+        'state': ca.state,
+        'zipcode': ca.zipcode,
+        'country_id': ca.country_id,
+    }
+    return result

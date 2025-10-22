@@ -2750,9 +2750,9 @@ class CobranzasApp {
     toggleContactEditButtons() {
         const editPhoneBtns = document.querySelectorAll('#editPhoneBtn');
         const deletePhoneBtns = document.querySelectorAll('#deletePhoneBtn');
-        const addPhoneBtn = document.getElementById('addPhoneBtn');
-        const addEmailBtn = document.getElementById('addEmailBtn');
-        const addAddressBtn = document.getElementById('addAddressBtn');
+        //const addPhoneBtn = document.getElementById('addPhoneBtn');
+        //const addEmailBtn = document.getElementById('addEmailBtn');
+        //const addAddressBtn = document.getElementById('addAddressBtn');
         const editEmailBtns = document.querySelectorAll('#editEmailBtn');
         const deleteEmailBtns = document.querySelectorAll('#deleteEmailBtn');
         const editAddressBtns = document.querySelectorAll('#editAddressBtn');
@@ -2767,9 +2767,9 @@ class CobranzasApp {
         editAddressBtns.forEach(btn => btn.classList.toggle('hidden'));
         deleteAddressBtns.forEach(btn => btn.classList.toggle('hidden'));
 
-        addPhoneBtn.classList.toggle('hidden');
-        addEmailBtn.classList.toggle('hidden');
-        addAddressBtn.classList.toggle('hidden');
+        //addPhoneBtn.classList.toggle('hidden');
+        //addEmailBtn.classList.toggle('hidden');
+        //addAddressBtn.classList.toggle('hidden');
     }
 
     async editPhone(phoneId, currentValue = '', currentPhoneType = '') {
@@ -2832,7 +2832,28 @@ class CobranzasApp {
         this.showSuccess(`Deleting phone with ID: ${phoneId} clicked`);
     }
 
-    //TODO: agregar metodos para editar y eliminar emails y direcciones
+    async editAddress(addressId, currentValue = {}){
+        debugger;
+        console.log(`Editing address with ID: ${addressId}`);
+        this.showSuccess(`Editing address with ID: ${addressId} clicked FUNCION EN DESARROLLO`);
+
+        const modal = document.getElementById('editFieldModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.getElementById('editFieldTitle').textContent = 'Editar Telefono';
+            document.getElementById('editFieldInput').value = currentValue.address;
+            document.getElementById('addressExtraFields').classList.remove('hidden');
+            document.getElementById('addressTypeSelect').classList.remove('hidden');
+            document.getElementById('addressTypeSelect').value = currentValue.address_type;
+            document.getElementById('editAddressState').value = currentValue.state;
+            document.getElementById('editAddressZipCode').value = currentValue.zip_code;
+            document.getElementById('editAddressCountry').value = currentValue.country;
+            //document.getElementById('editAddressCity').value = currentValue.city;
+        }
+    }
+
+
     async editEmail(mailId, currentValue = '', currentMailType = ''){
         debugger;
         console.log(`Editing mail with ID: ${mailId}`);
@@ -2848,6 +2869,12 @@ class CobranzasApp {
             document.getElementById('mailTypeSelect').value = currentMailType;
         }
 
+        const btnUpdateEditField = document.getElementById('btnUpdateEditField');
+
+        if (!btnUpdateEditField) {
+            return;
+        }
+
         btnUpdateEditField.onclick = async (e) => {
             e.stopPropagation();
 
@@ -2855,12 +2882,12 @@ class CobranzasApp {
                 const newValue = document.getElementById('editFieldInput').value;
                 if (newValue !== currentValue) {
                     // Update phone logic here
-                    const mailType = document.getElementById('mailTypeSelect').value;
+                    const mailType = document.getElementById('addressTypeSelect').value;
 
-                    const response = await fetch(`${this.apiBaseUrl}/contactos/mail/${mailId}/`, {
+                    const response = await fetch(`${this.apiBaseUrl}/contactos/direccion/${addressId}/`, {
                         method: 'POST',
                         headers: window.authService.getAuthHeaders(),
-                        body: JSON.stringify({ email: newValue, mail_type: mailType  })
+                        body: JSON.stringify({ address: newValue, address_type: mailType  })
                     });
 
                     const data = await response.json();
@@ -3024,12 +3051,12 @@ class CobranzasApp {
                 </div>
             </div>`;
 
-        const fabs = `
-            <div class="fixed bottom-20 right-6 flex flex-col gap-3">
-                <button id="fabEditContact" class="rounded-full w-14 h-14 bg-primary text-white shadow-lg flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2m2 0h2M4 7h16M4 15h16M4 11h16"/></svg>
-                </button>
-            </div>`;
+        // const fabs = `
+        //     <div class="fixed bottom-20 right-6 flex flex-col gap-3">
+        //         <button id="fabEditContact" class="rounded-full w-14 h-14 bg-primary text-white shadow-lg flex items-center justify-center">
+        //             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2m2 0h2M4 7h16M4 15h16M4 11h16"/></svg>
+        //         </button>
+        //     </div>`;
 
         return `
             <div class="space-y-4">
@@ -3037,7 +3064,7 @@ class CobranzasApp {
                 ${phonesSection}
                 ${emailsSection}
                 ${addressesSection}
-                ${fabs}
+                <!-- fabs PLACEHOLDER -->
             </div>`;
     }
 

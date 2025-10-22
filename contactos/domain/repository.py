@@ -1,7 +1,7 @@
 from typing import List, Optional
 from abc import ABC, abstractmethod
 
-from .entities import Contact, ContactEmail, ContactPhone
+from .entities import Contact, ContactAddress, ContactEmail, ContactPhone
 
 
 class ContactRepository(ABC):
@@ -19,6 +19,10 @@ class ContactRepository(ABC):
 
     @abstractmethod
     def update(self, contact_id: int, data: dict) -> Contact:
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete(self, contact_id: int) -> None:
         raise NotImplementedError
 
 
@@ -39,6 +43,10 @@ class ContactPhoneRepository(ABC):
     def find_by_contact(self, contact_id: int) -> List[ContactPhone]:
         raise NotImplementedError
 
+    @abstractmethod
+    def delete_by_contact_id(self, contact_id: int) -> None:
+        raise NotImplementedError
+
 class ContactEmailRepository(ABC):
     @abstractmethod
     def create(self, contact_mail: ContactEmail) -> ContactEmail:
@@ -56,3 +64,31 @@ class ContactEmailRepository(ABC):
     def find_by_contact(self, contact_id: int) -> List[ContactEmail]:
         raise NotImplementedError
 
+    @abstractmethod
+    def delete_by_contact_id(self, contact_id: int) -> None:
+        raise NotImplementedError
+
+class ContactAddressRepository(ABC):
+    @abstractmethod
+    def create(self, address: ContactAddress) -> ContactAddress:
+        raise NotImplementedError
+
+    @abstractmethod
+    def update(self, address_id: int, data: dict) -> ContactAddress:
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete(self, address_id: int) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def find_by_contact(self, contact_id: int) -> List[ContactAddress]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def find_by_id(self, address_id: int) -> Optional[ContactAddress]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete_by_contact_id(self, contact_id: int) -> None:
+        raise NotImplementedError

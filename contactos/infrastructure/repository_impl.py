@@ -1,8 +1,11 @@
 from typing import List, Optional
 
 from ..domain.entities import Contact, ContactPhone, ContactEmail, ContactAddress
-from ..domain.repository import ContactRepository, ContactPhoneRepository, ContactEmailRepository
+from ..domain.repository import ContactRepository, ContactPhoneRepository, ContactEmailRepository, ContactAddressRepository
 from .models import ContactModel, ContactPhoneModel, ContactEmailModel, ContactAddressModel
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class DjangoContactRepository(ContactRepository):
@@ -41,6 +44,10 @@ class DjangoContactRepository(ContactRepository):
         c.save()
         return self._to_domain(c)
 
+    def delete(self, contact_id: int) -> None:
+        c = ContactModel.objects.get(pk=contact_id)
+        c.delete()
+
     def _to_domain(self, c: ContactModel) -> Contact:
         phones = [ContactPhone(id=p.id, phone=p.phone, phone_type=p.phone_type, contact_id=c.id) for p in c.phones.all()]
         emails = [ContactEmail(id=e.id, email=e.email, mail_type=e.mail_type, contact_id=c.id) for e in c.emails.all()]
@@ -54,6 +61,8 @@ class DjangoContactRepository(ContactRepository):
             emails=emails,
             addresses=addresses,
             client_id=c.client,
+            updated_at=c.updated_at,
+            created_at=c.created_at
         )
 
 
@@ -73,6 +82,9 @@ class DjangoContactPhoneRepository(ContactPhoneRepository):
     def delete(self, contact_phone_id: int) -> None:
         cp = ContactPhoneModel.objects.get(pk=contact_phone_id)
         cp.delete()
+
+    def delete_by_contact_id(self, contact_id: int) -> None:
+        ContactPhoneModel.objects.filter(contact=contact_id).delete()
 
     def find_by_contact(self, contact_id: int) -> List[ContactPhone]:
         return [ContactPhone(id=p.id, phone=p.phone, phone_type=p.phone_type, contact_id=p.contact_id) for p in ContactPhoneModel.objects.filter(contact=contact_id)]
@@ -95,5 +107,35 @@ class DjangoContactEmailRepository(ContactEmailRepository):
         ce = ContactEmailModel.objects.get(pk=contact_email_id)
         ce.delete()
     
+    def delete_by_contact_id(self, contact_id: int) -> None:
+        ContactEmailModel.objects.filter(contact=contact_id).delete()
+    
     def find_by_contact(self, contact_id: int) -> List[ContactEmail]:
         return [ContactEmail(id=e.id, email=e.email, mail_type=e.mail_type, contact_id=e.contact_id) for e in ContactEmailModel.objects.filter(contact=contact_id)]
+
+
+class DjangoContactAddressRepository(ContactAddressRepository):
+    def create(self, address: ContactAddress) -> ContactAddress:
+        ca = ContactAddressModel.objects.create(contact=address.contact_id, address=address.address, state=address.state, zipcode=address.zipcode, country_id=address.country_id)
+        return ContactAddress(id=ca.id, address=ca.address, state=ca.state, zipcode=ca.zipcode, country_id=ca.country_id, contact_id=ca.contact_id)
+    
+    def update(self, address_id: int, data: dict) -> ContactAddress:
+        return super().update(address_id, data)
+
+    def delete(self, address_id: int) -> None:
+        ca = ContactAddressModel.objects.get(pk=address_id)
+        ca.delete()
+    
+    def delete_by_contact_id(self, contact_id: int) -> None:
+        logger.info(f"Deleting addresses for contact {contact_id}")
+        ContactAddressModel.objects.filter(contact=contact_id).delete()
+
+    def find_by_id(self, address_id: int) -> Optional[ContactAddress]:
+        try:
+            ca = ContactAddressModel.objects.get(pk=address_id)
+            return ContactAddress(id=ca.id, address=ca.address, state=ca.state, zipcode=ca.zipcode, country_id=ca.country_id, contact_id=ca.contact_id)
+        except ContactAddressModel.DoesNotExist:
+            return None
+    
+    def find_by_contact(self, contact_id: int) -> List[ContactAddress]:
+        return [ContactAddress(id=a.id, address=a.address, state=a.state, zipcode=a.zipcode, country_id=a.country_id, contact_id=a.contact_id) for a in ContactAddressModel.objects.filter(contact=contact_id)]

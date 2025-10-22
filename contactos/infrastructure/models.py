@@ -23,6 +23,10 @@ class ContactModel(models.Model):
     first_name = models.CharField(max_length=100, blank=True, null=True)
     last_name = models.CharField(max_length=100, blank=True, null=True)
 
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
+
+
     class Meta:
         db_table = 'contact'
         verbose_name = 'Contact'

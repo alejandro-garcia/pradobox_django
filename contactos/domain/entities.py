@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
+from datetime import datetime
 
 
 @dataclass
@@ -46,3 +47,6 @@ class Contact:
     addresses: List[ContactAddress] = field(default_factory=list)
     # Foreign aggregate owner: client id (for grouping by cliente)
     client_id: Optional[str] = None
+    updated_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+

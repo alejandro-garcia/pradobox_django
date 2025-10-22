@@ -20,9 +20,8 @@ class ClienteModel(models.Model):
     co_pais = models.CharField(db_column='co_pais', max_length=6, blank=True, null=True)
     ciudad = models.CharField(db_column='ciudad', max_length=50, blank=True, null=True)
     zip = models.CharField(db_column='zip', max_length=10, blank=True, null=True)
-
-    #created_at = models.DateTimeField(db_column='fe_us_in', auto_now_add=True)
-    #updated_at = models.DateTimeField(db_column='fe_us_mo', auto_now=True)
+    created_at = models.DateTimeField(db_column='fe_us_in', blank=True, null=True)
+    updated_at = models.DateTimeField(db_column='fe_us_mo', blank=True, null=True)
     
     class Meta:
         managed = False

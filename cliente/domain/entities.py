@@ -18,6 +18,10 @@ class Cliente:
     vencido: Optional[Decimal] = Decimal(0)
     total: Optional[Decimal] = Decimal(0)
     ventas_ultimo_trimestre: Optional[Decimal] = Decimal(0)
+    co_pais: Optional[str] = None
+    ciudad: Optional[str] = None
+    zip: Optional[str] = None
+    
     
     def __post_init__(self):
         if not self.nombre or len(self.nombre.strip()) == 0:

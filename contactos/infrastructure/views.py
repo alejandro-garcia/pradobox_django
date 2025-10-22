@@ -23,6 +23,56 @@ from datetime import timedelta
 
 repo = DjangoContactRepository()
 
+cities_states = {
+    "caracas": "Distrito Capital",
+    "maracaibo": "Zulia",
+    "valencia": "Carabobo",
+    "barquisimeto": "Lara",
+    "maracay": "Aragua",
+    "ciudad guayana": "Bolívar",
+    "barcelona": "Anzoátegui",
+    "puerto la cruz": "Anzoátegui",
+    "maturín": "Monagas",
+    "san cristóbal": "Táchira",
+    "barinas": "Barinas",
+    "cumaná": "Sucre",
+    "puerto ordaz": "Bolívar",
+    "guatire": "Miranda",
+    "guarenas": "Miranda",
+    "los teques": "Miranda",
+    "la guaira": "La Guaira",
+    "san felipe": "Yaracuy",
+    "acarigua": "Portuguesa",
+    "araure": "Portuguesa",
+    "el tigre": "Anzoátegui",
+    "coro": "Falcón",
+    "trujillo": "Trujillo",
+    "mérida": "Mérida",
+    "valera": "Trujillo",
+    "san carlos": "Cojedes",
+    "san fernando de apure": "Apure",
+    "guanare": "Portuguesa",
+    "carúpano": "Sucre",
+    "tucupita": "Delta Amacuro",
+    "el vigía": "Mérida",
+    "ciudad bolívar": "Bolívar",
+    "la asunción": "Nueva Esparta",
+    "porlamar": "Nueva Esparta",
+    "punto fijo": "Falcón",
+    "guacara": "Carabobo",
+    "naguanagua": "Carabobo",
+    "tinaquillo": "Cojedes",
+    "ocumare del tuy": "Miranda",
+    "charallave": "Miranda",
+    "san juan de los morros": "Guárico",
+    "calabozo": "Guárico",
+    "valle de la pascua": "Guárico",
+    "cabimas": "Zulia",
+    "santa rita": "Zulia",
+    "machiques": "Zulia"
+}
+
+
 
 def _serialize_contact(c: Contact) -> dict:
     return {
@@ -67,11 +117,10 @@ def _get_state(client: ClienteModel) -> Optional[str]:
     ciudad = client.ciudad.strip().lower()
 
     if ciudad in ['caracas', 'caraccas', 'caracaas', 'caraca', 'cararacas', 'caracs']:
-        return 'D.C.'
-    elif ciudad == 'maracaibo':
-        return 'Zulia'
-    elif ciudad == 'valencia':
-        return 'Carabobo'
+        ciudad = 'caracas'
+
+    if ciudad in cities_states:
+        return cities_states[ciudad]
     else:
         return None
 

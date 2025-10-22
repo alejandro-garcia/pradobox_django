@@ -287,7 +287,6 @@ class IndexedDBService {
                         }
                         else {
                             // Por vencer: tipo distinto de N/CR
-                            debugger;
                             resumen.total_por_vencer += saldo;
                             resumen.cantidad_por_vencer++;
                             cantidadPorVencer++;
@@ -376,7 +375,6 @@ class IndexedDBService {
     async getVentasTrimestre(seller_code) {
         // Cargar documentos filtrados por vendedor (admite CSV)
         const documentos = await this.getDocumentos({ co_ven: seller_code });
-        debugger;
 
         // Determinar los últimos 3 meses (incluyendo mes actual)
         const now = new Date();
@@ -504,7 +502,6 @@ class IndexedDBService {
                         }
                         else {
                             // Por vencer: tipo distinto de N/CR
-                            debugger;
                             resumen.total_por_vencer += saldo;
                             resumen.cantidad_por_vencer++;
                             cantidadPorVencer++;
@@ -741,6 +738,17 @@ class IndexedDBService {
             nombre_completo: fullName,
             codigo_vendedor_profit: sellerCode
         }
+    }
+
+    async getContactsByClientId(clientId) {
+        debugger;
+        const transaction = this.db.transaction(['clientes'], 'readonly');
+        const store = transaction.objectStore('clientes');
+        return new Promise((resolve, reject) => {
+            const request = store.get(clientId);
+            request.onsuccess = () => resolve(request.result?.contacts);
+            request.onerror = () => reject(request.error);
+        });
     }
 }
 

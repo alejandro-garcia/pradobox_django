@@ -201,9 +201,9 @@ class MSSQLConnector:
                 cli_des,
                 rif,
                 rif2,
-                telefonos,
-                email,
-                direccion,
+                ltrim(rtrim(telefonos)) as telefonos,
+                ltrim(rtrim(email)) as email,
+                ltrim(rtrim(direccion)) as direccion,
                 dias_ult_fact, 
                 dias_promedio_emision,
                 neto, 
@@ -211,7 +211,9 @@ class MSSQLConnector:
                 total,
                 ventas_ultimo_trimestre,
                 plaz_pag,
-                ltrim(rtrim(co_ven)) as co_ven
+                ltrim(rtrim(co_ven)) as co_ven,
+                case when ltrim(rtrim(co_pais)) = '' then 'VE' else ltrim(rtrim(co_pais)) end as co_pais,
+                ltrim(rtrim(ciudad)) as ciudad
             FROM clientes 
             WHERE co_cli IN ({codes_string})
             ORDER BY cli_des

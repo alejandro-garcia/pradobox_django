@@ -8,6 +8,56 @@ class ImportService {
             total: 0,
             percentage: 0
         };
+
+        this.ciudadesEstados = {
+            "caracas": "Distrito Capital",
+            "maracaibo": "Zulia",
+            "valencia": "Carabobo",
+            "barquisimeto": "Lara",
+            "maracay": "Aragua",
+            "ciudad guayana": "Bolívar",
+            "barcelona": "Anzoátegui",
+            "puerto la cruz": "Anzoátegui",
+            "maturín": "Monagas",
+            "san cristóbal": "Táchira",
+            "barinas": "Barinas",
+            "cumaná": "Sucre",
+            "puerto ordaz": "Bolívar",
+            "guatire": "Miranda",
+            "guarenas": "Miranda",
+            "los teques": "Miranda",
+            "la guaira": "La Guaira",
+            "san felipe": "Yaracuy",
+            "acarigua": "Portuguesa",
+            "araure": "Portuguesa",
+            "el tigre": "Anzoátegui",
+            "coro": "Falcón",
+            "trujillo": "Trujillo",
+            "mérida": "Mérida",
+            "valera": "Trujillo",
+            "san carlos": "Cojedes",
+            "san fernando de apure": "Apure",
+            "guanare": "Portuguesa",
+            "carúpano": "Sucre",
+            "tucupita": "Delta Amacuro",
+            "el vigía": "Mérida",
+            "ciudad bolívar": "Bolívar",
+            "la asunción": "Nueva Esparta",
+            "porlamar": "Nueva Esparta",
+            "punto fijo": "Falcón",
+            "guacara": "Carabobo",
+            "naguanagua": "Carabobo",
+            "tinaquillo": "Cojedes",
+            "ocumare del tuy": "Miranda",
+            "charallave": "Miranda",
+            "san juan de los morros": "Guárico",
+            "calabozo": "Guárico",
+            "valle de la pascua": "Guárico",
+            "cabimas": "Zulia",
+            "santa rita": "Zulia",
+            "machiques": "Zulia"
+          };
+          
     }
 
     // CSRF helpers
@@ -20,6 +70,22 @@ class ImportService {
 
     getCsrfToken() {
         return this.getCookie('csrftoken');
+    }
+
+    getAddressState(client) {
+        if (!client.ciudad || client.ciudad.trim() == '') {
+            return null
+        }
+
+        let ciudad = client.ciudad.trim().toLowerCase()
+
+        if (ciudad in ['caracas', 'caraccas', 'caracaas', 'caraca', 'cararacas', 'caracs']) {
+            ciudad = "caracas"
+        }
+
+        let state = this.ciudadesEstados[ciudad] || null
+
+        return state;
     }
 
     async importFromMSSQL(userInfo) {
@@ -42,7 +108,79 @@ class ImportService {
             // Paso 2: Obtener clientes relacionados
             this.updateProgress('Obteniendo clientes...', 10, 100);
             const clientesCodes = [...new Set(documentos.map(doc => doc.co_cli))];
-            const clientes = await this.fetchClientesFromMSSQL(clientesCodes);
+            let clientes = await this.fetchClientesFromMSSQL(clientesCodes);
+
+            debugger;
+
+            clientes.map(cliente => {
+               cliente["contacts"] = [
+                 { 
+                   id: -1, 
+                   client_id: cliente.co_cli, 
+                   name: cliente.cli_des, 
+                   first_name: '', 
+                   last_name: '', 
+                   phones: (cliente.telefonos && cliente.telefonos.trim() != '') ? [
+                    {
+                        id: -1,
+                        phone: cliente.telefonos,
+                        phone_type: 'work'
+                    }
+                   ] : [], 
+                   emails: (cliente.email && cliente.email.trim() != '') ? [
+                    {
+                        id: -1,
+                        email: cliente.email,
+                        mail_type: 'work'
+                    }
+                   ] : [], 
+                   addresses: (cliente.direccion && cliente.direccion.trim() != '') ? [
+                    {
+                        id: -1,
+                        address: cliente.direccion,
+                        state: this.getAddressState(cliente),
+                        zipcode: cliente.zip,
+                        country_id: 1
+                    }
+                   ] : []
+                 }
+               ] 
+            });
+
+            // Paso 2.1: Obtener contactos relacionados
+            /*
+                    {
+                    "id": 11,
+                    "client_id": "J500449321",
+                    "name": "VIVA SUPERCENTRO, C.A.",
+                    "first_name": "",
+                    "last_name": "",
+                    "phones": [
+                        {
+                        "id": 5,
+                        "phone": "0412 3083825                                      ",
+                        "phone_type": "work"
+                        }
+                    ],
+                    "emails": [
+                        {
+                        "id": 5,
+                        "email": "jacqueline.y@mercadosmega.com           ",
+                        "mail_type": "work"
+                        }
+                    ],
+                    "addresses": [
+                        {
+                        "id": 9,
+                        "address": "AV PRINCIPAL DE BOLEITA LOCAL ",
+                        "state": "D.C.",
+                        "zipcode": "1073      ",
+                        "country_id": 1
+                        }
+                    ]
+                    }
+
+            */
 
             // Paso 3: Obtener vendedores
             this.updateProgress('Obteniendo vendedores...', 20, 100);

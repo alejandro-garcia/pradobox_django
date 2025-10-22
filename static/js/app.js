@@ -58,7 +58,6 @@ class CobranzasApp {
             await window.indexedDBService.init();
 
             //Obtener version de cache
-            debugger;
             if (caches) {
                 const cacheNames = await caches.keys();
                 if (cacheNames.length > 1) {
@@ -652,7 +651,7 @@ class CobranzasApp {
                     topSalesIndex = 1
                     lessSalesIndex = 0;
                 }
-                debugger;
+
                 topSales = data.ventas_por_mes[topSalesIndex].monto / 1000;
                 let remainingSales  = Math.round((topSales - correntSalesNum),1)
 
@@ -1607,7 +1606,6 @@ class CobranzasApp {
                     
                     let productos = [];
                     
-                    debugger;
                     if ('FACT|DEV'.indexOf(doc.tipo_doc) !== -1){
                         let doc_id = doc.empresa + "-" + doc.tipo_doc + '-' + doc.nro_doc.toString();
                         productos = await window.indexedDBService.getDocLines(doc_id);
@@ -1691,7 +1689,6 @@ class CobranzasApp {
         const diasDesdeEmision = this.dateDiffInDays(new Date(documento.fecha_emision), new Date());
         const fechaEmisionFormatted = this.formatDateWithDay(new Date(documento.fecha_emision));
         const isOverdue = documento.esta_vencido;
-        debugger;
         
         const content = `
             <!-- Encabezado (fondo azul) -->
@@ -1826,7 +1823,6 @@ class CobranzasApp {
 
             const hasKeys = (documento.empresa !== undefined) && (documento.tipo) && (documento.numero !== undefined);
             if (!this.offlineMode && hasKeys) {
-                debugger;
                 let tipo_doc = (documento.tipo.indexOf("/") > -1) ? documento.tipo.replace("/", "") : documento.tipo;
                 const documentoKey = `${documento.empresa}_${tipo_doc}_${documento.numero}`;
                 const fab = document.createElement('button');
@@ -2147,8 +2143,6 @@ class CobranzasApp {
                 };
 
                 fab.addEventListener('click', async () => {
-                    debugger;
-
                     const filename = `EstadoCuenta_${uuid}.pdf`;
                     //const filename = `EstadoCuenta_${documentoKey}.pdf`;
                     const url = `${this.apiBaseUrl}/cobranzas/balance/vendedor/${documentoKey}/pdf/`;
@@ -2260,6 +2254,12 @@ class CobranzasApp {
                 document.getElementById('clientPendingDocs').onclick = () => {
                     this.currentClientId = clienteId;
                     this.LoadClientPendingDocs(clienteId);
+                };
+
+                document.getElementById('clientContacts').onclick = () => {
+                    this.currentClientId = clienteId;
+                    this.openContactsForClient(clienteId, cliente);
+                    //this.LoadClientContacts(clienteId);
                 };
 
                 window.scrollTo({ top: 0, behavior: 'auto' });
@@ -2773,7 +2773,6 @@ class CobranzasApp {
     }
 
     async editPhone(phoneId, currentValue = '', currentPhoneType = '') {
-        debugger;
         // Placeholder for phone editing logic
         console.log(`Editing phone with ID: ${phoneId}`);
         this.showSuccess(`Editing phone with ID: ${phoneId} clicked FUNCION EN DESARROLLO`);
@@ -2826,14 +2825,12 @@ class CobranzasApp {
     }
 
     async deletePhone(phoneId) {
-        debugger;
         // Placeholder for phone deletion logic
         console.log(`Deleting phone with ID: ${phoneId}`);
         this.showSuccess(`Deleting phone with ID: ${phoneId} clicked`);
     }
 
     async editAddress(addressId, currentValue = {}){
-        debugger;
         console.log(`Editing address with ID: ${addressId}`);
         this.showSuccess(`Editing address with ID: ${addressId} clicked FUNCION EN DESARROLLO`);
 
@@ -2855,7 +2852,6 @@ class CobranzasApp {
 
 
     async editEmail(mailId, currentValue = '', currentMailType = ''){
-        debugger;
         console.log(`Editing mail with ID: ${mailId}`);
         //this.showSuccess(`Editing mail with ID: ${mailId} clicked FUNCION EN DESARROLLO`);
 
@@ -2913,19 +2909,16 @@ class CobranzasApp {
     }
 
     async deleteMail(mailId){
-        debugger;
         console.log(`Deleting mail with ID: ${mailId}`);
         this.showSuccess(`Deleting mail with ID: ${mailId} clicked`);
     }
 
     async editAddress(addressId){
-        debugger;
         console.log(`Editing address with ID: ${addressId}`);
         this.showSuccess(`Editing address with ID: ${addressId} clicked FUNCION EN DESARROLLO`);
     }
 
     async deleteAddress(addressId){
-        debugger;
         console.log(`Deleting address with ID: ${addressId}`);
         this.showSuccess(`Deleting address with ID: ${addressId} clicked`);
     }
@@ -2983,11 +2976,14 @@ class CobranzasApp {
         const addressesHTML = contact && Array.isArray(contact.addresses) && contact.addresses.length
             ? contact.addresses.map(a => {
                 const addressText = (a.address || '').replace(/\r?\n/g, '<br/>');
-                const meta = [a.state || '', a.zipcode || ''].filter(Boolean).join(' · ');
+                let meta = '';
+                if (a.city) meta += '<div><span class="font-bold text-sm">Ciudad: </span>' + a.city + '</div>';
+                if (a.state) meta += '<div><span class="font-bold text-sm">Estado: </span>' + a.state + '</div>';
+                if (a.zipcode) meta += '<div><span class="font-bold text-sm">Código Postal: </span>' + a.zipcode + '</div>';
+                // <div class="text-gray-500 text-sm justify-between">${meta}</div>
                 return `
                     <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                         <div class="text-gray-800">📍${addressText}</div>
-                        <div class="text-gray-500 text-sm">${meta}</div>
                         <div class="flex items-center gap-3">
                             <svg id="editAddressBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editAddress(${a.id})">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
@@ -2996,7 +2992,11 @@ class CobranzasApp {
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>   
                         </div>
-                    </div>`;
+                    </div>
+                    <div class="py-2 border-b border-gray-100 last:border-b-0">
+                        ${meta}
+                    </div>
+                    `;
             }).join('')
             : '<p class="text-gray-500 text-sm">No hay direcciones registradas</p>';
 
@@ -3051,12 +3051,12 @@ class CobranzasApp {
                 </div>
             </div>`;
 
-        // const fabs = `
-        //     <div class="fixed bottom-20 right-6 flex flex-col gap-3">
-        //         <button id="fabEditContact" class="rounded-full w-14 h-14 bg-primary text-white shadow-lg flex items-center justify-center">
-        //             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2m2 0h2M4 7h16M4 15h16M4 11h16"/></svg>
-        //         </button>
-        //     </div>`;
+        const fabs = `
+            <div class="fixed bottom-20 right-6 flex flex-col gap-3 hidden">
+                <button id="fabEditContact" class="rounded-full w-14 h-14 bg-primary text-white shadow-lg flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2m2 0h2M4 7h16M4 15h16M4 11h16"/></svg>
+                </button>
+            </div>`;
 
         return `
             <div class="space-y-4">
@@ -3064,7 +3064,7 @@ class CobranzasApp {
                 ${phonesSection}
                 ${emailsSection}
                 ${addressesSection}
-                <!-- fabs PLACEHOLDER -->
+                ${fabs}
             </div>`;
     }
 
@@ -3119,11 +3119,17 @@ class CobranzasApp {
         try {
             // Placeholder data until backend is wired
             //const contacts = [];
+            let contacts = [];
 
-            const contactsResponse = await fetch(`${this.apiBaseUrl}/contactos/${clientId}`, {
-                headers: window.authService.getAuthHeaders()
-            });
-            const contacts = await contactsResponse.json();
+            if (this.offlineMode) {
+                debugger;
+                contacts = await window.indexedDBService.getContactsByClientId(clientId);
+            } else {
+                const contactsResponse = await fetch(`${this.apiBaseUrl}/contactos/${clientId}`, {
+                    headers: window.authService.getAuthHeaders()
+                });
+                contacts = await contactsResponse.json();
+            }
 
             const contactsView = document.getElementById('contacts-view');
             if (!contactsView) {

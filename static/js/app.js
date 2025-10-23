@@ -2749,30 +2749,141 @@ class CobranzasApp {
 
     toggleContactEditButtons() {
         const editPhoneBtns = document.querySelectorAll('#editPhoneBtn');
-        const deletePhoneBtns = document.querySelectorAll('#deletePhoneBtn');
+        //const deletePhoneBtns = document.querySelectorAll('#deletePhoneBtn');
         //const addPhoneBtn = document.getElementById('addPhoneBtn');
         //const addEmailBtn = document.getElementById('addEmailBtn');
         //const addAddressBtn = document.getElementById('addAddressBtn');
         const editEmailBtns = document.querySelectorAll('#editEmailBtn');
-        const deleteEmailBtns = document.querySelectorAll('#deleteEmailBtn');
-        const editAddressBtns = document.querySelectorAll('#editAddressBtn');
-        const deleteAddressBtns = document.querySelectorAll('#deleteAddressBtn');
+       // const deleteEmailBtns = document.querySelectorAll('#deleteEmailBtn');
+        // const editAddressBtns = document.querySelectorAll('#editAddressBtn');
+        // const deleteAddressBtns = document.querySelectorAll('#deleteAddressBtn');
 
         editPhoneBtns.forEach(btn => btn.classList.toggle('hidden'));
-        deletePhoneBtns.forEach(btn => btn.classList.toggle('hidden'));
+        //deletePhoneBtns.forEach(btn => btn.classList.toggle('hidden'));
 
         editEmailBtns.forEach(btn => btn.classList.toggle('hidden'));
-        deleteEmailBtns.forEach(btn => btn.classList.toggle('hidden'));
+        //deleteEmailBtns.forEach(btn => btn.classList.toggle('hidden'));
 
-        editAddressBtns.forEach(btn => btn.classList.toggle('hidden'));
-        deleteAddressBtns.forEach(btn => btn.classList.toggle('hidden'));
+        //editAddressBtns.forEach(btn => btn.classList.toggle('hidden'));
+        //deleteAddressBtns.forEach(btn => btn.classList.toggle('hidden'));
+
+        // TODO: habilitar los botones de agregar telefono y correo solo cuando no existan registros
+        //       usando un queryselectorall 
+        //       y ocultarlos si existen registros
+        //document.querySelectorAll()
+
+        if (document.getElementById('PhonesNotFound')) {
+            document.getElementById('addPhoneBtn').classList.toggle('hidden');
+        } else {
+            document.getElementById('addPhoneBtn').classList.add('hidden');
+        }
+
+        if (document.getElementById('EmailsNotFound')) {
+            document.getElementById('addEmailBtn').classList.toggle('hidden');
+        } else {
+            document.getElementById('addEmailBtn').classList.add('hidden');
+        }
 
         //addPhoneBtn.classList.toggle('hidden');
         //addEmailBtn.classList.toggle('hidden');
         //addAddressBtn.classList.toggle('hidden');
     }
 
-    async editPhone(phoneId, currentValue = '', currentPhoneType = '') {
+    async addPhone(contactId, clientId){
+        console.log(`Adding phone for client with ID: ${clientId}`);
+        //this.showSuccess(`Adding phone for client with ID: ${clientId} clicked FUNCION EN DESARROLLO`);
+
+        const modal = document.getElementById('editFieldModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.getElementById('editFieldTitle').textContent = 'Agregar Telefono';
+            document.getElementById('editFieldInput').value = '';
+            document.getElementById('phoneTypeSelect').classList.remove('hidden');
+            document.getElementById('phoneTypeSelect').value = 'work';
+        }
+
+        btnUpdateEditField.onclick = async (e) => {
+            e.stopPropagation();
+
+            try {
+                const newValue = document.getElementById('editFieldInput').value;
+                if (newValue) {
+                    // Update phone logic here
+                    const phoneType = document.getElementById('phoneTypeSelect').value;
+
+                    const response = await fetch(`${this.apiBaseUrl}/contactos/tlf/add/`, {
+                        method: 'POST',
+                        headers: window.authService.getAuthHeaders(),
+                        body: JSON.stringify({ client_id: clientId, contact_id: contactId, phone: newValue, phone_type: phoneType  })
+                    });
+
+                    const data = await response.json();
+
+                    const phoneContainer = document.getElementById('contactPhonesList');
+                    if (data && phoneContainer) {
+                        phoneContainer.innerHTML = this.renderPhoneHTML(data, clientId);
+                    }
+                }
+            } catch (err) {
+                debugger; 
+                console.error('Error updating phone:', err);
+                this.showError('No fue posible actualizar el telefono');
+            }
+
+            this.closeEditFieldModal('phoneTypeSelect');
+            this.toggleContactEditButtons();
+        };
+    }
+
+    async addEmail(contactId, clientId){
+        console.log(`Adding email for client with ID: ${clientId}`);
+        //this.showSuccess(`Adding email for client with ID: ${clientId} clicked FUNCION EN DESARROLLO`);
+
+        const modal = document.getElementById('editFieldModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.getElementById('editFieldTitle').textContent = 'Agregar Correo';
+            document.getElementById('editFieldInput').value = '';
+            document.getElementById('mailTypeSelect').classList.remove('hidden');
+            document.getElementById('mailTypeSelect').value = 'work';
+        }
+
+        btnUpdateEditField.onclick = async (e) => {
+            e.stopPropagation();
+
+            try {
+                const newValue = document.getElementById('editFieldInput').value;
+                if (newValue) {
+                    // Update phone logic here
+                    const mailType = document.getElementById('mailTypeSelect').value;
+
+                    const response = await fetch(`${this.apiBaseUrl}/contactos/mail/add/`, {
+                        method: 'POST',
+                        headers: window.authService.getAuthHeaders(),
+                        body: JSON.stringify({ client_id: clientId, contact_id: contactId, email: newValue, mail_type: mailType  })
+                    });
+
+                    const data = await response.json();
+
+                    const emailContainer = document.getElementById('contactEmailsList');
+                    if (data && emailContainer) {
+                        emailContainer.innerHTML = this.renderMailHTML(data, clientId);
+                    }
+                }
+            } catch (err) {
+                debugger; 
+                console.error('Error adding email:', err);
+                this.showError('No fue posible agregar el correo');
+            }
+
+            this.closeEditFieldModal('mailTypeSelect');
+            this.toggleContactEditButtons();
+        };
+    }
+
+    async editPhone(clientId, phoneId, currentValue = '', currentPhoneType = '') {
         // Placeholder for phone editing logic
         console.log(`Editing phone with ID: ${phoneId}`);
         this.showSuccess(`Editing phone with ID: ${phoneId} clicked FUNCION EN DESARROLLO`);
@@ -2787,6 +2898,8 @@ class CobranzasApp {
             document.getElementById('phoneTypeSelect').value = currentPhoneType;
         }
 
+        const btnUpdateEditField = document.getElementById('btnUpdateEditField');
+
         btnUpdateEditField.onclick = async (e) => {
             e.stopPropagation();
 
@@ -2799,19 +2912,20 @@ class CobranzasApp {
                     const response = await fetch(`${this.apiBaseUrl}/contactos/tlf/${phoneId}/`, {
                         method: 'POST',
                         headers: window.authService.getAuthHeaders(),
-                        body: JSON.stringify({ phone: newValue, phone_type: phoneType  })
+                        body: JSON.stringify({ client_id: clientId, phone: newValue, phone_type: phoneType  })
                     });
 
                     const data = await response.json();
+
                     const phoneContainer = document.getElementById('contactPhonesList');
                     if (data && phoneContainer) {
                         const phoneElement = document.getElementById(`phone-${phoneId}`);
                         if (phoneElement) {
-                            phoneElement.outerHTML = this.renderPhoneHTML(data);
+                            phoneElement.outerHTML = this.renderPhoneHTML(data, clientId);
                         }
                     }
 
-                    console.log(`Updating phone with ID: ${phoneId} to: ${newValue}`);
+                    console.log(`Added phone with ID: ${phoneId} to: ${newValue}`);
                     //this.showSuccess(`Updating phone with ID: ${phoneId} to: ${newValue} clicked FUNCION EN DESARROLLO`);
                 }
             } catch (err) {
@@ -2821,6 +2935,7 @@ class CobranzasApp {
             }
 
             this.closeEditFieldModal('phoneTypeSelect');
+            this.toggleContactEditButtons();
         };
     }
 
@@ -2851,7 +2966,7 @@ class CobranzasApp {
     }
 
 
-    async editEmail(mailId, currentValue = '', currentMailType = ''){
+    async editEmail(clientId, mailId, currentValue = '', currentMailType = ''){
         console.log(`Editing mail with ID: ${mailId}`);
         //this.showSuccess(`Editing mail with ID: ${mailId} clicked FUNCION EN DESARROLLO`);
 
@@ -2878,12 +2993,12 @@ class CobranzasApp {
                 const newValue = document.getElementById('editFieldInput').value;
                 if (newValue !== currentValue) {
                     // Update phone logic here
-                    const mailType = document.getElementById('addressTypeSelect').value;
+                    const mailType = document.getElementById('mailTypeSelect').value;
 
-                    const response = await fetch(`${this.apiBaseUrl}/contactos/direccion/${addressId}/`, {
+                    const response = await fetch(`${this.apiBaseUrl}/contactos/mail/${mailId}/`, {
                         method: 'POST',
                         headers: window.authService.getAuthHeaders(),
-                        body: JSON.stringify({ address: newValue, address_type: mailType  })
+                        body: JSON.stringify({ email: newValue, mail_type: mailType, client_id: clientId  })
                     });
 
                     const data = await response.json();
@@ -2891,7 +3006,7 @@ class CobranzasApp {
                     if (data && mailContainer) {
                         const mailElement = document.getElementById(`mail-${mailId}`);
                         if (mailElement) {
-                            mailElement.outerHTML = this.renderMailHTML(data);
+                            mailElement.outerHTML = this.renderMailHTML(data, clientId);
                         }
                     }
 
@@ -2905,6 +3020,7 @@ class CobranzasApp {
             }
 
             this.closeEditFieldModal('mailTypeSelect');
+            this.toggleContactEditButtons();
         };
     }
 
@@ -2945,7 +3061,7 @@ class CobranzasApp {
                     <span class="text-gray-800">📞${p.phone}</span>
                     <div class="flex items-center gap-3">
                         <span class="text-gray-500 text-sm">${phoneTypeLabel[p.phone_type] || 'Otro'}</span>
-                        <svg id="editPhoneBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editPhone(${p.id}, '${p.phone}', '${p.phone_type}')">
+                        <svg id="editPhoneBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editPhone('${cliente.id}', ${p.id}, '${p.phone}', '${p.phone_type}')">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                         </svg>
                         <svg id="deletePhoneBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.deletePhone(${p.id})">
@@ -2953,7 +3069,7 @@ class CobranzasApp {
                         </svg>   
                     </div>
                 </div>`).join('')
-            : '<p class="text-gray-500 text-sm">No hay teléfonos registrados</p>';
+            : '<p id="PhonesNotFound" class="text-gray-500 text-sm">No hay teléfonos registrados</p>';
 
         // Emails HTML
         const emailsHTML = contact && Array.isArray(contact.emails) && contact.emails.length
@@ -2962,7 +3078,7 @@ class CobranzasApp {
                     <span class="text-gray-800">✉️${e.email}</span>
                     <div class="flex items-center gap-3">
                         <span class="text-gray-500 text-sm">${mailTypeLabel[e.mail_type] || 'Otro'}</span>
-                        <svg id="editEmailBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editEmail(${e.id}, '${e.email}', '${e.mail_type}')">
+                        <svg id="editEmailBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editEmail('${cliente.id}', ${e.id}, '${e.email}', '${e.mail_type}')">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                         </svg>
                         <svg id="deleteEmailBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.deleteEmail(${e.id})">
@@ -2970,7 +3086,7 @@ class CobranzasApp {
                         </svg>   
                     </div>
                 </div>`).join('')
-            : '<p class="text-gray-500 text-sm">No hay emails registrados</p>';
+            : '<p id="EmailsNotFound" class="text-gray-500 text-sm">No hay emails registrados</p>';
 
         // Addresses HTML
         const addressesHTML = contact && Array.isArray(contact.addresses) && contact.addresses.length
@@ -3010,7 +3126,7 @@ class CobranzasApp {
             <div class="bg-white rounded-lg shadow-md p-6">
                 <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                     <h3 class="text-sm font-semibold text-gray-800 mb-2">TELÉFONOS</h3>
-                    <button id="addPhoneBtn" class="text-gray-500 hover:text-gray-700 hidden">
+                    <button id="addPhoneBtn" class="text-gray-500 hover:text-gray-700 hidden" onclick="window.cobranzasApp.addPhone(${contact.id}, '${cliente.id}')">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
@@ -3025,7 +3141,7 @@ class CobranzasApp {
             <div class="bg-white rounded-lg shadow-md p-6">
                 <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                     <h3 class="text-sm font-semibold text-gray-800 mb-2">EMAILS</h3>
-                    <button id="addEmailBtn" class="text-gray-500 hover:text-gray-700 hidden">
+                    <button id="addEmailBtn" class="text-gray-500 hover:text-gray-700 hidden" onclick="window.cobranzasApp.addEmail(${contact.id}, '${cliente.id}')">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
@@ -3052,7 +3168,7 @@ class CobranzasApp {
             </div>`;
 
         const fabs = `
-            <div class="fixed bottom-20 right-6 flex flex-col gap-3 hidden">
+            <div class="fixed bottom-20 right-6 flex flex-col gap-3 ${this.offlineMode ? 'hidden' : ''}">
                 <button id="fabEditContact" class="rounded-full w-14 h-14 bg-primary text-white shadow-lg flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2m2 0h2M4 7h16M4 15h16M4 11h16"/></svg>
                 </button>
@@ -3068,7 +3184,7 @@ class CobranzasApp {
             </div>`;
     }
 
-    renderPhoneHTML(phone){
+    renderPhoneHTML(phone, clientId){
         const phoneTypeLabel = {
             work: 'Trabajo',
             mobile: 'Móvil',
@@ -3083,7 +3199,7 @@ class CobranzasApp {
                 <span class="text-gray-800">📞${phone.phone}</span>
                 <div class="flex items-center gap-3">
                     <span class="text-gray-500 text-sm">${phoneTypeLabel[phone.phone_type] || 'Otro'}</span>
-                    <svg id="editPhoneBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editPhone(${phone.id}, '${phone.phone}', '${phone.phone_type}')">
+                    <svg id="editPhoneBtn" class="w-6 h-6 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editPhone('${clientId}', ${phone.id}, '${phone.phone}', '${phone.phone_type}')">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                     </svg>
                     <svg id="deletePhoneBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.deletePhone(${phone.id})">
@@ -3093,7 +3209,7 @@ class CobranzasApp {
             </div>`;
     }
 
-    renderMailHTML(email){
+    renderMailHTML(email, clientId){
         const mailTypeLabel = {
             work: 'Trabajo',
             personal: 'Personal',
@@ -3105,7 +3221,7 @@ class CobranzasApp {
                 <span class="text-gray-800">✉️${email.email}</span>
                 <div class="flex items-center gap-3">
                     <span class="text-gray-500 text-sm">${mailTypeLabel[email.mail_type] || 'Otro'}</span>
-                    <svg id="editEmailBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editEmail(${email.id}, '${email.email}', '${email.mail_type}')">
+                    <svg id="editEmailBtn" class="w-6 h-6 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editEmail('${clientId}', ${email.id}, '${email.email}', '${email.mail_type}')">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                     </svg>
                     <svg id="deleteEmailBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.deleteEmail(${email.id})">

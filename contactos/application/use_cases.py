@@ -2,7 +2,14 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 from ..domain.entities import Contact, ContactPhone, ContactEmail, ContactAddress
-from ..domain.repository import ContactRepository, ContactPhoneRepository, ContactEmailRepository, ContactAddressRepository
+from ..domain.repository import (
+    ContactRepository, 
+    ContactPhoneRepository, 
+    ContactEmailRepository, 
+    ContactAddressRepository, 
+    ContactPhoneProfitRepository,
+    ContactEmailProfitRepository
+)
 
 
 @dataclass
@@ -37,6 +44,28 @@ class CreateContactPhoneUseCase:
         return self.repository.create(contact_phone)
 
 @dataclass
+class CreateContactEmailUseCase:
+    repository: ContactEmailRepository
+
+    def execute(self, contact_email: ContactEmail) -> ContactEmail:
+        return self.repository.create(contact_email)
+
+
+@dataclass
+class UpdateContactPhoneProfitUseCase:
+    repository: ContactPhoneProfitRepository
+
+    def execute(self, data: dict) -> int:
+        return self.repository.update(data)
+
+@dataclass
+class UpdateContactEmailProfitUseCase:
+    repository: ContactEmailProfitRepository
+
+    def execute(self, data: dict) -> int:
+        return self.repository.update(data)
+
+@dataclass
 class UpdateContactPhoneUseCase:
     repository: ContactPhoneRepository
 
@@ -49,7 +78,6 @@ class DeleteContactPhoneUseCase:
 
     def execute(self, phone_id: int) -> None:
         return self.repository.delete(phone_id)
-
 
 @dataclass
 class UpdateContactEmailUseCase:

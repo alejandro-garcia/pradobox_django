@@ -1,8 +1,16 @@
 from typing import List, Optional
 
 from ..domain.entities import Contact, ContactPhone, ContactEmail, ContactAddress
-from ..domain.repository import ContactRepository, ContactPhoneRepository, ContactEmailRepository, ContactAddressRepository
+from ..domain.repository import (
+    ContactRepository, 
+    ContactPhoneRepository, 
+    ContactEmailRepository, 
+    ContactAddressRepository, 
+    ContactPhoneProfitRepository,
+    ContactEmailProfitRepository
+)
 from .models import ContactModel, ContactPhoneModel, ContactEmailModel, ContactAddressModel
+from django.db import connections
 
 import logging
 logger = logging.getLogger(__name__)
@@ -49,8 +57,8 @@ class DjangoContactRepository(ContactRepository):
         c.delete()
 
     def _to_domain(self, c: ContactModel) -> Contact:
-        phones = [ContactPhone(id=p.id, phone=p.phone, phone_type=p.phone_type, contact_id=c.id) for p in c.phones.all()]
-        emails = [ContactEmail(id=e.id, email=e.email, mail_type=e.mail_type, contact_id=c.id) for e in c.emails.all()]
+        phones = [ContactPhone(id=p.id, phone=p.phone, phone_type=p.phone_type, contact_id=c.id, client_id= c.client) for p in c.phones.all()]
+        emails = [ContactEmail(id=e.id, email=e.email, mail_type=e.mail_type, contact_id=c.id, client_id= c.client) for e in c.emails.all()]
         addresses = [ContactAddress(id=a.id, address=a.address, state=a.state, zipcode=a.zipcode, country_id=a.country_id, contact_id=c.id) for a in c.addresses.all()]
         return Contact(
             id=c.id,
@@ -67,9 +75,9 @@ class DjangoContactRepository(ContactRepository):
 
 
 class DjangoContactPhoneRepository(ContactPhoneRepository):
-    def create(self, contact_phone: ContactPhone) -> ContactPhone:
-        cp = ContactPhoneModel.objects.create(contact=contact_phone.contact_id, phone=contact_phone.phone, phone_type=contact_phone.phone_type)
-        return ContactPhone(id=cp.id, phone=cp.phone, phone_type=cp.phone_type, contact_id=cp.contact_id)
+    def create(self, contact_phone: dict) -> ContactPhone:
+        cp = ContactPhoneModel.objects.create(contact_id=contact_phone['contact_id'], phone=contact_phone['phone'], phone_type=contact_phone['phone_type'])
+        return ContactPhone(id=cp.id, phone=cp.phone, phone_type=cp.phone_type, contact_id=cp.contact_id, client_id=contact_phone['client_id'])
 
     def update(self, contact_phone_id: int, data: dict) -> ContactPhone:
         cp = ContactPhoneModel.objects.get(pk=contact_phone_id)
@@ -77,7 +85,7 @@ class DjangoContactPhoneRepository(ContactPhoneRepository):
             if field in data:
                 setattr(cp, field, data[field])
         cp.save()
-        return ContactPhone(id=cp.id, phone=cp.phone, phone_type=cp.phone_type, contact_id=cp.contact_id)
+        return ContactPhone(id=cp.id, phone=cp.phone, phone_type=cp.phone_type, contact_id=cp.contact_id, client_id=data['client_id'])
 
     def delete(self, contact_phone_id: int) -> None:
         cp = ContactPhoneModel.objects.get(pk=contact_phone_id)
@@ -91,9 +99,9 @@ class DjangoContactPhoneRepository(ContactPhoneRepository):
 
 
 class DjangoContactEmailRepository(ContactEmailRepository):
-    def create(self, contact_email: ContactEmail) -> ContactEmail:
-        ce = ContactEmailModel.objects.create(contact=contact_email.contact_id, email=contact_email.email, mail_type=contact_email.mail_type)
-        return ContactEmail(id=ce.id, email=ce.email, mail_type=ce.mail_type, contact_id=ce.contact_id)
+    def create(self, contact_email: dict) -> ContactEmail:
+        ce = ContactEmailModel.objects.create(contact_id=contact_email['contact_id'], email=contact_email['email'], mail_type=contact_email['mail_type'])
+        return ContactEmail(id=ce.id, email=ce.email, mail_type=ce.mail_type, contact_id=ce.contact_id, client_id=contact_email['client_id'])
     
     def update(self, contact_email_id: int, data: dict) -> ContactEmail:
         ce = ContactEmailModel.objects.get(pk=contact_email_id)
@@ -101,7 +109,7 @@ class DjangoContactEmailRepository(ContactEmailRepository):
             if field in data:
                 setattr(ce, field, data[field])
         ce.save()
-        return ContactEmail(id=ce.id, email=ce.email, mail_type=ce.mail_type, contact_id=ce.contact_id)
+        return ContactEmail(id=ce.id, email=ce.email, mail_type=ce.mail_type, contact_id=ce.contact_id, client_id=data['client_id'])
     
     def delete(self, contact_email_id: int) -> None:
         ce = ContactEmailModel.objects.get(pk=contact_email_id)
@@ -139,3 +147,36 @@ class DjangoContactAddressRepository(ContactAddressRepository):
     
     def find_by_contact(self, contact_id: int) -> List[ContactAddress]:
         return [ContactAddress(id=a.id, address=a.address, state=a.state, zipcode=a.zipcode, country_id=a.country_id, contact_id=a.contact_id) for a in ContactAddressModel.objects.filter(contact=contact_id)]
+
+
+class ProfitContactPhoneRepository(ContactPhoneProfitRepository):
+    def update(self, data: dict) -> int:
+        with connections['default'].cursor() as cursor:
+            cursor.execute("""
+                EXECUTE pp_actualizar_telefono %s, %s
+            """, [data['client_id'], data['phone']])
+            
+            #columns = [col[0] for col in cursor.description]
+            #row = cursor.fetchone()
+            rows = cursor.fetchall()
+            
+            if rows:
+                #return dict(zip(columns, row))
+                result = rows[0][0] + rows[0][1]
+                return result
+            return 0
+
+class ProfitContactEmailRepository(ContactEmailProfitRepository):
+    def update(self, data: dict) -> int:
+        with connections['default'].cursor() as cursor:
+            cursor.execute("""
+                EXECUTE pp_actualizar_email %s, %s
+            """, [data['client_id'], data['email']])
+            
+            rows = cursor.fetchall()
+            
+            if rows:
+                #return dict(zip(columns, row))
+                result = rows[0][0] + rows[0][1]
+                return result
+            return 0

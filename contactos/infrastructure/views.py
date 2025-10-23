@@ -13,8 +13,18 @@ from ..application.use_cases import (
     UpdateContactAddressUseCase,
     DeleteContactAddressUseCase,
     CreateContactAddressUseCase,
+    UpdateContactPhoneProfitUseCase,
+    UpdateContactEmailProfitUseCase,
+    CreateContactEmailUseCase
 )
-from .repository_impl import DjangoContactPhoneRepository, DjangoContactRepository, DjangoContactEmailRepository, DjangoContactAddressRepository
+from .repository_impl import (
+    DjangoContactPhoneRepository, 
+    DjangoContactRepository, 
+    DjangoContactEmailRepository, 
+    DjangoContactAddressRepository, 
+    ProfitContactPhoneRepository, 
+    ProfitContactEmailRepository
+)
 from ..domain.entities import Contact, ContactPhone, ContactEmail, ContactAddress
 from cliente.infrastructure.models import ClienteModel
 from typing import Optional
@@ -215,16 +225,26 @@ def update_contact_view(request, contact_id: int):
 @api_view(['POST'])
 def create_phone_view(request):
     data = request.data or {}
-    use_case = CreateContactPhoneUseCase(repo)
+    phone_repo = DjangoContactPhoneRepository()
+    use_case = CreateContactPhoneUseCase(phone_repo)
     created = use_case.execute(data)
+
+    use_case_profit = UpdateContactPhoneProfitUseCase(ProfitContactPhoneRepository())
+    use_case_profit.execute(data)
+    
     return Response(_serialize_contact_phone(created), status=status.HTTP_201_CREATED)
 
 @api_view(['POST'])
 def update_phone_view(request, phone_id: int):
     data = request.data or {}
     repo = DjangoContactPhoneRepository()
+    
     use_case = UpdateContactPhoneUseCase(repo)
     updated = use_case.execute(phone_id, data)
+
+    use_case_profit = UpdateContactPhoneProfitUseCase(ProfitContactPhoneRepository())
+    use_case_profit.execute(data)
+
     return Response(_serialize_contact_phone(updated))
 
 @api_view(['DELETE'])
@@ -240,6 +260,10 @@ def update_mail_view(request, mail_id: int):
     repo = DjangoContactEmailRepository()
     use_case = UpdateContactEmailUseCase(repo)
     updated = use_case.execute(mail_id, data)
+
+    use_case_profit = UpdateContactEmailProfitUseCase(ProfitContactEmailRepository())
+    use_case_profit.execute(data)
+    
     return Response(_serialize_contact_mail(updated))
 
 @api_view(['DELETE'])
@@ -251,8 +275,14 @@ def delete_mail_view(request, mail_id: int):
 @api_view(['POST'])
 def create_mail_view(request):
     data = request.data or {}
-    use_case = CreateContactEmailUseCase(repo)
+
+    mail_repo = DjangoContactEmailRepository()
+    use_case = CreateContactEmailUseCase(mail_repo)
     created = use_case.execute(data)
+
+    use_case_profit = UpdateContactEmailProfitUseCase(ProfitContactEmailRepository())
+    use_case_profit.execute(data)
+    
     return Response(_serialize_contact_mail(created), status=status.HTTP_201_CREATED)
 
 @api_view(['POST'])

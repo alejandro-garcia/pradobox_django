@@ -15,6 +15,7 @@ class ContactPhone:
     phone: str
     phone_type: str  # one of: work, mobile, fax, home, skype, other
     contact_id: int
+    client_id: Optional[str]
 
 
 @dataclass
@@ -23,6 +24,7 @@ class ContactEmail:
     email: str
     mail_type: str  # one of: work, personal, other
     contact_id: int
+    client_id: Optional[str]
 
 
 @dataclass

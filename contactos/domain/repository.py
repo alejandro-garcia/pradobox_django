@@ -28,7 +28,7 @@ class ContactRepository(ABC):
 
 class ContactPhoneRepository(ABC):
     @abstractmethod
-    def create(self, contact_phone: ContactPhone) -> ContactPhone:
+    def create(self, contact_phone: dict) -> ContactPhone:
         raise NotImplementedError
 
     @abstractmethod
@@ -49,7 +49,7 @@ class ContactPhoneRepository(ABC):
 
 class ContactEmailRepository(ABC):
     @abstractmethod
-    def create(self, contact_mail: ContactEmail) -> ContactEmail:
+    def create(self, contact_mail: dict) -> ContactEmail:
         raise NotImplementedError
     
     @abstractmethod
@@ -91,4 +91,14 @@ class ContactAddressRepository(ABC):
 
     @abstractmethod
     def delete_by_contact_id(self, contact_id: int) -> None:
+        raise NotImplementedError
+
+class ContactPhoneProfitRepository(ABC):
+    @abstractmethod
+    def update(self, data: dict) -> int:
+        raise NotImplementedError
+
+class ContactEmailProfitRepository(ABC):
+    @abstractmethod
+    def update(self, data: dict) -> int:
         raise NotImplementedError

@@ -2091,7 +2091,11 @@ class CobranzasApp {
                         }
                     } catch (err) {
                         console.error('Error al generar/compartir PDF:', err);
-                        if (this.showNotification) this.showNotification('No se pudo generar o compartir el PDF', 'error');
+                        if (err.message === "Error 512") {
+                            if (this.showNotification) this.showNotification('El cliente no tiene deudas', 'error');
+                        } else {
+                            if (this.showNotification) this.showNotification('No se pudo generar o compartir el PDF', 'error');
+                        }
                     } finally {
                         setLoading(false);
                     }
@@ -2886,7 +2890,7 @@ class CobranzasApp {
     async editPhone(clientId, phoneId, currentValue = '', currentPhoneType = '') {
         // Placeholder for phone editing logic
         console.log(`Editing phone with ID: ${phoneId}`);
-        this.showSuccess(`Editing phone with ID: ${phoneId} clicked FUNCION EN DESARROLLO`);
+        //this.showSuccess(`Editing phone with ID: ${phoneId} clicked FUNCION EN DESARROLLO`);
 
         const modal = document.getElementById('editFieldModal');
         if (modal) {
@@ -2947,7 +2951,7 @@ class CobranzasApp {
 
     async editAddress(addressId, currentValue = {}){
         console.log(`Editing address with ID: ${addressId}`);
-        this.showSuccess(`Editing address with ID: ${addressId} clicked FUNCION EN DESARROLLO`);
+        //this.showSuccess(`Editing address with ID: ${addressId} clicked FUNCION EN DESARROLLO`);
 
         const modal = document.getElementById('editFieldModal');
         if (modal) {

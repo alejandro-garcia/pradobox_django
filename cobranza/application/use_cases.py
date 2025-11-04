@@ -325,7 +325,9 @@ class CreateBalancePdfUseCase(UseCase[str, bytes]):
         estado_cuenta = self.documento_repository.get_estado_cuenta(rif)
         if not estado_cuenta:
             raise EntityNotFoundException(f"Estado de cuenta para cliente/rif {rif} no encontrado")
-        
+        elif len(estado_cuenta.renglones) == 0:
+            raise EntityNotFoundException(f"El cliente/rif {rif} no tiene deudas")
+            
         """
             tipo=tipo,
             numero=nro_doc,

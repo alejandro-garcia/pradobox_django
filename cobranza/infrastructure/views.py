@@ -247,8 +247,9 @@ def balance_pdf_view(request, rif):
         response['Content-Disposition'] = f'attachment; filename="documento_{rif}.pdf"'
         return response
     except EntityNotFoundException as e:
-        return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)
-
+        if "no tiene deudas" in str(e):
+            return Response({'error': str(e)}, status=512)
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
 def balance_seller_pdf_view(request, seller_ids):

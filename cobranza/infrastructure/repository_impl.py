@@ -613,7 +613,7 @@ class DjangoEventoRepository(EventoRepository):
     
     def find_eventos_cliente(self, client_id: str) -> List[Evento]:
 
-        query = EventoModel.objects.filter(co_cli=client_id)
+        query = EventoModel.objects.filter(co_cli=client_id).order_by('-fec_emis')
 
         eventos = []
         

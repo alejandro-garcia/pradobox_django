@@ -1,15 +1,16 @@
 from typing import List, Optional
 
-from ..domain.entities import Contact, ContactPhone, ContactEmail, ContactAddress
+from ..domain.entities import Contact, ContactPhone, ContactEmail, ContactAddress, ContactLocation
 from ..domain.repository import (
     ContactRepository, 
     ContactPhoneRepository, 
     ContactEmailRepository, 
     ContactAddressRepository, 
+    ContactLocationRepository,
     ContactPhoneProfitRepository,
     ContactEmailProfitRepository
 )
-from .models import ContactModel, ContactPhoneModel, ContactEmailModel, ContactAddressModel
+from .models import ContactModel, ContactPhoneModel, ContactEmailModel, ContactAddressModel, ContactLocationModel
 from django.db import connections
 
 import logging
@@ -180,3 +181,26 @@ class ProfitContactEmailRepository(ContactEmailProfitRepository):
                 result = rows[0][0] + rows[0][1]
                 return result
             return 0
+
+class DjangoContactLocationRepository(ContactLocationRepository):
+    def create(self, location: dict) -> ContactLocation:
+        cl = ContactLocationModel.objects.create(contact_id=location['contact_id'], location=location['location'])
+        return ContactLocation(id=cl.id, location=cl.location, contact_id=cl.contact_id, client_id=location['client_id'])
+    
+    def update(self, location_id: int, data: dict) -> ContactLocation:
+        cl = ContactLocationModel.objects.get(pk=location_id)
+        for field in ['location']:
+            if field in data:
+                setattr(cl, field, data[field])
+        cl.save()
+        return ContactLocation(id=cl.id, location=cl.location, contact_id=cl.contact_id, client_id=data['client_id'])
+    
+    def delete(self, location_id: int) -> None:
+        cl = ContactLocationModel.objects.get(pk=location_id)
+        cl.delete()
+    
+    def delete_by_contact_id(self, contact_id: int) -> None:
+        ContactLocationModel.objects.filter(contact=contact_id).delete()
+    
+    def find_by_contact(self, contact_id: int) -> List[ContactLocation]:
+        return [ContactLocation(id=l.id, location=l.location, contact_id=l.contact_id) for l in ContactLocationModel.objects.filter(contact=contact_id)]

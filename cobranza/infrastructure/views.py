@@ -163,6 +163,7 @@ def documentos_pendientes_cliente_view(request, client_id):
         'empresa': doc.empresa,
         'saldo': float(doc.saldo)
     } for doc in documentos])
+    
 
 @api_view(['GET'])
 def documento_detalle_view(request, documento_id):

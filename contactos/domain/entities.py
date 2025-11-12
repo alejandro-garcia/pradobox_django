@@ -38,6 +38,13 @@ class ContactAddress:
 
 
 @dataclass
+class ContactLocation:
+    id: int
+    location: str
+    client_id: Optional[str]
+
+
+@dataclass
 class Contact:
     id: int
     name: Optional[str]

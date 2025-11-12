@@ -93,3 +93,16 @@ class ContactAddressModel(models.Model):
 
     def __str__(self) -> str:
         return f"{self.address[:30]}..." if len(self.address) > 30 else self.address
+
+
+class ContactLocationModel(models.Model):
+    contact = models.ForeignKey(ContactModel, on_delete=models.CASCADE, related_name='locations')
+    location = models.CharField(max_length=50, blank=True, null=True)
+
+    class Meta:
+        db_table = 'contact_location'
+        verbose_name = 'Contact Location'
+        verbose_name_plural = 'Contact Locations'
+
+    def __str__(self) -> str:
+        return f"{self.location[:30]}..." if len(self.location) > 30 else self.location

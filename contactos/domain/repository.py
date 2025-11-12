@@ -1,7 +1,7 @@
 from typing import List, Optional
 from abc import ABC, abstractmethod
 
-from .entities import Contact, ContactAddress, ContactEmail, ContactPhone
+from .entities import Contact, ContactAddress, ContactEmail, ContactPhone, ContactLocation
 
 
 class ContactRepository(ABC):
@@ -101,4 +101,26 @@ class ContactPhoneProfitRepository(ABC):
 class ContactEmailProfitRepository(ABC):
     @abstractmethod
     def update(self, data: dict) -> int:
+        raise NotImplementedError
+
+
+class ContactLocationRepository(ABC):
+    @abstractmethod
+    def create(self, location: dict) -> ContactLocation:
+        raise NotImplementedError
+    
+    @abstractmethod
+    def update(self, location_id: int, data: dict) -> ContactLocation:
+        raise NotImplementedError
+    
+    @abstractmethod
+    def delete(self, contact_location_id: int) -> None:
+        raise NotImplementedError
+    
+    @abstractmethod
+    def find_by_contact(self, contact_id: int) -> List[ContactLocation]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete_by_contact_id(self, contact_id: int) -> None:
         raise NotImplementedError

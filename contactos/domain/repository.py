@@ -103,6 +103,10 @@ class ContactEmailProfitRepository(ABC):
     def update(self, data: dict) -> int:
         raise NotImplementedError
 
+class ContactLocationProfitRepository(ABC):
+    @abstractmethod
+    def update(self, data: dict) -> int:
+        raise NotImplementedError
 
 class ContactLocationRepository(ABC):
     @abstractmethod

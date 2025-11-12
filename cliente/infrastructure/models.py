@@ -22,6 +22,7 @@ class ClienteModel(models.Model):
     zip = models.CharField(db_column='zip', max_length=10, blank=True, null=True)
     created_at = models.DateTimeField(db_column='fe_us_in', blank=True, null=True)
     updated_at = models.DateTimeField(db_column='fe_us_mo', blank=True, null=True)
+    geolocalizacion = models.CharField(db_column='geolocalizacion', max_length=50, blank=True, null=True)
     
     class Meta:
         managed = False

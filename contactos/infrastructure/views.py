@@ -15,7 +15,10 @@ from ..application.use_cases import (
     CreateContactAddressUseCase,
     UpdateContactPhoneProfitUseCase,
     UpdateContactEmailProfitUseCase,
-    CreateContactEmailUseCase
+    CreateContactEmailUseCase,
+    CreateContactLocationUseCase,
+    UpdateContactLocationUseCase,
+    UpdateContactLocationProfitUseCase
 )
 from .repository_impl import (
     DjangoContactPhoneRepository, 
@@ -23,9 +26,11 @@ from .repository_impl import (
     DjangoContactEmailRepository, 
     DjangoContactAddressRepository, 
     ProfitContactPhoneRepository, 
-    ProfitContactEmailRepository
+    ProfitContactEmailRepository,
+    ProfitContactLocationRepository,
+    DjangoContactLocationRepository
 )
-from ..domain.entities import Contact, ContactPhone, ContactEmail, ContactAddress
+from ..domain.entities import Contact, ContactPhone, ContactEmail, ContactAddress, ContactLocation
 from cliente.infrastructure.models import ClienteModel
 from typing import Optional
 from datetime import timedelta
@@ -152,6 +157,7 @@ def contacts_by_client_view(request, client_id: str):
             DjangoContactPhoneRepository().delete_by_contact_id(contacts[0].id)
             DjangoContactEmailRepository().delete_by_contact_id(contacts[0].id)
             DjangoContactAddressRepository().delete_by_contact_id(contacts[0].id)
+            DjangoContactLocationRepository().delete_by_contact_id(contacts[0].id)
             repo.delete(contacts[0].id)
 
     if is_updated:
@@ -167,6 +173,10 @@ def contacts_by_client_view(request, client_id: str):
 
             if (client.email and len(client.email.strip()) > 0):
                 email = ContactEmail(id=0, email=client.email, mail_type='work', contact_id=0)
+
+            if (client.geolocalizacion and len(client.geolocalizacion.strip()) > 0):
+                [latitude, longitude] = client.geolocalizacion.split(';')
+                location = ContactLocation(id=0, latitude=latitude.strip(), longitude=longitude.strip(), contact_id=0)
 
             if (client.direccion and len(client.direccion.strip()) > 0):
                 country_code = 1
@@ -184,7 +194,8 @@ def contacts_by_client_view(request, client_id: str):
                 last_name='',
                 phones=[phone] if phone else [],
                 emails=[email] if email else [],
-                addresses=[address] if address else []
+                addresses=[address] if address else [], 
+                location=location if location else None
             )
 
             new_contact = CreateContactUseCase(repo).execute(contact)
@@ -266,6 +277,18 @@ def update_mail_view(request, mail_id: int):
     
     return Response(_serialize_contact_mail(updated))
 
+@api_view(['POST'])
+def update_location_view(request, location_id: int):
+    data = request.data or {}
+    repo = DjangoContactLocationRepository()
+    use_case = UpdateContactLocationUseCase(repo)
+    updated = use_case.execute(location_id, data)
+
+    use_case_profit = UpdateContactLocationProfitUseCase(ProfitContactLocationRepository())
+    use_case_profit.execute(data)
+    
+    return Response(_serialize_contact_location(updated))
+
 @api_view(['DELETE'])
 def delete_mail_view(request, mail_id: int):
     use_case = DeleteContactEmailUseCase(repo)
@@ -281,6 +304,19 @@ def create_mail_view(request):
     created = use_case.execute(data)
 
     use_case_profit = UpdateContactEmailProfitUseCase(ProfitContactEmailRepository())
+    use_case_profit.execute(data)
+    
+    return Response(_serialize_contact_mail(created), status=status.HTTP_201_CREATED)
+    
+@api_view(['POST'])
+def create_location_view(request):
+    data = request.data or {}
+
+    location_repo = DjangoContactLocationRepository()
+    use_case = CreateContactLocationUseCase(location_repo)
+    created = use_case.execute(data)
+
+    use_case_profit = UpdateContactLocationProfitUseCase(ProfitContactLocationRepository())
     use_case_profit.execute(data)
     
     return Response(_serialize_contact_mail(created), status=status.HTTP_201_CREATED)

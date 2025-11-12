@@ -1,14 +1,16 @@
 from dataclasses import dataclass
 from typing import List, Optional
 
-from ..domain.entities import Contact, ContactPhone, ContactEmail, ContactAddress
+from ..domain.entities import Contact, ContactPhone, ContactEmail, ContactAddress, ContactLocation
 from ..domain.repository import (
     ContactRepository, 
     ContactPhoneRepository, 
     ContactEmailRepository, 
     ContactAddressRepository, 
     ContactPhoneProfitRepository,
-    ContactEmailProfitRepository
+    ContactEmailProfitRepository,
+    ContactLocationProfitRepository,
+    ContactLocationRepository
 )
 
 
@@ -50,6 +52,13 @@ class CreateContactEmailUseCase:
     def execute(self, contact_email: ContactEmail) -> ContactEmail:
         return self.repository.create(contact_email)
 
+@dataclass
+class CreateContactLocationUseCase:
+    repository: ContactLocationRepository
+
+    def execute(self, contact_location: ContactLocation) -> ContactLocation:
+        return self.repository.create(contact_location)
+
 
 @dataclass
 class UpdateContactPhoneProfitUseCase:
@@ -61,6 +70,13 @@ class UpdateContactPhoneProfitUseCase:
 @dataclass
 class UpdateContactEmailProfitUseCase:
     repository: ContactEmailProfitRepository
+
+    def execute(self, data: dict) -> int:
+        return self.repository.update(data)
+
+@dataclass
+class UpdateContactLocationProfitUseCase:
+    repository: ContactLocationProfitRepository
 
     def execute(self, data: dict) -> int:
         return self.repository.update(data)
@@ -85,6 +101,13 @@ class UpdateContactEmailUseCase:
 
     def execute(self, email_id: int, data: dict) -> ContactEmail:
         return self.repository.update(email_id, data)
+
+@dataclass
+class UpdateContactLocationUseCase:
+    repository: ContactLocationRepository
+
+    def execute(self, location_id: int, data: dict) -> ContactLocation:
+        return self.repository.update(location_id, data)
 
 @dataclass
 class CreateContactAddressUseCase:

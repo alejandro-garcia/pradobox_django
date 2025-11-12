@@ -40,7 +40,8 @@ class ContactAddress:
 @dataclass
 class ContactLocation:
     id: int
-    location: str
+    latitude: str
+    longitude: str
     client_id: Optional[str]
 
 
@@ -54,6 +55,7 @@ class Contact:
     phones: List[ContactPhone] = field(default_factory=list)
     emails: List[ContactEmail] = field(default_factory=list)
     addresses: List[ContactAddress] = field(default_factory=list)
+    location: Optional[ContactLocation] = None
     # Foreign aggregate owner: client id (for grouping by cliente)
     client_id: Optional[str] = None
     updated_at: Optional[datetime] = None

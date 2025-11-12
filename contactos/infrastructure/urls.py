@@ -14,4 +14,7 @@ urlpatterns = [
     path('direccion/add/', views.create_address_view, name='create-address'),
     path('direccion/<int:address_id>/', views.update_address_view, name='update-address'),
     path('direccion/<int:address_id>/delete/', views.delete_address_view, name='delete-address'),
+    path('ubicacion/add/', views.create_location_view, name='create-location'),
+    path('ubicacion/<int:location_id>/', views.update_location_view, name='update-location'),
+    path('ubicacion/<int:location_id>/delete/', views.delete_location_view, name='delete-location'),
 ]

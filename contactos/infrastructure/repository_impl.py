@@ -8,7 +8,8 @@ from ..domain.repository import (
     ContactAddressRepository, 
     ContactLocationRepository,
     ContactPhoneProfitRepository,
-    ContactEmailProfitRepository
+    ContactEmailProfitRepository,
+    ContactLocationProfitRepository
 )
 from .models import ContactModel, ContactPhoneModel, ContactEmailModel, ContactAddressModel, ContactLocationModel
 from django.db import connections
@@ -43,6 +44,7 @@ class DjangoContactRepository(ContactRepository):
             ContactEmailModel.objects.create(contact=c, email=e.email, mail_type=e.mail_type)
         for a in contact.addresses:
             ContactAddressModel.objects.create(contact=c, address=a.address, state=a.state, zipcode=a.zipcode, country_id=a.country_id)
+        
         return self._to_domain(c)
 
     def update(self, contact_id: int, data: dict) -> Contact:
@@ -173,6 +175,21 @@ class ProfitContactEmailRepository(ContactEmailProfitRepository):
             cursor.execute("""
                 EXECUTE pp_actualizar_email %s, %s
             """, [data['client_id'], data['email']])
+            
+            rows = cursor.fetchall()
+            
+            if rows:
+                #return dict(zip(columns, row))
+                result = rows[0][0] + rows[0][1]
+                return result
+            return 0
+
+class ProfitContactLocationRepository(ContactLocationProfitRepository):
+    def update(self, data: dict) -> int:
+        with connections['default'].cursor() as cursor:
+            cursor.execute("""
+                EXECUTE pp_actualizar_geolocalizacion %s, %s
+            """, [data['client_id'], data['location']])
             
             rows = cursor.fetchall()
             

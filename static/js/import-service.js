@@ -104,7 +104,11 @@ class ImportService {
             // Paso 1: Obtener documentos de MSSQL
             this.updateProgress('Obteniendo documentos...', 0, 100);
             const documentos = await this.fetchDocumentosFromMSSQL(userInfo.codigo_vendedor_profit);
-            
+    
+            // Paso 2: Obtener eventos de MSSQL
+            this.updateProgress('Obteniendo eventos...', 5, 100);
+            const events = await this.fetchEventsFromMSSQL(userInfo.codigo_vendedor_profit);
+
             // Paso 2: Obtener clientes relacionados
             this.updateProgress('Obteniendo clientes...', 10, 100);
             const clientesCodes = [...new Set(documentos.map(doc => doc.co_cli))];
@@ -210,21 +214,27 @@ class ImportService {
             this.updateProgress('Guardando documentos...', 80, 100);
             await window.indexedDBService.saveDocs(documentos);
 
-            // Paso 10: Guardar renglones de documentos en IndexedDB
+            // Paso 10: Guardar eventos en IndexedDB    
+            this.updateProgress('Guardando eventos...', 85, 100);
+            await window.indexedDBService.saveEvents(events);
+
+
+            // Paso 11: Guardar renglones de documentos en IndexedDB
             this.updateProgress('Guardando renglones de documentos...', 90, 100);
             await window.indexedDBService.saveDocLines(lines);
 
-            // Paso 11: Guardar Ventas Mensuales en IndexedDB
+            // Paso 12: Guardar Ventas Mensuales en IndexedDB
             this.updateProgress('Guardando ventas mensuales...', 95, 100);
             await window.indexedDBService.saveMonthSales(month_sales);
 
-            // Paso 12: Actualizar metadatos de sincronización
+            // Paso 13: Actualizar metadatos de sincronización
             this.updateProgress('Finalizando...', 97, 100);
 
             await window.indexedDBService.setSyncMetadata('last_sync', new Date().toISOString());
             await window.indexedDBService.setSyncMetadata('total_clientes', clientes.length);
             await window.indexedDBService.setSyncMetadata('total_documentos', documentos.length);
             await window.indexedDBService.setSyncMetadata('total_renglones_documentos', lines.length);
+            await window.indexedDBService.setSyncMetadata('total_eventos', events.length);
             await window.indexedDBService.setSyncMetadata('user_name', userInfo.username); 
             await window.indexedDBService.setSyncMetadata('nombre_completo', userInfo.nombre_completo);
             await window.indexedDBService.setSyncMetadata('codigo_vendedor_profit', userInfo.codigo_vendedor_profit);
@@ -235,6 +245,7 @@ class ImportService {
                 success: true,
                 clientes_imported: clientes.length,
                 documentos_imported: documentos.length,
+                eventos_imported: events.length,
                 renglones_imported: lines.length,
                 timestamp: new Date().toISOString()
             };
@@ -259,6 +270,23 @@ class ImportService {
 
         if (!response.ok) {
             throw new Error(`Error al obtener documentos: ${response.statusText}`);
+        }
+
+        return await response.json();
+    }
+
+    async fetchEventsFromMSSQL(sellerCode) {
+        const response = await fetch(`${this.apiBaseUrl}/import/eventos/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': this.getCsrfToken() || ''
+            },
+            body: JSON.stringify({'sellerCode': sellerCode })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error al obtener eventos: ${response.statusText}`);
         }
 
         return await response.json();

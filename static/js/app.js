@@ -1445,6 +1445,7 @@ class CobranzasApp {
             document.getElementById('clientesCount').textContent = info.clientes_count;
             document.getElementById('documentosCount').textContent = info.documentos_count;
             document.getElementById('renglonesCount').textContent = info.renglones_count;
+            document.getElementById('eventosCount').textContent = info.eventos_count;
             
             if (info.last_sync) {
                 const date = new Date(info.last_sync);
@@ -1470,6 +1471,7 @@ class CobranzasApp {
             document.getElementById('clientesCount2').textContent = info.clientes_count;
             document.getElementById('documentosCount2').textContent = info.documentos_count;
             document.getElementById('renglonesCount2').textContent = info.renglones_count;
+            document.getElementById('eventosCount2').textContent = info.eventos_count;
             
             if (info.last_sync) {
                 const date = new Date(info.last_sync);
@@ -1640,6 +1642,9 @@ class CobranzasApp {
                         total: doc.monto_net
                     }
                     
+                } else {
+                    this.showError('El documento no está disponible para consultar OffLine!');   
+                    return;
                 }
             } else {
                 // Obtener desde API
@@ -1719,9 +1724,9 @@ class CobranzasApp {
                     </div>
                     
                     <!-- Vencimiento -->
-                    <div class="flex justify-between">
+                    <div class="flex justify-between ${documento.fecha_vencimiento ? '' : 'hidden'}">
                         <span class="text-gray-600">Vencimiento</span>
-                        <span class="font-medium">${this.formatDate(documento.fecha_vencimiento)}</span>
+                        <span class="font-medium">${(documento.fecha_vencimiento ? this.formatDate(documento.fecha_vencimiento) : '')}</span>
                     </div>
                     
                     <!-- Días de crédito -->
@@ -2346,7 +2351,11 @@ class CobranzasApp {
             const tipoColor = this.getTipoColor(doc.tipo);
             const tipoAbrev = this.getTipoAbreviacion(doc.tipo);
             const timeAgo = this.getTimeAgo(doc.fecha_emision);
-            const diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
+            let diasCredito = null;
+            if (doc.fecha_emision && doc.fecha_vencimiento){
+                diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
+            }
+                
             const diasVencido = doc.dias_vencimiento;
             const isOverdue = doc.esta_vencido;
             
@@ -2373,7 +2382,7 @@ class CobranzasApp {
                             <span class="text-gray-900">${this.formatDate(doc.fecha_emision)}</span>
                         </div>
                         <div class="text-right">
-                            <span class="text-gray-600 pr-10">${diasCredito}</span>
+                            <span class="text-gray-600 pr-10">${(diasCredito) ? diasCredito : ""}</span>
                         </div>
                         <div class="col-span-2 text-right">
                             <span class="text-gray-900 font-medium">${this.formatCurrency(doc.monto)}</span>

@@ -1,7 +1,7 @@
 class IndexedDBService {
     constructor() {
         this.dbName = 'CobranzasDB';
-        this.version = 1;
+        this.version = 3;
         this.db = null;
     }
 
@@ -56,6 +56,15 @@ class IndexedDBService {
                 if (!db.objectStoreNames.contains('sync_metadata')) {
                     db.createObjectStore('sync_metadata', { keyPath: 'key' });
                 }
+
+                // Store para eventos
+                if (!db.objectStoreNames.contains('eventos')) {
+                    const eventosStore = db.createObjectStore('eventos', { keyPath: 'id' });
+                    eventosStore.createIndex('co_cli', 'co_cli', { unique: false });
+                    eventosStore.createIndex('tipo_doc', 'tipo_doc', { unique: false });
+                    eventosStore.createIndex('fec_venc', 'fec_venc', { unique: false });
+                    eventosStore.createIndex('saldo', 'saldo', { unique: false });
+                }
             };
         });
     }
@@ -101,6 +110,18 @@ class IndexedDBService {
             // Crear ID único combinando tipo_doc y nro_doc
             documento.id = `${documento.tipo_doc}_${documento.nro_doc}`;
             await store.put(documento);
+        }
+
+        return transaction.complete;
+    }
+
+    async saveEvents(events) {
+        const transaction = this.db.transaction(['eventos'], 'readwrite');
+        const store = transaction.objectStore('eventos');
+
+        for (const event of events) {
+            event.id = `${event.tipo_doc}_${event.nro_doc}`;
+            await store.put(event);
         }
 
         return transaction.complete;
@@ -194,6 +215,50 @@ class IndexedDBService {
             request.onerror = () => reject(request.error);
         });
     }
+
+    async getEvents(filtros = {}) {
+        if (!this.db) {
+            await this.init();
+        }
+        const transaction = this.db.transaction(['eventos'], 'readonly');
+        const store = transaction.objectStore('eventos');
+        
+        return new Promise((resolve, reject) => {
+            const request = store.getAll();
+            request.onsuccess = () => {
+                let eventos = request.result;
+                
+                // Aplicar filtros
+                if (filtros.co_cli) {
+                    eventos = eventos.filter(doc => doc.co_cli === filtros.co_cli);
+                }
+
+                if (filtros.co_ven) {
+                    // Admitir valor único, lista separada por comas o array
+                    let coVenList = [];
+                    if (Array.isArray(filtros.co_ven)) {
+                        coVenList = filtros.co_ven.map(v => String(v).trim()).filter(Boolean);
+                    } else if (typeof filtros.co_ven === 'string' && filtros.co_ven.includes(',')) {
+                        coVenList = filtros.co_ven.split(',').map(v => v.trim()).filter(Boolean);
+                    } else {
+                        coVenList = [String(filtros.co_ven).trim()];
+                    }
+
+                    eventos = eventos.filter(doc => coVenList.includes(String(doc.co_ven).trim()));
+                }
+
+                if (filtros.vencidos) {
+                    const today = new Date().toISOString().split('T')[0];
+                    eventos = eventos.filter(doc => doc.fec_venc < today);
+                }
+                
+                resolve(eventos);
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+
 
     async getResumenCobranzas(seller_code) {
         // Obtener documentos filtrados por vendedor (admite lista separada por comas)
@@ -576,7 +641,8 @@ class IndexedDBService {
 
     async getEventosCliente(cliente_id) {
         // Aprox de eventos: documentos del cliente en últimos 90 días
-        const documentos = await this.getDocumentos();
+        //const documentos = await this.getDocumentos();
+        const documentos = await this.getEvents();
         const now = new Date();
         const ninetyDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 90);
 
@@ -698,11 +764,22 @@ class IndexedDBService {
         });
     }
 
+    async getEventosCount(){
+        const transaction = this.db.transaction(['eventos'], 'readonly');
+        const store = transaction.objectStore('eventos');
+        return new Promise((resolve, reject) => {
+            const request = store.count();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
     async getStorageInfo() {
         const clientes = await this.getClientes();
         const documentos = await this.getDocumentos();
         //const renglonees = await this.getRenglones();
         const renglones_count = await this.getDocLinesCount();
+        const eventos_count = await this.getEventosCount();
         const lastSync = await this.getSyncMetadata('last_sync');
         const swVersion = await this.getSyncMetadata('sw_version');
 
@@ -710,6 +787,7 @@ class IndexedDBService {
             clientes_count: clientes.length,
             documentos_count: documentos.length,
             renglones_count: renglones_count,
+            eventos_count: eventos_count,
             last_sync: lastSync,
             storage_size: await this.calculateStorageSize(),
             sw_version: swVersion

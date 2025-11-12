@@ -7,5 +7,6 @@ urlpatterns = [
     path('sellers/', views.import_sellers_view, name='import_sellers'),
     path('custom-query/', views.execute_custom_query_view, name='custom_query'),
     path('document-details/', views.import_document_details, name='docs_details'),
-    path('month-sales/', views.import_month_sales_view, name='month_sales')
+    path('month-sales/', views.import_month_sales_view, name='month_sales'),
+    path('eventos/', views.import_events_view, name='events')
 ]

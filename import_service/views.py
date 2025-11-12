@@ -41,6 +41,23 @@ def import_documentos_view(request):
         return Response({
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+@api_view(['POST'])
+def import_events_view(request):
+    """Importa documentos desde SQL Server"""
+
+    seller_code = request.data.get('sellerCode', None)
+
+    try:
+        with MSSQLConnector() as connector:
+            documentos = connector.get_events_cc(seller_code)
+            
+            return Response(documentos)
+
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['POST'])

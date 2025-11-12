@@ -92,6 +92,7 @@ class EventoModel(models.Model):
     amount = models.DecimalField(db_column='monto_net', max_digits=12, decimal_places=2)
     amount_pending = models.DecimalField(db_column='saldo', max_digits=12, decimal_places=2)
     comment = models.TextField(db_column='observa', blank=True, null=True)
+    co_ven = models.CharField(db_column='co_ven', max_length=6, blank=True, null=True)
 
     class Meta:
         managed = False

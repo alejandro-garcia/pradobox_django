@@ -115,8 +115,37 @@ class MSSQLConnector:
             and ltrim(rtrim(co_ven)) in ({placeholders})
             ORDER BY fec_venc DESC
         """
+
         return self.execute_query(query)
-    
+
+
+    def get_events_cc(self, seller_code) -> List[Dict[str, Any]]:
+        seller_codes = []
+        if "," in seller_code:
+            seller_codes = [c.strip() for c in seller_code.split(",")]
+        else:
+            seller_codes.append(seller_code)
+
+        placeholders = ", ".join([f"'{c}'" for c in seller_codes])
+
+        """Obtiene documentos de cuentas por cobrar según criterios específicos"""
+        query = f"""
+            SELECT 
+                tipo_doc,
+                nro_doc,
+                co_cli,
+                ltrim(rtrim(co_ven)) as co_ven,
+                fec_emis,
+                fec_venc,
+                monto_net,
+                saldo,
+                empresa
+            FROM vw_eventos 
+            WHERE ltrim(rtrim(co_ven)) in ({placeholders})
+            ORDER BY fec_emis DESC
+        """
+        return self.execute_query(query)
+  
     
     def get_document_details(self, seller_code) -> List[Dict[str, Any]]:
         seller_codes = []

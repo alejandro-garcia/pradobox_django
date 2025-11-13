@@ -18,6 +18,7 @@ from ..application.use_cases import (
     CreateContactEmailUseCase,
     CreateContactLocationUseCase,
     UpdateContactLocationUseCase,
+    DeleteContactLocationUseCase,
     UpdateContactLocationProfitUseCase
 )
 from .repository_impl import (
@@ -122,6 +123,11 @@ def _serialize_contact(c: Contact) -> dict:
             }
             for a in c.addresses
         ],
+        'location': {
+            'id': c.location.id,
+            'latitude': c.location.latitude,
+            'longitude': c.location.longitude,
+        } if c.location else None
     }
 
 def _get_state(client: ClienteModel) -> Optional[str]:
@@ -152,6 +158,9 @@ def contacts_by_client_view(request, client_id: str):
         update_at_utc = client.updated_at + timedelta(hours=4) 
         
         is_updated = update_at_utc > contacts[0].updated_at
+
+        if not is_updated:
+            is_updated = not contacts[0].location and client.geolocalizacion and client.geolocalizacion.strip() != ''
         
         if is_updated:
             DjangoContactPhoneRepository().delete_by_contact_id(contacts[0].id)
@@ -176,7 +185,7 @@ def contacts_by_client_view(request, client_id: str):
 
             if (client.geolocalizacion and len(client.geolocalizacion.strip()) > 0):
                 [latitude, longitude] = client.geolocalizacion.split(';')
-                location = ContactLocation(id=0, latitude=latitude.strip(), longitude=longitude.strip(), contact_id=0)
+                location = ContactLocation(id=0, latitude=latitude.strip(), longitude=longitude.strip(), contact_id=0, client_id=client_id)
 
             if (client.direccion and len(client.direccion.strip()) > 0):
                 country_code = 1
@@ -293,6 +302,12 @@ def update_location_view(request, location_id: int):
 def delete_mail_view(request, mail_id: int):
     use_case = DeleteContactEmailUseCase(repo)
     use_case.execute(mail_id)
+    return Response(status=status.HTTP_204_NO_CONTENT)
+    
+@api_view(['DELETE'])
+def delete_location_view(request, location_id: int):
+    use_case = DeleteContactLocationUseCase(repo)
+    use_case.execute(location_id)
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['POST'])

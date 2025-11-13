@@ -42,6 +42,7 @@ class ContactLocation:
     id: int
     latitude: str
     longitude: str
+    contact_id: int
     client_id: Optional[str]
 
 

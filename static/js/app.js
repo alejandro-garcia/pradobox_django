@@ -2766,6 +2766,7 @@ class CobranzasApp {
         //const addPhoneBtn = document.getElementById('addPhoneBtn');
         //const addEmailBtn = document.getElementById('addEmailBtn');
         //const addAddressBtn = document.getElementById('addAddressBtn');
+        const addLocationBtn = document.getElementById('addLocationBtn'); 
         const editEmailBtns = document.querySelectorAll('#editEmailBtn');
        // const deleteEmailBtns = document.querySelectorAll('#deleteEmailBtn');
         // const editAddressBtns = document.querySelectorAll('#editAddressBtn');
@@ -2797,9 +2798,22 @@ class CobranzasApp {
             document.getElementById('addEmailBtn').classList.add('hidden');
         }
 
+        if (document.getElementById('LocationNotFound')) {
+            document.getElementById('addLocationBtn').classList.toggle('hidden');
+        } else {
+            document.getElementById('addLocationBtn').classList.add('hidden');
+        }
+
+        if (document.getElementById('LocationNotFound')) {
+            document.getElementById('addLocationBtn').classList.toggle('hidden');
+        } else {
+            document.getElementById('addLocationBtn').classList.add('hidden');
+        }
+
         //addPhoneBtn.classList.toggle('hidden');
         //addEmailBtn.classList.toggle('hidden');
         //addAddressBtn.classList.toggle('hidden');
+        addLocationBtn.classList.toggle('hidden');
     }
 
     async addPhone(contactId, clientId){
@@ -3129,6 +3143,21 @@ class CobranzasApp {
             }).join('')
             : '<p class="text-gray-500 text-sm">No hay direcciones registradas</p>';
 
+        const locationHTML = contact.location
+            ? `
+                <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                    <div class="text-gray-800">📍${contact.location.latitude}, ${contact.location.longitude}</div>
+                    <div class="flex items-center gap-3">       
+                        <svg id="editLocationBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editLocation(${contact.location.id})">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                        </svg>
+                        <svg id="deleteLocationBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.deleteLocation(${contact.location.id})">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>   
+                    </div>
+                </div>
+                ` : '<p id="LocationNotFound" class="text-gray-500 text-sm">No hay ubicación registrada</p>';
+
         const header = `
             <div class="bg-primary text-white rounded-lg p-6">
                 <h2 class="text-lg font-bold">${cliente?.nombre || 'Contacto'}</h2>
@@ -3180,6 +3209,21 @@ class CobranzasApp {
                 </div>
             </div>`;
 
+        const locationSection = `
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                    <h3 class="text-sm font-semibold text-gray-800 mb-2">GEO-LOCALIZACIÓN</h3>
+                    <button id="addLocationBtn" class="text-gray-500 hover:text-gray-700 hidden">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="contactLocationList" class="space-y-2">
+                    ${locationHTML}
+                </div>
+            </div>`;
+
         const fabs = `
             <div class="fixed bottom-20 right-6 flex flex-col gap-3 ${this.offlineMode ? 'hidden' : ''}">
                 <button id="fabEditContact" class="rounded-full w-14 h-14 bg-primary text-white shadow-lg flex items-center justify-center">
@@ -3193,6 +3237,7 @@ class CobranzasApp {
                 ${phonesSection}
                 ${emailsSection}
                 ${addressesSection}
+                ${locationSection}
                 ${fabs}
             </div>`;
     }

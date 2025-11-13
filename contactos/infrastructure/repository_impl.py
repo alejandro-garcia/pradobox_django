@@ -20,12 +20,12 @@ logger = logging.getLogger(__name__)
 
 class DjangoContactRepository(ContactRepository):
     def find_by_client(self, client_id: str) -> List[Contact]:
-        qs = ContactModel.objects.filter(client=client_id).prefetch_related('phones', 'emails', 'addresses')
+        qs = ContactModel.objects.filter(client=client_id).prefetch_related('phones', 'emails', 'addresses', 'locations')
         return [self._to_domain(c) for c in qs]
 
     def find_by_id(self, contact_id: int) -> Optional[Contact]:
         try:
-            c = ContactModel.objects.prefetch_related('phones', 'emails', 'addresses').get(pk=contact_id)
+            c = ContactModel.objects.prefetch_related('phones', 'emails', 'addresses', 'locations').get(pk=contact_id)
             return self._to_domain(c)
         except ContactModel.DoesNotExist:
             return None
@@ -45,6 +45,10 @@ class DjangoContactRepository(ContactRepository):
         for a in contact.addresses:
             ContactAddressModel.objects.create(contact=c, address=a.address, state=a.state, zipcode=a.zipcode, country_id=a.country_id)
         
+        if contact.location and contact.location.latitude and contact.location.longitude:
+            location_str  = f"{contact.location.latitude};{contact.location.longitude}"
+            ContactLocationModel.objects.create(contact=c, location=location_str)
+
         return self._to_domain(c)
 
     def update(self, contact_id: int, data: dict) -> Contact:
@@ -63,6 +67,14 @@ class DjangoContactRepository(ContactRepository):
         phones = [ContactPhone(id=p.id, phone=p.phone, phone_type=p.phone_type, contact_id=c.id, client_id= c.client) for p in c.phones.all()]
         emails = [ContactEmail(id=e.id, email=e.email, mail_type=e.mail_type, contact_id=c.id, client_id= c.client) for e in c.emails.all()]
         addresses = [ContactAddress(id=a.id, address=a.address, state=a.state, zipcode=a.zipcode, country_id=a.country_id, contact_id=c.id) for a in c.addresses.all()]
+        l_row = c.locations.first()
+        if l_row:
+            [latitude, longitude] = l_row.location.split(';')
+            client_id = c.client if c.client else None
+            location = ContactLocation(id=l_row.id, latitude=latitude.strip(), longitude=longitude.strip(), contact_id=c.id, client_id=client_id)
+        else:
+            location = None
+
         return Contact(
             id=c.id,
             name=c.name,
@@ -71,6 +83,7 @@ class DjangoContactRepository(ContactRepository):
             phones=phones,
             emails=emails,
             addresses=addresses,
+            location=location,
             client_id=c.client,
             updated_at=c.updated_at,
             created_at=c.created_at

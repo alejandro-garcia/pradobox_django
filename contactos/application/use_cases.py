@@ -96,6 +96,13 @@ class DeleteContactPhoneUseCase:
         return self.repository.delete(phone_id)
 
 @dataclass
+class DeleteContactLocationUseCase:
+    repository: ContactLocationRepository
+
+    def execute(self, location_id: int) -> None:
+        return self.repository.delete(location_id)
+
+@dataclass
 class UpdateContactEmailUseCase:
     repository: ContactEmailRepository
 

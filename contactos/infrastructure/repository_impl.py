@@ -69,7 +69,11 @@ class DjangoContactRepository(ContactRepository):
         addresses = [ContactAddress(id=a.id, address=a.address, state=a.state, zipcode=a.zipcode, country_id=a.country_id, contact_id=c.id) for a in c.addresses.all()]
         l_row = c.locations.first()
         if l_row:
-            [latitude, longitude] = l_row.location.split(';')
+            if ',' in l_row.location:
+                [latitude, longitude] = l_row.location.split(',')
+            else:
+                [latitude, longitude] = l_row.location.split(';')
+                
             client_id = c.client if c.client else None
             location = ContactLocation(id=l_row.id, latitude=latitude.strip(), longitude=longitude.strip(), contact_id=c.id, client_id=client_id)
         else:
@@ -199,6 +203,9 @@ class ProfitContactEmailRepository(ContactEmailProfitRepository):
 
 class ProfitContactLocationRepository(ContactLocationProfitRepository):
     def update(self, data: dict) -> int:
+        if ',' in data['location']: 
+            data['location'] = data['location'].replace(' ', '').replace(',', ';')
+
         with connections['default'].cursor() as cursor:
             cursor.execute("""
                 EXECUTE pp_actualizar_geolocalizacion %s, %s
@@ -215,7 +222,8 @@ class ProfitContactLocationRepository(ContactLocationProfitRepository):
 class DjangoContactLocationRepository(ContactLocationRepository):
     def create(self, location: dict) -> ContactLocation:
         cl = ContactLocationModel.objects.create(contact_id=location['contact_id'], location=location['location'])
-        return ContactLocation(id=cl.id, location=cl.location, contact_id=cl.contact_id, client_id=location['client_id'])
+        [latitude, longitude] = location['location'].split(';')
+        return ContactLocation(id=cl.id, latitude=latitude, longitude=longitude, contact_id=cl.contact_id, client_id=location['client_id'])
     
     def update(self, location_id: int, data: dict) -> ContactLocation:
         cl = ContactLocationModel.objects.get(pk=location_id)
@@ -223,7 +231,13 @@ class DjangoContactLocationRepository(ContactLocationRepository):
             if field in data:
                 setattr(cl, field, data[field])
         cl.save()
-        return ContactLocation(id=cl.id, location=cl.location, contact_id=cl.contact_id, client_id=data['client_id'])
+
+        if ',' in data['location']:
+            [latitude, longitude] = data['location'].split(',')
+        else:
+            [latitude, longitude] = data['location'].split(';')
+        
+        return ContactLocation(id=cl.id, latitude=latitude.strip(), longitude=longitude.strip(), contact_id=cl.contact_id, client_id=data['client_id'])
     
     def delete(self, location_id: int) -> None:
         cl = ContactLocationModel.objects.get(pk=location_id)

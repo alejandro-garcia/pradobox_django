@@ -2768,6 +2768,10 @@ class CobranzasApp {
         //const addAddressBtn = document.getElementById('addAddressBtn');
         const addLocationBtn = document.getElementById('addLocationBtn'); 
         const editEmailBtns = document.querySelectorAll('#editEmailBtn');
+
+        const editLocationBtns = document.querySelectorAll('#editLocationBtn');
+        const deleteLocationBtns = document.querySelectorAll('#deleteLocationBtn');
+
        // const deleteEmailBtns = document.querySelectorAll('#deleteEmailBtn');
         // const editAddressBtns = document.querySelectorAll('#editAddressBtn');
         // const deleteAddressBtns = document.querySelectorAll('#deleteAddressBtn');
@@ -2776,6 +2780,9 @@ class CobranzasApp {
         //deletePhoneBtns.forEach(btn => btn.classList.toggle('hidden'));
 
         editEmailBtns.forEach(btn => btn.classList.toggle('hidden'));
+        editLocationBtns.forEach(btn => btn.classList.toggle('hidden'));
+        deleteLocationBtns.forEach(btn => btn.classList.toggle('hidden'));
+
         //deleteEmailBtns.forEach(btn => btn.classList.toggle('hidden'));
 
         //editAddressBtns.forEach(btn => btn.classList.toggle('hidden'));
@@ -2796,12 +2803,6 @@ class CobranzasApp {
             document.getElementById('addEmailBtn').classList.toggle('hidden');
         } else {
             document.getElementById('addEmailBtn').classList.add('hidden');
-        }
-
-        if (document.getElementById('LocationNotFound')) {
-            document.getElementById('addLocationBtn').classList.toggle('hidden');
-        } else {
-            document.getElementById('addLocationBtn').classList.add('hidden');
         }
 
         if (document.getElementById('LocationNotFound')) {
@@ -2908,6 +2909,212 @@ class CobranzasApp {
             this.closeEditFieldModal('mailTypeSelect');
             this.toggleContactEditButtons();
         };
+    }
+
+    async addLocation(contactId, clientId, locationId, currentLat, currentLng) {
+        try {
+            if (this.offlineMode) {
+                this.showError('No disponible en modo sin conexión');
+                return;
+            }
+
+            // Asegurarse de que Leaflet esté cargado
+            const ensureLeaflet = () => new Promise((resolve) => {
+                if (window.L && document.getElementById('leaflet-css')) return resolve(true);
+
+                // Cargar CSS
+                const css = document.createElement('link');
+                css.id = 'leaflet-css';
+                css.rel = 'stylesheet';
+                css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+                css.onload = () => {
+                    // Cargar JS
+                    const script = document.createElement('script');
+                    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+                    script.onload = () => resolve(true);
+                    script.onerror = () => {
+                        this.showError('No se pudo cargar Leaflet');
+                        resolve(false);
+                    };
+                    document.head.appendChild(script);
+                };
+                css.onerror = () => {
+                    this.showError('No se pudo cargar estilos de Leaflet');
+                    resolve(false);
+                };
+                document.head.appendChild(css);
+            });
+
+            const ok = await ensureLeaflet();
+            if (!ok) return;
+
+            // Crear o reutilizar modal
+            let modal = document.getElementById('mapModal');
+            if (!modal) {
+                const html = `
+                <div id="mapModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 flex">
+                <div class="bg-white rounded-lg shadow-lg w-11/12 max-w-2xl">
+                    <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                    <h3 class="text-lg font-semibold">Seleccionar ubicación</h3>
+                    <button id="closeMapModalBtn" class="text-gray-500 hover:text-gray-700">✕</button>
+                    </div>
+                    <div class="p-4">
+                    <div id="mapContainer" class="w-full rounded" style="height:380px;"></div>
+                    <p class="text-sm text-gray-500 mt-2">Haz clic en el mapa para ubicar el marcador.</p>
+                    </div>
+                    <div class="px-4 py-3 border-t border-gray-200 flex justify-end gap-2">
+                    <button id="cancelMapBtn" class="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200">Cancelar</button>
+                    <button id="confirmMapBtn" class="px-4 py-2 bg-primary text-white rounded hover:opacity-90">Confirmar</button>
+                    </div>
+                </div>
+                </div>`;
+                const wrap = document.createElement('div');
+                wrap.innerHTML = html;
+                document.body.appendChild(wrap.firstElementChild);
+                modal = document.getElementById('mapModal');
+            }
+
+            const mapEl = document.getElementById('mapContainer');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            // Centrar en ubicación actual o por defecto
+            let center = []; 
+
+            if (currentLat && currentLng) {
+                center = [currentLat, currentLng];
+            } else {
+                center = [10.4806, -66.9036];
+
+                try {
+                    await new Promise((resolve) => {
+                        if (!navigator.geolocation) return resolve();
+                        navigator.geolocation.getCurrentPosition(
+                            (pos) => {
+                                center = [pos.coords.latitude, pos.coords.longitude];
+                                resolve();
+                            },
+                            () => resolve(),
+                            { timeout: 5000, enableHighAccuracy: true }
+                        );
+                    });
+                } catch (err) {
+                    console.warn("Geolocalización falló, usando centro por defecto", err);
+                }
+            }
+
+            // Limpiar mapa anterior si existe
+            if (mapEl._leaflet_id) {
+                mapEl._leaflet_map.remove();
+            }
+
+            // Crear mapa
+            const map = L.map(mapEl).setView(center, 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>',
+                maxZoom: 19,
+            }).addTo(map);
+
+            let marker = null;
+
+            const placeMarker = (latlng) => {
+                if (marker) {
+                    marker.setLatLng(latlng);
+                } else {
+                    marker = L.marker(latlng, { draggable: true }).addTo(map);
+                    // Opcional: permitir arrastrar
+                    marker.on('dragend', () => {
+                        const pos = marker.getLatLng();
+                        // Actualizar si necesitas algo en tiempo real
+                    });
+                }
+            };
+
+            // Clic en mapa
+            map.on('click', (e) => placeMarker(e.latlng));
+
+            // Botón cerrar
+            const close = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                if (map) map.remove();
+            };
+
+            document.getElementById('closeMapModalBtn').onclick = close;
+            document.getElementById('cancelMapBtn').onclick = close;
+
+            // Confirmar ubicación
+            document.getElementById('confirmMapBtn').onclick = async () => {
+                if (!marker) {
+                    this.showError('Selecciona una ubicación en el mapa');
+                    return;
+                }
+
+                const latlng = marker.getLatLng();
+                const lat = latlng.lat.toFixed(6);
+                const lng = latlng.lng.toFixed(6);
+                const location = `${lat}, ${lng}`;
+
+                try {
+                    let apiUrl = `${this.apiBaseUrl}/contactos/ubicacion/add/`;
+                    if (locationId !== -1) {
+                        apiUrl = `${this.apiBaseUrl}/contactos/ubicacion/${locationId}/`;
+                    }
+
+                    const resp = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: window.authService.getAuthHeaders(),
+                        body: JSON.stringify({ client_id: clientId, contact_id: contactId, location })
+                    });
+
+                    if (resp.status === 401) {
+                        window.authService.logout();
+                        return;
+                    }
+                    if (!resp.ok) {
+                        this.showError('No fue posible guardar la ubicación');
+                        return;
+                    }
+
+                    // Actualizar lista en UI
+                    const list = document.getElementById('contactLocationList');
+                    if (list) {
+                        list.innerHTML = `
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                        <div class="text-gray-800">Pin: ${lat};${lng}</div>
+                        <div class="flex items-center gap-3">
+                            <svg id="editLocationBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                            <svg id="deleteLocationBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </div>
+                        </div>`;
+                    }
+
+                    const btn = document.getElementById('addLocationBtn');
+                    if (btn) btn.classList.add('hidden');
+
+                    this.showSuccess('Ubicación guardada');
+                } catch (err) {
+                    console.error(err);
+                    this.showError('Error guardando la ubicación');
+                } finally {
+                    close();
+                }
+            };
+
+        } catch (e) {
+            console.error(e);
+            this.showError('No se pudo abrir el mapa');
+        }
+    }
+
+    async editLocation(contactId, clientId, locationId, latitude, longitude){
+        debugger; 
+        console.log(`Editing location with ID: ${locationId}`);
+        return this.addLocation(contactId, clientId, locationId, latitude, longitude);
+    }
+
+    async deleteLocation(locationId){
+        console.log(`Deleting location with ID: ${locationId}`);
     }
 
     async editPhone(clientId, phoneId, currentValue = '', currentPhoneType = '') {
@@ -3145,10 +3352,10 @@ class CobranzasApp {
 
         const locationHTML = contact.location
             ? `
-                <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                <div class="flex items-center py-2 border-b border-gray-100 last:border-b-0">
                     <div class="text-gray-800">📍${contact.location.latitude}, ${contact.location.longitude}</div>
-                    <div class="flex items-center gap-3">       
-                        <svg id="editLocationBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editLocation(${contact.location.id})">
+                    <div class="flex items-center gap-3 ml-6">       
+                        <svg id="editLocationBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editLocation(${contact.id}, '${cliente.id}', ${contact.location.id}, ${contact.location.latitude}, ${contact.location.longitude})">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                         </svg>
                         <svg id="deleteLocationBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.deleteLocation(${contact.location.id})">
@@ -3213,7 +3420,7 @@ class CobranzasApp {
             <div class="bg-white rounded-lg shadow-md p-6">
                 <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                     <h3 class="text-sm font-semibold text-gray-800 mb-2">GEO-LOCALIZACIÓN</h3>
-                    <button id="addLocationBtn" class="text-gray-500 hover:text-gray-700 hidden">
+                    <button id="addLocationBtn" class="text-gray-500 hover:text-gray-700 hidden" onclick="window.cobranzasApp.addLocation(${contact.id}, '${cliente.id}', -1, ${contact.location?.latitude}, ${contact.location?.longitude})">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
@@ -3288,6 +3495,19 @@ class CobranzasApp {
                 </div>
             </div>`;            
     }
+
+    // renderLocationHtml(location, clientId){
+    //     debugger; 
+    //     return `
+    //         <div id="location-${location.id}" class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+    //             <span class="text-gray-800">📍${location.location}</span>
+    //             <div class="flex items-center gap-3">
+    //                 <svg id="editLocationBtn" class="w-6 h-6 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editLocation('${clientId}', ${location.id}, '${location.location}')">
+    //                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+    //                 </svg>
+    //             </div>
+    //         </div>`;
+    // }
 
     async openContactsForClient(clientId, cliente) {
         try {

@@ -221,9 +221,13 @@ class ProfitContactLocationRepository(ContactLocationProfitRepository):
 
 class DjangoContactLocationRepository(ContactLocationRepository):
     def create(self, location: dict) -> ContactLocation:
-        cl = ContactLocationModel.objects.create(contact_id=location['contact_id'], location=location['location'])
-        [latitude, longitude] = location['location'].split(';')
-        return ContactLocation(id=cl.id, latitude=latitude, longitude=longitude, contact_id=cl.contact_id, client_id=location['client_id'])
+        cl = ContactLocationModel.objects.create(contact_id=location['contact_id'], location=location['location'].replace(',',';'))
+        if ',' in location['location']:
+            [latitude, longitude] = location['location'].split(',')
+        else:
+            [latitude, longitude] = location['location'].split(';')
+
+        return ContactLocation(id=cl.id, latitude=latitude.strip(), longitude=longitude.strip(), contact_id=cl.contact_id, client_id=location['client_id'])
     
     def update(self, location_id: int, data: dict) -> ContactLocation:
         cl = ContactLocationModel.objects.get(pk=location_id)
@@ -248,3 +252,11 @@ class DjangoContactLocationRepository(ContactLocationRepository):
     
     def find_by_contact(self, contact_id: int) -> List[ContactLocation]:
         return [ContactLocation(id=l.id, location=l.location, contact_id=l.contact_id) for l in ContactLocationModel.objects.filter(contact=contact_id)]
+
+    def get_from_location_id(self, location_id: int) -> str:
+        cl = ContactLocationModel.objects.get(pk=location_id)
+        client_id = None 
+        if cl and cl.contact:
+            client_id = cl.contact.client
+        
+        return client_id 

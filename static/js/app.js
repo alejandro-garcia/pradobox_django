@@ -2814,7 +2814,7 @@ class CobranzasApp {
         //addPhoneBtn.classList.toggle('hidden');
         //addEmailBtn.classList.toggle('hidden');
         //addAddressBtn.classList.toggle('hidden');
-        addLocationBtn.classList.toggle('hidden');
+        //addLocationBtn.classList.toggle('hidden');
     }
 
     async addPhone(contactId, clientId){
@@ -2912,6 +2912,7 @@ class CobranzasApp {
     }
 
     async addLocation(contactId, clientId, locationId, currentLat, currentLng) {
+        let modalIsOpen = false;
         try {
             if (this.offlineMode) {
                 this.showError('No disponible en modo sin conexión');
@@ -2977,6 +2978,7 @@ class CobranzasApp {
             const mapEl = document.getElementById('mapContainer');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+            modalIsOpen = true;
 
             // Centrar en ubicación actual o por defecto
             let center = []; 
@@ -3030,6 +3032,14 @@ class CobranzasApp {
                 }
             };
 
+            if (currentLat && currentLng) {
+                const lat = parseFloat(currentLat);
+                const lng = parseFloat(currentLng);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    placeMarker([lat, lng]);
+                }
+            }
+
             // Clic en mapa
             map.on('click', (e) => placeMarker(e.latlng));
 
@@ -3076,18 +3086,34 @@ class CobranzasApp {
                         return;
                     }
 
+                    if (locationId == -1){
+                        const newObj = await resp.json();
+                        if (newObj) locationId = newObj.id;
+                    }
+
+                    close();
+                    modalIsOpen = false;
+
                     // Actualizar lista en UI
                     const list = document.getElementById('contactLocationList');
                     if (list) {
                         list.innerHTML = `
-                        <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-                        <div class="text-gray-800">Pin: ${lat};${lng}</div>
-                        <div class="flex items-center gap-3">
-                            <svg id="editLocationBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                            <svg id="deleteLocationBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                        </div>
+                        <div class="flex items-center py-2 border-b border-gray-100 last:border-b-0">
+                            <div class="text-gray-800">📍 ${lat};${lng}</div>
+                            <div class="flex items-center gap-3 ml-6">
+                                <svg id="editLocationBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.editLocation(${contactId}, '${clientId}', ${locationId}, ${lat}, ${lng})">
+                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                </svg>
+                                <svg id="deleteLocationBtn" class="w-6 h-6 cursor-pointer hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="window.cobranzasApp.deleteLocation(${locationId})">
+                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                                   </path>
+                                </svg>
+                            </div>
                         </div>`;
                     }
+
+                    // const btnEdit = document.getElementById('editLocationBtn')
+                    // if (btnEdit) btnEdit.addEventListener('click')
 
                     const btn = document.getElementById('addLocationBtn');
                     if (btn) btn.classList.add('hidden');
@@ -3097,7 +3123,8 @@ class CobranzasApp {
                     console.error(err);
                     this.showError('Error guardando la ubicación');
                 } finally {
-                    close();
+                    if (modalIsOpen)
+                        close();
                 }
             };
 
@@ -3114,7 +3141,30 @@ class CobranzasApp {
     }
 
     async deleteLocation(locationId){
-        console.log(`Deleting location with ID: ${locationId}`);
+        if (!confirm('¿Está seguro de que eliminar la Geo-localización?')) {
+            return 
+        }
+
+        try {
+            const apiUrl = `${this.apiBaseUrl}/contactos/ubicacion/${locationId}/delete/`;
+
+            const response = await fetch(apiUrl, {
+                method: 'DELETE',
+                headers: window.authService.getAuthHeaders()
+            });
+
+            const locationContainer = document.getElementById('contactLocationList');
+            if (response && response.status == 204 && locationContainer) {
+                locationContainer.innerHTML = '<p id="LocationNotFound" class="text-gray-500 text-sm">No hay ubicación registrada</p>'
+            }
+
+            this.showSuccess(`Se borro la geo-localización seleccionada exitosamente!`);
+        
+        } catch (err) {
+            debugger; 
+            console.error('Error updating location:', err);
+            this.showError('No fue posible actualizar la geo-localización');
+        }
     }
 
     async editPhone(clientId, phoneId, currentValue = '', currentPhoneType = '') {

@@ -19,7 +19,8 @@ from ..application.use_cases import (
     CreateContactLocationUseCase,
     UpdateContactLocationUseCase,
     DeleteContactLocationUseCase,
-    UpdateContactLocationProfitUseCase
+    UpdateContactLocationProfitUseCase,
+    GetContactFromLocationIdUseCase
 )
 from .repository_impl import (
     DjangoContactPhoneRepository, 
@@ -176,12 +177,13 @@ def contacts_by_client_view(request, client_id: str):
             phone = None
             email = None
             address = None
+            location = None
 
             if (client.telefono and len(client.telefono.strip()) > 0):
                 phone = ContactPhone(id=0, phone=client.telefono, phone_type='work', contact_id=0)
 
             if (client.email and len(client.email.strip()) > 0):
-                email = ContactEmail(id=0, email=client.email, mail_type='work', contact_id=0)
+                email = ContactEmail(id=0, email=client.email, mail_type='work', contact_id=0, client_id=client_id)
 
             if (client.geolocalizacion and len(client.geolocalizacion.strip()) > 0):
                 [latitude, longitude] = client.geolocalizacion.split(';')
@@ -227,7 +229,7 @@ def create_contact_view(request):
         first_name=data.get('first_name'),
         last_name=data.get('last_name'),
         phones=[ContactPhone(id=0, phone=p['phone'], phone_type=p.get('phone_type', 'other'), contact_id=0) for p in data.get('phones', [])],
-        emails=[ContactEmail(id=0, email=e['email'], mail_type=e.get('mail_type', 'other'), contact_id=0) for e in data.get('emails', [])],
+        emails=[ContactEmail(id=0, email=e['email'], mail_type=e.get('mail_type', 'other'), contact_id=0, client_id=data.get('client_id')) for e in data.get('emails', [])],
         addresses=[ContactAddress(id=0, address=a['address'], state=a.get('state'), zipcode=a.get('zipcode'), country_id=a['country_id'], contact_id=0) for a in data.get('addresses', [])],
     )
     use_case = CreateContactUseCase(repo)
@@ -306,9 +308,28 @@ def delete_mail_view(request, mail_id: int):
     
 @api_view(['DELETE'])
 def delete_location_view(request, location_id: int):
-    use_case = DeleteContactLocationUseCase(repo)
-    use_case.execute(location_id)
-    return Response(status=status.HTTP_204_NO_CONTENT)
+    try:
+        repo = DjangoContactLocationRepository()
+
+        use_case_client =  GetContactFromLocationIdUseCase(repo)
+        client_id  = use_case_client.execute(location_id)
+
+        use_case = DeleteContactLocationUseCase(repo)
+        use_case.execute(location_id)
+
+        use_case_profit = UpdateContactLocationProfitUseCase(ProfitContactLocationRepository())
+        data = {
+            'client_id': client_id,
+            'location': ''
+        }
+        use_case_profit.execute(data) 
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        print(str(e))
+        return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
 
 @api_view(['POST'])
 def create_mail_view(request):
@@ -334,7 +355,7 @@ def create_location_view(request):
     use_case_profit = UpdateContactLocationProfitUseCase(ProfitContactLocationRepository())
     use_case_profit.execute(data)
     
-    return Response(_serialize_contact_mail(created), status=status.HTTP_201_CREATED)
+    return Response(_serialize_contact_location(created), status=status.HTTP_201_CREATED)
 
 @api_view(['POST'])
 def create_address_view(request):
@@ -382,3 +403,14 @@ def _serialize_contact_address(ca: ContactAddress) -> dict:
         'country_id': ca.country_id,
     }
     return result
+
+def _serialize_contact_location(cl: ContactLocation) -> dict:
+    result = {
+        'id': cl.id,
+        'latitude': cl.latitude,
+        'longitude': cl.longitude,
+        'contact_id': cl.contact_id if cl.contact_id else 0,
+        'client_id': cl.client_id if cl.client_id else '-1'
+    }
+    return result
+

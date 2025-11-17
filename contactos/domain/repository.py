@@ -128,3 +128,7 @@ class ContactLocationRepository(ABC):
     @abstractmethod
     def delete_by_contact_id(self, contact_id: int) -> None:
         raise NotImplementedError
+
+    @abstractmethod
+    def get_from_location_id(self, location_id: int) -> str:
+        raise NotImplementedError

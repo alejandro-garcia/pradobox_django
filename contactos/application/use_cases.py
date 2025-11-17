@@ -53,6 +53,14 @@ class CreateContactEmailUseCase:
         return self.repository.create(contact_email)
 
 @dataclass
+class GetContactFromLocationIdUseCase:
+    repository: ContactLocationRepository 
+
+    def execute(self, location_id: int) -> str:
+        return self.repository.get_from_location_id(location_id)
+
+
+@dataclass
 class CreateContactLocationUseCase:
     repository: ContactLocationRepository
 

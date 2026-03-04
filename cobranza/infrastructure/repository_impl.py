@@ -390,7 +390,12 @@ class DjangoDocumentoRepository(DocumentoRepository):
             
             return documento
             
-        except DocumentoModel.DoesNotExist:
+        except DocumentoModel.DoesNotExist as e:
+            logger.error(f"Document not found for document {documento_id}: {e}")
+            return None
+
+        except DocumentoModel.MultipleObjectsReturned as e:
+            logger.error(f"Multiple objects returned for document {documento_id}: {e}")
             return None
         
     def get_estado_cuenta(self, rif: str) -> Balance:

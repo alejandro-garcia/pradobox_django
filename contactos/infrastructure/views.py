@@ -180,7 +180,7 @@ def contacts_by_client_view(request, client_id: str):
             location = None
 
             if (client.telefono and len(client.telefono.strip()) > 0):
-                phone = ContactPhone(id=0, phone=client.telefono, phone_type='work', contact_id=0)
+                phone = ContactPhone(id=0, phone=client.telefono, phone_type='work', contact_id=0, client_id=client_id)
 
             if (client.email and len(client.email.strip()) > 0):
                 email = ContactEmail(id=0, email=client.email, mail_type='work', contact_id=0, client_id=client_id)

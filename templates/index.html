@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -38,13 +39,14 @@
         }
     </script>
     <style>
-        .chart-parent{
+        .chart-parent {
             position: relative;
             /*width: 58.7vw;*/
             height: 30vh;
         }
     </style>
 </head>
+
 <body class="bg-gray-50 font-sans">
     <div id="app" class="min-h-screen">
         <!-- Header -->
@@ -54,7 +56,8 @@
                     <img src="/static/icons/icon-72x72.png" alt="Logo" class="h-12 w-12 mr-3">
                     <button id="backBtn" class="mr-3 text-white hover:text-gray-200 hidden">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
+                            </path>
                         </svg>
                     </button>
                     <h1 id="pageTitle" class="text-xl font-bold">Situación</h1>
@@ -62,18 +65,25 @@
                 <div class="flex items-center space-x-3 relative">
                     <div id="userMenuWrapper" class="relative">
                         <span id="userInfo" class="text-sm text-white opacity-90 cursor-pointer"></span>
-                        <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-md shadow-lg py-1 hidden z-50">
-                            <button id="changePasswordMenuItem" class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Cambiar Contraseña</button>
+                        <div id="userMenu"
+                            class="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-md shadow-lg py-1 hidden z-50">
+                            <button id="changePasswordMenuItem"
+                                class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Cambiar
+                                Contraseña</button>
                         </div>
                     </div>
                     <button id="refreshBtn" class="text-white hover:text-gray-200">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                            </path>
                         </svg>
                     </button>
                     <button id="logoutBtn" class="text-white hover:text-gray-200">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                            </path>
                         </svg>
                     </button>
                 </div>
@@ -90,8 +100,12 @@
                     <div class="space-y-4">
                         <div class="flex items-center justify-between">
                             <span class="text-sm text-gray-600">Van</span>
-                            <span class="text-sm font-medium"><p class="text-sm text-gray-600" id="lessSales">144k jun</p></span>
-                            <span class="text-sm font-medium"><p class="text-sm text-gray-600" id="topSales">155k may</p></span>
+                            <span class="text-sm font-medium">
+                                <p class="text-sm text-gray-600" id="lessSales">144k jun</p>
+                            </span>
+                            <span class="text-sm font-medium">
+                                <p class="text-sm text-gray-600" id="topSales">155k may</p>
+                            </span>
                             <span class="text-sm text-gray-600">Faltan</span>
                         </div>
                         <div class="relative">
@@ -99,8 +113,12 @@
                                 <div id="salesPercentage" class="bg-blue-500 h-4 rounded-full" style="width: 48%"></div>
                             </div>
                             <div class="flex justify-between text-sm mt-1">
-                                <span class="text-gray-600"><p class="text-sm text-gray-600" id="currentSales">69.4k</p></span>
-                                <span class="text-gray-600"><p class="text-sm text-gray-600" id="remainingSales">85.8k</p></span>
+                                <span class="text-gray-600">
+                                    <p class="text-sm text-gray-600" id="currentSales">69.4k</p>
+                                </span>
+                                <span class="text-gray-600">
+                                    <p class="text-sm text-gray-600" id="remainingSales">85.8k</p>
+                                </span>
                             </div>
                         </div>
                         <div class="relative">
@@ -108,8 +126,12 @@
                                 <div id="daysPercentage" class="bg-red-500 h-4 rounded-full" style="width: 99%"></div>
                             </div>
                             <div class="flex justify-between text-sm mt-1">
-                                <span class="text-gray-600"><p class="text-sm text-gray-600" id="currentDay">25d</p></span>
-                                <span class="text-gray-600"><p class="text-sm text-gray-600" id="remainingDays">6d</p></span>
+                                <span class="text-gray-600">
+                                    <p class="text-sm text-gray-600" id="currentDay">25d</p>
+                                </span>
+                                <span class="text-gray-600">
+                                    <p class="text-sm text-gray-600" id="remainingDays">6d</p>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -163,7 +185,8 @@
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-semibold text-gray-800">DOCUMENTOS PENDIENTES</h2>
                         <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
+                            </path>
                         </svg>
                     </div>
                 </div>
@@ -174,7 +197,7 @@
                         <h2 class="text-lg font-semibold text-gray-800 mb-4">VENTAS</h2>
                         <canvas id="ventasChart"></canvas>
                     </div>
-                    <br/>
+                    <br />
                 </div>
             </div>
 
@@ -183,26 +206,31 @@
                 <!-- Search Panel -->
                 <div class="bg-white rounded-lg shadow-md p-4 mb-4">
                     <div class="relative">
-                        <input 
-                            type="text" 
-                            id="clienteSearchInput" 
-                            placeholder="Buscar cliente por nombre..." 
-                            class="w-full px-4 py-3 pl-10 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                        >
+                        <input type="text" id="clienteSearchInput" placeholder="Buscar cliente por nombre..."
+                            class="w-full px-4 py-3 pl-10 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </div>
                         <!-- Filters toggle button -->
-                        <button id="toggleFiltersBtn" type="button" class="absolute inset-y-0 right-8 pr-2 flex items-center text-gray-500 hover:text-gray-700" title="Filtros">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 01.8 1.6l-4.2 5.6a1 1 0 00-.2.6v3.8a1 1 0 01-1.447.894l-2-1A1 1 0 018 14.6V12a1 1 0 00-.2-.6L3.2 5.6A1 1 0 013 5z" clip-rule="evenodd" />
+                        <button id="toggleFiltersBtn" type="button"
+                            class="absolute inset-y-0 right-8 pr-2 flex items-center text-gray-500 hover:text-gray-700"
+                            title="Filtros">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                fill="currentColor">
+                                <path fill-rule="evenodd"
+                                    d="M3 5a1 1 0 011-1h12a1 1 0 01.8 1.6l-4.2 5.6a1 1 0 00-.2.6v3.8a1 1 0 01-1.447.894l-2-1A1 1 0 018 14.6V12a1 1 0 00-.2-.6L3.2 5.6A1 1 0 013 5z"
+                                    clip-rule="evenodd" />
                             </svg>
                         </button>
-                        <div id="clearSearchBtn" class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer hidden">
-                            <svg class="w-5 h-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        <div id="clearSearchBtn"
+                            class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer hidden">
+                            <svg class="w-5 h-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </div>
                     </div>
@@ -211,7 +239,8 @@
                         <div class="grid grid-cols-2 gap-3">
                             <!-- lastYearSales -->
                             <div>
-                                <label for="filterLastYearSales" class="block text-xs text-gray-600 mb-1">Ventas último año</label>
+                                <label for="filterLastYearSales" class="block text-xs text-gray-600 mb-1">Ventas último
+                                    año</label>
                                 <select id="filterLastYearSales" class="w-full border-gray-300 rounded-md text-sm">
                                     <option value="all">(Todas)</option>
                                     <option value="lessTen">0-10</option>
@@ -223,7 +252,8 @@
                             </div>
                             <!-- overdueDebt -->
                             <div>
-                                <label for="filterOverdueDebt" class="block text-xs text-gray-600 mb-1">Deuda vencida</label>
+                                <label for="filterOverdueDebt" class="block text-xs text-gray-600 mb-1">Deuda
+                                    vencida</label>
                                 <select id="filterOverdueDebt" class="w-full border-gray-300 rounded-md text-sm">
                                     <option value="all">(Todas)</option>
                                     <option value="lessTen">0-10</option>
@@ -235,7 +265,8 @@
                             </div>
                             <!-- totalOverdue -->
                             <div>
-                                <label for="filterTotalOverdue" class="block text-xs text-gray-600 mb-1">Total por cobrar</label>
+                                <label for="filterTotalOverdue" class="block text-xs text-gray-600 mb-1">Total por
+                                    cobrar</label>
                                 <select id="filterTotalOverdue" class="w-full border-gray-300 rounded-md text-sm">
                                     <option value="all">(Todas)</option>
                                     <option value="lessTen">0-10</option>
@@ -247,7 +278,8 @@
                             </div>
                             <!-- daysPastDue -->
                             <div>
-                                <label for="filterDaysPastDue" class="block text-xs text-gray-600 mb-1">Días vencidos</label>
+                                <label for="filterDaysPastDue" class="block text-xs text-gray-600 mb-1">Días
+                                    vencidos</label>
                                 <select id="filterDaysPastDue" class="w-full border-gray-300 rounded-md text-sm">
                                     <option value="all">(Todas)</option>
                                     <option value="upToSeven">0-7</option>
@@ -259,8 +291,10 @@
                             </div>
                             <!-- daysSinceLastInvoice -->
                             <div>
-                                <label for="filterDaysSinceLastInvoice" class="block text-xs text-gray-600 mb-1">Días desde última factura</label>
-                                <select id="filterDaysSinceLastInvoice" class="w-full border-gray-300 rounded-md text-sm">
+                                <label for="filterDaysSinceLastInvoice" class="block text-xs text-gray-600 mb-1">Días
+                                    desde última factura</label>
+                                <select id="filterDaysSinceLastInvoice"
+                                    class="w-full border-gray-300 rounded-md text-sm">
                                     <option value="all">(Todas)</option>
                                     <option value="upToSeven">0-7</option>
                                     <option value="upToFourteen">8-14</option>
@@ -291,8 +325,10 @@
                         </div>
                         <!-- Action buttons -->
                         <div class="mt-3 flex justify-end gap-2">
-                            <button id="btnClearFilter" type="button" class="px-4 py-2 rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 text-sm">Borrar</button>
-                            <button id="btnApplyFilters" type="button" class="px-4 py-2 rounded-md bg-primary text-white hover:opacity-90 text-sm">Aceptar</button>
+                            <button id="btnClearFilter" type="button"
+                                class="px-4 py-2 rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 text-sm">Borrar</button>
+                            <button id="btnApplyFilters" type="button"
+                                class="px-4 py-2 rounded-md bg-primary text-white hover:opacity-90 text-sm">Aceptar</button>
                         </div>
                     </div>
                     <div id="searchResults" class="mt-2 text-sm text-gray-600 hidden">
@@ -307,8 +343,11 @@
                         <p class="mt-2 text-gray-600">Cargando clientes...</p>
                     </div>
                     <div id="clientesEmpty" class="hidden text-center py-8 text-gray-500">
-                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                            </path>
                         </svg>
                         <p>No se encontraron clientes</p>
                     </div>
@@ -375,14 +414,18 @@
 
                 <!-- Lista de Documentos -->
                 <div class="bg-gray-100 p-4">
-                    <h2 id="globalPendingDocsTitle" class="text-sm font-medium text-gray-600 mb-4">DOCUMENTOS PENDIENTES</h2>
+                    <h2 id="globalPendingDocsTitle" class="text-sm font-medium text-gray-600 mb-4">DOCUMENTOS PENDIENTES
+                    </h2>
                     <div id="documentosPendientesLoading" class="hidden text-center py-8">
                         <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                         <p class="mt-2 text-gray-600">Cargando documentos...</p>
                     </div>
                     <div id="documentosPendientesEmpty" class="hidden text-center py-8 text-gray-500">
-                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                            </path>
                         </svg>
                         <p>No hay documentos pendientes</p>
                     </div>
@@ -404,10 +447,11 @@
                     <!-- Configuración de Importación -->
                     <div class="bg-white rounded-lg shadow-md p-6">
                         <!-- <h2 class="text-lg font-semibold text-gray-800 mb-4">Importar desde SQL Server</h2> -->
-                        
+
                         <!-- Botones de Acción -->
                         <div class="flex space-x-3 mb-4">
-                            <button id="startImportBtn" class="flex-1 bg-primary text-white py-2 px-4 rounded-md hover:bg-opacity-90 transition-colors">
+                            <button id="startImportBtn"
+                                class="flex-1 bg-primary text-white py-2 px-4 rounded-md hover:bg-opacity-90 transition-colors">
                                 Sincronizar
                             </button>
                         </div>
@@ -424,7 +468,8 @@
                                 </div>
                             </div>
                             <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div id="progressBar" class="bg-primary h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                <div id="progressBar" class="bg-primary h-2 rounded-full transition-all duration-300"
+                                    style="width: 0%"></div>
                             </div>
                         </div>
                     </div>
@@ -491,12 +536,14 @@
                                 <span id="swVersion" class="font-medium text-sm">Nunca</span>
                             </div>
                         </div>
-                        
-                        <button id="clearDataBtn" class="w-full mt-4 bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition-colors">
+
+                        <button id="clearDataBtn"
+                            class="w-full mt-4 bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition-colors">
                             Limpiar Datos Locales
                         </button>
 
-                        <button id="clearCacheBtn" class="w-full mt-4 bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition-colors">
+                        <button id="clearCacheBtn"
+                            class="w-full mt-4 bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition-colors">
                             Limpiar Cache
                         </button>
                     </div>
@@ -509,7 +556,9 @@
                                 <span class="text-gray-700">Modo offline</span>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" id="offlineMode" class="sr-only peer">
-                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                    <div
+                                        class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary">
+                                    </div>
                                 </label>
                             </div>
                             <!-- <div class="flex items-center justify-between">
@@ -528,21 +577,30 @@
         <!-- Bottom Navigation -->
         <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2">
             <div class="flex justify-around">
-                <button class="nav-item flex flex-col items-center py-2 px-3 rounded-lg transition-colors active" data-view="dashboard">
+                <button class="nav-item flex flex-col items-center py-2 px-3 rounded-lg transition-colors active"
+                    data-view="dashboard">
                     <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a2 2 0 012-2v2a2 2 0 01-2 2v2a2 2 0 01-2-2v-2a2 2 0 012-2h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 01.293.707V14a1 1 0 01-1 1H3z"></path>
+                        <path
+                            d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a2 2 0 012-2v2a2 2 0 01-2 2v2a2 2 0 01-2-2v-2a2 2 0 012-2h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 01.293.707V14a1 1 0 01-1 1H3z">
+                        </path>
                     </svg>
                     <span class="text-xs">Situación</span>
                 </button>
-                <button class="nav-item flex flex-col items-center py-2 px-3 rounded-lg transition-colors" data-view="clientes">
+                <button class="nav-item flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
+                    data-view="clientes">
                     <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>
+                        <path
+                            d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z">
+                        </path>
                     </svg>
                     <span class="text-xs">Clientes</span>
                 </button>
-                <button class="nav-item flex flex-col items-center py-2 px-3 rounded-lg transition-colors" data-view="mas">
+                <button class="nav-item flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
+                    data-view="mas">
                     <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
+                        <path
+                            d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z">
+                        </path>
                     </svg>
                     <span class="text-xs">Más</span>
                 </button>
@@ -555,14 +613,18 @@
         <div class="bg-white rounded-lg w-11/12 max-w-sm p-6">
             <h3 class="text-lg font-semibold mb-4">Cambiar Contraseña</h3>
             <div class="space-y-3">
-                <input type="password" id="oldPasswordInput" class="w-full border rounded-md px-3 py-2" placeholder="Contraseña actual">
-                <input type="password" id="newPasswordInput" class="w-full border rounded-md px-3 py-2" placeholder="Nueva contraseña">
-                <input type="password" id="confirmPasswordInput" class="w-full border rounded-md px-3 py-2" placeholder="Confirmar nueva contraseña">
+                <input type="password" id="oldPasswordInput" class="w-full border rounded-md px-3 py-2"
+                    placeholder="Contraseña actual">
+                <input type="password" id="newPasswordInput" class="w-full border rounded-md px-3 py-2"
+                    placeholder="Nueva contraseña">
+                <input type="password" id="confirmPasswordInput" class="w-full border rounded-md px-3 py-2"
+                    placeholder="Confirmar nueva contraseña">
                 <div id="changePasswordError" class="hidden text-red-600 text-sm"></div>
             </div>
             <div class="mt-4 flex justify-end gap-2">
                 <button id="cancelChangePasswordBtn" class="px-4 py-2 rounded-md border">Cancelar</button>
-                <button id="confirmChangePasswordBtn" class="px-4 py-2 rounded-md bg-primary text-white">Actualizar</button>
+                <button id="confirmChangePasswordBtn"
+                    class="px-4 py-2 rounded-md bg-primary text-white">Actualizar</button>
             </div>
         </div>
     </div>
@@ -572,15 +634,17 @@
         <div class="bg-white rounded-lg w-11/12 max-w-sm p-6">
             <h3 class="text-lg font-semibold mb-4" id="editFieldTitle">titulo</h3>
             <div class="space-y-3">
-                <input type="text" id="editFieldInput" class="w-full border rounded-md px-3 py-2" placeholder="Valor"/>
-            </div>  
+                <input type="text" id="editFieldInput" class="w-full border rounded-md px-3 py-2" placeholder="Valor" />
+            </div>
             <div id="addressExtraFields" class="hidden">
                 <div class="space-y-3">
-                    <input type="text" id="editAddressState" class="w-full border rounded-md px-3 py-2" placeholder="Valor"/>
-                </div> 
+                    <input type="text" id="editAddressState" class="w-full border rounded-md px-3 py-2"
+                        placeholder="Valor" />
+                </div>
                 <div class="space-y-3">
-                    <input type="text" id="editAddressZipCode" class="w-full border rounded-md px-3 py-2" placeholder="Valor"/>
-                </div> 
+                    <input type="text" id="editAddressZipCode" class="w-full border rounded-md px-3 py-2"
+                        placeholder="Valor" />
+                </div>
                 <div class="space-y-3">
                     <select id="editAddressCountry" class="w-full border rounded-md px-3 py-2">
                         <option value="">Selecciona un pais</option>
@@ -588,8 +652,8 @@
                         <option value="2">Colombia</option>
                         <option value="99">Otro</option>
                     </select>
-                </div> 
-            </div> 
+                </div>
+            </div>
 
             <!-- Phone Type -->
             <select id="phoneTypeSelect" class="w-full border rounded-md px-3 py-2 hidden">
@@ -617,7 +681,8 @@
             </select>
 
             <div class="mt-4 flex justify-end gap-2">
-                <button id="btnCancelEditField" class="px-4 py-2 rounded-md border" onclick="window.cobranzasApp.closeEditFieldModal()">Cancelar</button>
+                <button id="btnCancelEditField" class="px-4 py-2 rounded-md border"
+                    onclick="window.cobranzasApp.closeEditFieldModal()">Cancelar</button>
                 <button id="btnUpdateEditField" class="px-4 py-2 rounded-md bg-primary text-white">Actualizar</button>
             </div>
         </div>
@@ -631,4 +696,5 @@
         lucide.createIcons();
     </script>
 </body>
+
 </html>

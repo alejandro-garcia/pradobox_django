@@ -172,7 +172,7 @@ def contacts_by_client_view(request, client_id: str):
 
     if is_updated:
         try:
-            #client = ClienteModel.objects.get(id=client_id)
+            client = ClienteModel.objects.get(id=client_id)
 
             phone = None
             email = None

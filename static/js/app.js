@@ -23,7 +23,7 @@ class CobranzasApp {
                 this.initialized = false;
             }
         });
-        
+
         // Verificar autenticación e inicializar
         this.checkAuthAndInit();
         //this.init();
@@ -33,7 +33,7 @@ class CobranzasApp {
     async checkAuthAndInit() {
         // Esperar a que el servicio de auth se inicialice
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         if (window.authService.requireAuth()) {
             this.init();
         }
@@ -42,7 +42,7 @@ class CobranzasApp {
     init() {
         if (this.initialized) return;
         this.initialized = true;
-        
+
         this.initializeIndexedDB().then(() => {
             this.setupEventListeners();
             this.loadDashboard();
@@ -74,15 +74,15 @@ class CobranzasApp {
 
     generateUUID() { // Public Domain/MIT
         var d = new Date().getTime();//Timestamp
-        var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now()*1000)) || 0;//Time in microseconds since page-load or 0 if unsupported
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now() * 1000)) || 0;//Time in microseconds since page-load or 0 if unsupported
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
             var r = Math.random() * 16;//random number between 0 and 16
-            if(d > 0){//Use timestamp until depleted
-                r = (d + r)%16 | 0;
-                d = Math.floor(d/16);
+            if (d > 0) {//Use timestamp until depleted
+                r = (d + r) % 16 | 0;
+                d = Math.floor(d / 16);
             } else {//Use microseconds since page-load if supported
-                r = (d2 + r)%16 | 0;
-                d2 = Math.floor(d2/16);
+                r = (d2 + r) % 16 | 0;
+                d2 = Math.floor(d2 / 16);
             }
             return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
         });
@@ -93,7 +93,7 @@ class CobranzasApp {
         if (modal) {
             modal.classList.add('hidden');
             modal.classList.remove('flex');
-            if (typeId){
+            if (typeId) {
                 document.getElementById(typeId).classList.add('hidden');
             } else {
                 document.getElementById('mailTypeSelect').classList.add('hidden');
@@ -146,7 +146,7 @@ class CobranzasApp {
 
         // Import/Sync functionality
         this.setupImportEventListeners();
-        
+
         // Client search functionality
         this.setupClientSearchEventListeners();
 
@@ -166,7 +166,7 @@ class CobranzasApp {
                 }
             });
         }
-        
+
         // Open Change Password Modal
         const changePwdItem = document.getElementById('changePasswordMenuItem');
         if (changePwdItem) {
@@ -179,7 +179,7 @@ class CobranzasApp {
                 }
             });
         }
-        
+
         // Modal actions: cancel and confirm
         const cancelChangePasswordBtn = document.getElementById('cancelChangePasswordBtn');
         const confirmChangePasswordBtn = document.getElementById('confirmChangePasswordBtn');
@@ -202,11 +202,11 @@ class CobranzasApp {
                 changePasswordError.classList.add('hidden');
             }
         };
-        
+
         if (cancelChangePasswordBtn) {
             cancelChangePasswordBtn.addEventListener('click', () => closeChangePasswordModal());
         }
-        
+
         if (confirmChangePasswordBtn) {
             confirmChangePasswordBtn.addEventListener('click', async () => {
                 const oldPwd = oldPasswordInput ? oldPasswordInput.value : '';
@@ -280,7 +280,7 @@ class CobranzasApp {
             this.offlineMode = e.target.checked;
             localStorage.setItem('offlineMode', this.offlineMode);
             this.dashboardLoaded = false;
-            
+
             // If we're on dashboard, refresh to show appropriate data
             if (this.currentView === 'dashboard') {
                 this.refreshDashboard();
@@ -383,7 +383,7 @@ class CobranzasApp {
 
     navigateTo(view, options = {}) {
         const push = options.push !== false; // default: push into history
-        const isBack = (options.hasOwnProperty("isBack") ?  options.isBack: false); 
+        const isBack = (options.hasOwnProperty("isBack") ? options.isBack : false);
 
         // Manage history stack
         if (push && this.currentView && this.currentView !== view) {
@@ -435,7 +435,7 @@ class CobranzasApp {
         };
 
         document.getElementById('pageTitle').textContent = titles[view] || 'Cobranzas';
-        
+
         // Show/hide back button
         const backBtn = document.getElementById('backBtn');
         if (view === 'dashboard') {
@@ -487,10 +487,10 @@ class CobranzasApp {
         // Reset dashboard state to allow reloading
         this.dashboardLoaded = false;
         this.loadingDashboard = false;
-        
+
         // Clear existing charts
         this.destroyCharts();
-        
+
         // Reload dashboard
         await this.loadDashboard();
     }
@@ -546,7 +546,7 @@ class CobranzasApp {
 
         const diffTime = Math.abs(now - date);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
+
         if (diffDays < 30) {
             return `${diffDays} día${diffDays !== 1 ? 's' : ''}`;
         } else if (diffDays < 365) {
@@ -601,59 +601,59 @@ class CobranzasApp {
     async loadDashboard() {
         try {
             // Evitar múltiples cargas simultáneas y cargas innecesarias
-            if (this.loadingDashboard){ // || this.dashboardLoaded) {
+            if (this.loadingDashboard) { // || this.dashboardLoaded) {
                 return;
             }
             this.loadingDashboard = true;
-            
+
             let data;
             let seller_code;
-            
+
             if (this.offlineMode) {
                 // Load from IndexedDB
                 const user = await window.indexedDBService.getCurrentUser();
-                seller_code = user.codigo_vendedor_profit; 
+                seller_code = user.codigo_vendedor_profit;
 
                 data = await this.loadDashboardFromIndexedDB(seller_code);
             } else {
                 const user = window.authService.getCurrentUser();
-                seller_code = user.codigo_vendedor_profit; 
+                seller_code = user.codigo_vendedor_profit;
 
                 // Load from API
                 const response = await fetch(`${this.apiBaseUrl}/dashboard/${seller_code}`, {
                     headers: window.authService.getAuthHeaders()
                 });
-                
+
                 if (response.status === 401) {
                     window.authService.logout();
                     return;
                 }
-                
+
                 data = await response.json();
             }
 
             // Update dashboard data
 
             let currentSales = 0;
-            if (data.ventas_por_mes.length == 3){
+            if (data.ventas_por_mes.length == 3) {
                 let correntSalesNum = data.ventas_por_mes[2].monto / 1000
 
                 //verificar el mayor de los ultimos 2 meses 
                 let topSales = 0;
-                let topSalesMonth = ""; 
+                let topSalesMonth = "";
                 let lessSales = 0;
                 let lessSalesMonth = "";
                 let lessSalesIndex = 1;
 
                 let topSalesIndex = 0;
-                
-                if  (data.ventas_por_mes[0].monto < data.ventas_por_mes[1].monto) {
+
+                if (data.ventas_por_mes[0].monto < data.ventas_por_mes[1].monto) {
                     topSalesIndex = 1
                     lessSalesIndex = 0;
                 }
 
                 topSales = data.ventas_por_mes[topSalesIndex].monto / 1000;
-                let remainingSales  = Math.round((topSales - correntSalesNum),1)
+                let remainingSales = Math.round((topSales - correntSalesNum), 1)
 
                 topSalesMonth = data.ventas_por_mes[topSalesIndex].mes;
 
@@ -661,7 +661,7 @@ class CobranzasApp {
                 lessSales = this.formatCurrency(data.ventas_por_mes[lessSalesIndex].monto / 1000, false, false) + "K";
                 lessSalesMonth = data.ventas_por_mes[lessSalesIndex].mes;
 
-                let salesPercentage = (topSales !== 0) ? correntSalesNum * 100 / topSales: 0; 
+                let salesPercentage = (topSales !== 0) ? correntSalesNum * 100 / topSales : 0;
 
                 if (salesPercentage > 100) salesPercentage = 100;
 
@@ -675,23 +675,23 @@ class CobranzasApp {
                 //document.getElementById('topSales').textContent = topSales.toString().split(".")[0] + "K" + " " + topSalesMonth;
                 document.getElementById('topSales').textContent = topSales + " " + topSalesMonth;
                 //document.getElementById('remainingSales').textContent = remainingSales.toString().split(".")[0] + "K";
-                document.getElementById('remainingSales').textContent =  this.formatCurrency(remainingSales, false, false) + "K";
-                document.getElementById('salesPercentage').style= `width:${salesPercentage}%`;
+                document.getElementById('remainingSales').textContent = this.formatCurrency(remainingSales, false, false) + "K";
+                document.getElementById('salesPercentage').style = `width:${salesPercentage}%`;
             }
 
             document.getElementById('currentDay').textContent = data.situacion.dias_transcurridos.toString() + 'd';
             document.getElementById('remainingDays').textContent = data.situacion.dias_faltantes.toString() + 'd';
-            
+
             let percentageDays = data.situacion.dias_transcurridos * 100 / (data.situacion.dias_faltantes + data.situacion.dias_transcurridos);
-           
-            document.getElementById('daysPercentage').style= `width:${percentageDays}%`;
+
+            document.getElementById('daysPercentage').style = `width:${percentageDays}%`;
             document.getElementById('totalVencido').textContent = this.formatCurrency(data.situacion.total_vencido, true);
             document.getElementById('cantidadVencido').textContent = data.situacion.cantidad_documentos_vencidos;
             document.getElementById('diasVencido').textContent = data.situacion.dias_promedio_vencimiento;
-            document.getElementById('totalGeneral').textContent =  this.formatCurrency(data.situacion.total_vencido + data.situacion.total_por_vencer - data.situacion.total_sinvencimiento, true);
+            document.getElementById('totalGeneral').textContent = this.formatCurrency(data.situacion.total_vencido + data.situacion.total_por_vencer - data.situacion.total_sinvencimiento, true);
             document.getElementById('cantidadTotal').textContent = data.situacion.cantidad_documentos_total;
             document.getElementById('diasTotal').textContent = data.situacion.dias_promedio_vencimiento_todos;
-            document.getElementById('totalNeto').textContent =  this.formatCurrency(data.situacion.total_neto, true);
+            document.getElementById('totalNeto').textContent = this.formatCurrency(data.situacion.total_neto, true);
             document.getElementById('totalCreditos').textContent = this.formatCurrency(data.situacion.total_creditos * -1, true);
 
             // Create charts only if they don't exist
@@ -738,7 +738,7 @@ class CobranzasApp {
         };
     }
 
-    clientToDomain(cliente){
+    clientToDomain(cliente) {
         return {
             id: cliente.co_cli,
             nombre: cliente.cli_des,
@@ -755,10 +755,10 @@ class CobranzasApp {
 
     async loadClientes() {
         this.showClientesLoading(true);
-        
+
         try {
             let clientes;
-            
+
             if (this.offlineMode) {
                 clientes = await window.indexedDBService.getClientes();
                 clientes = clientes.map(c => this.clientToDomain(c));
@@ -771,7 +771,7 @@ class CobranzasApp {
 
                 if (!this.activeFilters) {
                     console.log('No order field set, defaulting to daysSinceLastInvoice');
-                    
+
                     this.activeFilters = {
                         lastYearSales: 'all',
                         overdueDebt: 'all',
@@ -852,7 +852,7 @@ class CobranzasApp {
                 }
             } else {
                 const user = window.authService.getCurrentUser();
-                const sellerCode = user.codigo_vendedor_profit || '-1'; 
+                const sellerCode = user.codigo_vendedor_profit || '-1';
 
                 const params = new URLSearchParams();
                 if (this.searchTerm) params.set('search', this.searchTerm);
@@ -894,7 +894,7 @@ class CobranzasApp {
         const loading = document.getElementById('documentosPendientesLoading');
         const list = document.getElementById('documentosPendientesList');
         const empty = document.getElementById('documentosPendientesEmpty');
-        
+
         if (show) {
             loading.classList.remove('hidden');
             list.innerHTML = '';
@@ -908,7 +908,7 @@ class CobranzasApp {
         const loading = document.getElementById('clientDocsPendingLoading');
         const list = document.getElementById('clientDocsPendingList');
         const empty = document.getElementById('documentosPendientesEmpty');
-        
+
         if (show) {
             loading.classList.remove('hidden');
             list.innerHTML = '';
@@ -920,21 +920,21 @@ class CobranzasApp {
 
     async loadDocumentosPendientes() {
         this.showDocumentosPendientesLoading(true);
-        
+
         try {
             let data;
-            
+
             if (this.offlineMode) {
 
                 const user = await window.indexedDBService.getCurrentUser();
-                const seller_code = user.codigo_vendedor_profit;     
-                
+                const seller_code = user.codigo_vendedor_profit;
+
                 const clientes = await window.indexedDBService.getClientes();
 
                 const clientesDict = clientes.reduce((acc, item) => {
-                        acc[item.co_cli] = item.cli_des.trim(); // trim() para limpiar espacios
-                        return acc;
-                }, {});    
+                    acc[item.co_cli] = item.cli_des.trim(); // trim() para limpiar espacios
+                    return acc;
+                }, {});
 
                 // Load from IndexedDB
                 const documentos = await window.indexedDBService.getDocumentos({ co_ven: seller_code });
@@ -953,7 +953,7 @@ class CobranzasApp {
                     dias_transcurridos: resumen.dias_transcurridos,
                     dias_faltantes: resumen.dias_faltantes
                 };
-                
+
                 data = {
                     // documentos: documentos.map(doc => ({
                     //     ...doc,
@@ -962,25 +962,25 @@ class CobranzasApp {
                     //     esta_vencido: new Date(doc.fec_venc) < new Date()
                     // })),
                     documentos: documentos.map(doc => ({
-                        cliente_id: doc.co_cli, 
-                        vendedor_id: doc.co_ven, 
-                        fecha_emision: doc.fec_emis, 
-                        fecha_vencimiento: doc.fec_venc, 
+                        cliente_id: doc.co_cli,
+                        vendedor_id: doc.co_ven,
+                        fecha_emision: doc.fec_emis,
+                        fecha_vencimiento: doc.fec_venc,
                         id: doc.nro_doc,
-                        numero: doc.nro_doc, 
-                        tipo: doc.tipo_doc, 
+                        numero: doc.nro_doc,
+                        tipo: doc.tipo_doc,
                         monto: doc.monto_net,
-                        saldo: doc.saldo, 
-                        cliente_nombre: clientesDict[doc.co_cli] || 'Cliente: ' + doc.co_cli, 
+                        saldo: doc.saldo,
+                        cliente_nombre: clientesDict[doc.co_cli] || 'Cliente: ' + doc.co_cli,
                         dias_vencimiento: this.calculateDaysOverdue(doc.fec_venc),
                         esta_vencido: new Date(doc.fec_venc) < new Date(),
-                        empresa: doc.empresa 
+                        empresa: doc.empresa
                     })),
                     resumen: resumenDto
                 };
             } else {
                 const user = window.authService.getCurrentUser();
-                const seller_code = user.codigo_vendedor_profit; 
+                const seller_code = user.codigo_vendedor_profit;
 
                 // Load from API
                 const [documentosResponse, resumenResponse] = await Promise.all([
@@ -991,23 +991,23 @@ class CobranzasApp {
                         headers: window.authService.getAuthHeaders()
                     })
                 ]);
-                
+
                 if (documentosResponse.status === 401 || resumenResponse.status === 401) {
                     window.authService.logout();
                     return;
                 }
-                
+
                 const documentos = await documentosResponse.json();
                 const dashboardData = await resumenResponse.json();
-                
+
                 data = {
                     documentos: documentos,
                     resumen: dashboardData.situacion
                 };
             }
-            
+
             this.displayDocumentosPendientes(data);
-            
+
         } catch (error) {
             console.error('Error loading documentos pendientes:', error);
             this.showError('Error cargando documentos pendientes...' + error.message);
@@ -1017,17 +1017,17 @@ class CobranzasApp {
     }
     async LoadClientPendingDocs(clientId) {
         this.showClientDocsPendingLoading(true);
-        
+
         try {
             let data;
-            
+
             if (this.offlineMode) {
                 // Load from IndexedDB
                 //const docsPendientes = await window.indexedDBService.getDocumentos();
                 const docsPendientes = await window.indexedDBService.getDocumentosPendientesCliente(clientId);
-                
+
                 const resumen = await window.indexedDBService.getResumenCobranzas();
-                
+
                 // data = {
                 //     documentos: documentos.map(doc => ({
                 //         ...doc,
@@ -1047,16 +1047,16 @@ class CobranzasApp {
                 const documentosResponse = await fetch(`${this.apiBaseUrl}/cobranzas/pendientes/${clientId}`, {
                     headers: window.authService.getAuthHeaders()
                 });
-                
+
                 const documentos = await documentosResponse.json();
-                
+
                 data = {
-                    documentos: documentos, 
+                    documentos: documentos,
                 };
             }
-            
+
             this.displayClientDocsPending(data);
-            
+
         } catch (error) {
             console.error('Error loading documentos pendientes:', error);
             this.showError('Error cargando documentos pendientes...' + error.message);
@@ -1070,13 +1070,13 @@ class CobranzasApp {
         document.getElementById('resumenVencido').textContent = this.formatCurrency(data.resumen.total_vencido, true);
         document.getElementById('resumenCantidadVencido').textContent = data.resumen.cantidad_documentos_vencidos;
         document.getElementById('resumenDiasVencido').textContent = data.resumen.dias_promedio_vencimiento;
-        
+
         const totalGeneral = data.resumen.total_vencido + data.resumen.total_por_vencer - data.resumen.total_sinvencimiento;
-        
+
         document.getElementById('resumenTotal').textContent = this.formatCurrency(totalGeneral, true);
         document.getElementById('resumenCantidadTotal').textContent = data.resumen.cantidad_documentos_total;
         document.getElementById('resumenDiasTotal').textContent = data.resumen.dias_promedio_vencimiento_todos;
-        
+
         document.getElementById('resumenNeto').textContent = this.formatCurrency(data.resumen.total_neto, true);
         document.getElementById('resumenCreditos').textContent = this.formatCurrency(data.resumen.total_creditos * -1, true);
 
@@ -1084,30 +1084,30 @@ class CobranzasApp {
         document.getElementById('globalPendingDocsTitle').textContent = 'DOCUMENTOS PENDIENTES (' + data.documentos.length + ')';
         const documentosList = document.getElementById('documentosPendientesList');
         const documentosEmpty = document.getElementById('documentosPendientesEmpty');
-        
+
         if (data.documentos.length === 0) {
             documentosList.innerHTML = '';
             documentosEmpty.classList.remove('hidden');
             return;
         }
-        
+
         documentosEmpty.classList.add('hidden');
-        
+
         documentosList.innerHTML = data.documentos.map(doc => {
             const tipoColor = this.getTipoColor(doc.tipo);
             const tipoAbrev = this.getTipoAbreviacion(doc.tipo);
             const timeAgo = this.getTimeAgo(doc.fecha_emision);
 
-            let diasCredito =  ''; 
-            let diasVencido = ''; 
+            let diasCredito = '';
+            let diasVencido = '';
 
             if (doc.tipo != 'COB') {
                 diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
-                diasCredito = diasCredito != null? diasCredito.toString() + 'd': '';
+                diasCredito = diasCredito != null ? diasCredito.toString() + 'd' : '';
 
                 diasVencido = doc.dias_vencimiento;
-                diasVencido = diasVencido != null? Math.abs(diasVencido).toString() + 'd': '';
-            } 
+                diasVencido = diasVencido != null ? Math.abs(diasVencido).toString() + 'd' : '';
+            }
 
             const isOverdue = doc.esta_vencido;
             //<div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
@@ -1166,15 +1166,15 @@ class CobranzasApp {
         // Display documentos
         const documentosList = document.getElementById('clientDocsPendingList');
         //const documentosEmpty = document.getElementById('documentosPendientesEmpty');
-        
+
         if (data.documentos.length === 0) {
             documentosList.innerHTML = '';
             //documentosEmpty.classList.remove('hidden');
             return;
         }
-        
+
         //documentosEmpty.classList.add('hidden');
-        
+
         documentosList.innerHTML = data.documentos.map(doc => {
             const tipoColor = this.getTipoColor(doc.tipo);
             const tipoAbrev = this.getTipoAbreviacion(doc.tipo);
@@ -1182,7 +1182,7 @@ class CobranzasApp {
             const diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
             const diasVencido = doc.dias_vencimiento;
             const isOverdue = doc.esta_vencido;
-            
+
             return `
                 <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200" onclick="cobranzasApp.viewDocumentoDetail(${doc.empresa}, '${doc.tipo}', ${doc.numero})">
                     <!-- Fila 1: Tipo, Cliente, Tiempo -->
@@ -1233,10 +1233,10 @@ class CobranzasApp {
 
     async searchClientes(searchTerm, filters = null) {
         this.showClientesLoading(true);
-        
+
         try {
             let clientes;
-            
+
             if (this.offlineMode) {
                 clientes = await window.indexedDBService.getClientes();
                 clientes = clientes.map(c => this.clientToDomain(c));
@@ -1296,9 +1296,9 @@ class CobranzasApp {
                     // ordering (offline)
                     if (!filters.orderField) {
                         console.log('No order field set, defaulting to daysSinceLastInvoice');
-                        
+
                         filters.orderField = 'daysSinceLastInvoice';
-                        filters.orderDesc = false;    
+                        filters.orderDesc = false;
                     }
 
                     if (filters.orderField) {
@@ -1365,9 +1365,9 @@ class CobranzasApp {
     displayClientes(clientes) {
         const clientesList = document.getElementById('clientesList');
         const clientesEmpty = document.getElementById('clientesEmpty');
-        
+
         clientesList.innerHTML = '';
-        
+
         if (clientes.length === 0) {
             clientesEmpty.classList.remove('hidden');
         } else {
@@ -1383,7 +1383,7 @@ class CobranzasApp {
         const loadingDiv = document.getElementById('clientesLoading');
         const clientesList = document.getElementById('clientesList');
         const clientesEmpty = document.getElementById('clientesEmpty');
-        
+
         if (show) {
             loadingDiv.classList.remove('hidden');
             clientesList.classList.add('hidden');
@@ -1397,7 +1397,7 @@ class CobranzasApp {
     updateSearchResults(count, searchTerm) {
         const searchResults = document.getElementById('searchResults');
         const searchResultsText = document.getElementById('searchResultsText');
-        
+
         if (searchTerm && searchTerm.length >= 3) {
             searchResults.classList.remove('hidden');
             searchResultsText.textContent = `${count} cliente${count !== 1 ? 's' : ''} encontrado${count !== 1 ? 's' : ''} para "${searchTerm}"`;
@@ -1412,17 +1412,17 @@ class CobranzasApp {
     async startImport() {
         const importBtn = document.getElementById('startImportBtn');
         const progressDiv = document.getElementById('importProgress');
-        
+
         importBtn.disabled = true;
         importBtn.textContent = 'Importando...';
         progressDiv.classList.remove('hidden');
-        
+
         try {
             const user = window.authService.getCurrentUser();
             const result = await window.importService.importFromMSSQL(user);
-            
+
             this.showSuccess(`Importación completada: ${result.clientes_imported} clientes, ${result.documentos_imported} documentos, ${result.renglones_imported} renglones`);
-            await this.updateStorageInfoSync();           
+            await this.updateStorageInfoSync();
         } catch (error) {
             this.showError('Error durante la importación: ' + error.message);
         } finally {
@@ -1441,12 +1441,12 @@ class CobranzasApp {
     async updateStorageInfo() {
         try {
             const info = await window.indexedDBService.getStorageInfo();
-            
+
             document.getElementById('clientesCount').textContent = info.clientes_count;
             document.getElementById('documentosCount').textContent = info.documentos_count;
             document.getElementById('renglonesCount').textContent = info.renglones_count;
             document.getElementById('eventosCount').textContent = info.eventos_count;
-            
+
             if (info.last_sync) {
                 const date = new Date(info.last_sync);
                 document.getElementById('lastSync').textContent = date.toLocaleString();
@@ -1454,7 +1454,7 @@ class CobranzasApp {
                 document.getElementById('lastSync').textContent = 'Nunca';
             }
 
-            if (info.sw_version){ 
+            if (info.sw_version) {
                 document.getElementById('swVersion').textContent = info.sw_version;
             } else {
                 document.getElementById('swVersion').textContent = 'N/A';
@@ -1467,12 +1467,12 @@ class CobranzasApp {
     async updateStorageInfoSync() {
         try {
             const info = await window.indexedDBService.getStorageInfo();
-            
+
             document.getElementById('clientesCount2').textContent = info.clientes_count;
             document.getElementById('documentosCount2').textContent = info.documentos_count;
             document.getElementById('renglonesCount2').textContent = info.renglones_count;
             document.getElementById('eventosCount2').textContent = info.eventos_count;
-            
+
             if (info.last_sync) {
                 const date = new Date(info.last_sync);
                 document.getElementById('lastSync2').textContent = date.toLocaleString();
@@ -1570,9 +1570,9 @@ class CobranzasApp {
     async viewDocumentoDetail(empresa, tipo, documentoId) {
         try {
             this.showDocumentoDetailLoading(true);
-            
+
             let documento;
-            
+
             if (this.offlineMode) {
                 // En modo offline, obtener de IndexedDB (funcionalidad limitada)
                 const documentos = await window.indexedDBService.getDocumentos();
@@ -1580,12 +1580,12 @@ class CobranzasApp {
                 const clientes = await window.indexedDBService.getClientes();
 
                 const clientesDict = clientes.reduce((acc, item) => {
-                        acc[item.co_cli] = item.cli_des.trim(); // trim() para limpiar espacios
-                        return acc;
-                }, {});    
+                    acc[item.co_cli] = item.cli_des.trim(); // trim() para limpiar espacios
+                    return acc;
+                }, {});
 
                 let doc = documentos.find(doc => doc.empresa == empresa && doc.tipo_doc === tipo && doc.nro_doc === documentoId);
-                
+
                 if (doc) {
                     // Simular estructura completa para modo offline
                     // documento = {
@@ -1603,36 +1603,36 @@ class CobranzasApp {
                     let vendedor = await window.indexedDBService.getSellerByCode(doc.co_ven);
                     let vendedor_nombre = 'Vendedor Local'
                     if (vendedor)
-                        vendedor_nombre = vendedor.ven_des; 
+                        vendedor_nombre = vendedor.ven_des;
 
-                    
+
                     let productos = [];
-                    
-                    if ('FACT|DEV'.indexOf(doc.tipo_doc) !== -1){
+
+                    if ('FACT|DEV'.indexOf(doc.tipo_doc) !== -1) {
                         let doc_id = doc.empresa + "-" + doc.tipo_doc + '-' + doc.nro_doc.toString();
                         productos = await window.indexedDBService.getDocLines(doc_id);
                         if (!Array.isArray(productos))
                             productos = [productos];
 
                         productos = productos.map(p => ({
-                            codigo: p.co_art, 
-                            descripcion: p.art_des, 
-                            cantidad: Number(p.total_art), 
+                            codigo: p.co_art,
+                            descripcion: p.art_des,
+                            cantidad: Number(p.total_art),
                             precio_unitario: Number(p.prec_vta),
                             subtotal: Number(p.total)
                         }))
                     }
-                    
+
                     //monto: doc.monto_net,
                     documento = {
-                        cliente_id: doc.co_cli, 
-                        vendedor_id: doc.co_ven, 
-                        fecha_emision: doc.fec_emis, 
-                        fecha_vencimiento: doc.fec_venc, 
+                        cliente_id: doc.co_cli,
+                        vendedor_id: doc.co_ven,
+                        fecha_emision: doc.fec_emis,
+                        fecha_vencimiento: doc.fec_venc,
                         numero: doc.nro_doc,
-                        tipo: doc.tipo_doc, 
-                        saldo: doc.saldo, 
-                        cliente_nombre: clientesDict[doc.co_cli] || 'Cliente: ' + doc.co_cli, 
+                        tipo: doc.tipo_doc,
+                        saldo: doc.saldo,
+                        cliente_nombre: clientesDict[doc.co_cli] || 'Cliente: ' + doc.co_cli,
                         dias_vencimiento: this.calculateDaysOverdue(doc.fec_venc),
                         esta_vencido: new Date(doc.fec_venc) < new Date(),
                         vendedor_nombre,
@@ -1641,35 +1641,35 @@ class CobranzasApp {
                         impuestos: doc.monto_imp,
                         total: doc.monto_net
                     }
-                    
+
                 } else {
-                    this.showError('El documento no está disponible para consultar OffLine!');   
+                    this.showError('El documento no está disponible para consultar OffLine!');
                     return;
                 }
             } else {
                 // Obtener desde API
-                let documentoKey = `${empresa}_${tipo.replace('/','')}_${documentoId}`;
+                let documentoKey = `${empresa}_${tipo.replace('/', '')}_${documentoId}`;
 
                 const response = await fetch(`${this.apiBaseUrl}/cobranzas/detalle/${documentoKey}/`, {
                     headers: window.authService.getAuthHeaders()
                 });
-                
+
                 if (response.status === 401) {
                     window.authService.logout();
                     return;
                 }
-                
+
                 if (response.status === 404) {
                     this.showError('Documento no encontrado');
                     return;
                 }
-                
+
                 documento = await response.json();
             }
-            
+
             this.displayDocumentoDetail(documento);
             this.navigateTo('documento-detalle');
-            
+
         } catch (error) {
             console.error('Error loading documento detail:', error);
             this.showError('Error cargando detalle del documento...' + error.message);
@@ -1694,7 +1694,7 @@ class CobranzasApp {
         const diasDesdeEmision = this.dateDiffInDays(new Date(documento.fecha_emision), new Date());
         const fechaEmisionFormatted = this.formatDateWithDay(new Date(documento.fecha_emision));
         const isOverdue = documento.esta_vencido;
-        
+
         const content = `
             <!-- Encabezado (fondo azul) -->
             <div class="${tipoColor} text-white p-6 rounded-t-lg">
@@ -1744,11 +1744,11 @@ class CobranzasApp {
             </div>
 
             <!-- Sección Productos -->
-            <div class="bg-gray-100 p-4 ${'FACT|DEV'.indexOf(documento.tipo) == -1 ? 'hidden': ''}" id="productsContainer">
+            <div class="bg-gray-100 p-4 ${'FACT|DEV'.indexOf(documento.tipo) == -1 ? 'hidden' : ''}" id="productsContainer">
                 <h3 class="text-sm font-medium text-gray-600 mb-3">PRODUCTOS</h3>
                 <div class="space-y-3">
-                    ${documento.productos && documento.productos.length > 0 
-                        ? documento.productos.map(producto => `
+                    ${documento.productos && documento.productos.length > 0
+                ? documento.productos.map(producto => `
                             <div class="bg-white p-4 rounded">
                                 <div class="flex justify-between items-start">
                                     <div class="flex-1">
@@ -1762,12 +1762,12 @@ class CobranzasApp {
                                 </div>
                             </div>
                         `).join('')
-                        : `
+                : `
                             <div class="bg-white p-4 rounded text-center text-gray-500">
                                 <p>No hay productos disponibles</p>
                             </div>
                         `
-                    }
+            }
                 </div>
             </div>
 
@@ -1817,7 +1817,7 @@ class CobranzasApp {
                 </div>
             </div>
         `;
-        
+
         document.getElementById('documentoDetalleContent').innerHTML = content;
 
         // Floating Share Button for PDF
@@ -1948,7 +1948,7 @@ class CobranzasApp {
                         } else {
                             // Fallback: descargar como HTML
                             const blob = new Blob([printableHtml], { type: 'text/html;charset=utf-8' });
-                            this.legacyDownload(`EstadoCuenta_${(cliente.rif||cliente.id||'cliente')}.html`, blob);
+                            this.legacyDownload(`EstadoCuenta_${(cliente.rif || cliente.id || 'cliente')}.html`, blob);
                             this.showSuccess('Archivo HTML descargado (offline)');
                         }
                     } catch (err) {
@@ -1964,7 +1964,7 @@ class CobranzasApp {
 
     showDocumentoDetailLoading(show) {
         const content = document.getElementById('documentoDetalleContent');
-        
+
         if (show) {
             content.innerHTML = `
                 <div class="text-center py-8">
@@ -1977,18 +1977,18 @@ class CobranzasApp {
 
     parseAmountToMilesK(amount) {
         let addSuffix = false;
-        let result =  (typeof(amount) !== 'string') ? amount: Number(amount);
-        
+        let result = (typeof (amount) !== 'string') ? amount : Number(amount);
+
         if (amount >= 1000) {
             addSuffix = true;
             result = result / 1000;
         }
 
-        if (addSuffix) 
+        if (addSuffix)
             return result.toFixed(0) + 'k';
         else
-            return result.toFixed(0);   
-    } 
+            return result.toFixed(0);
+    }
 
     createClienteCard(cliente) {
         const card = document.createElement('div');
@@ -1998,7 +1998,7 @@ class CobranzasApp {
         let expiredAmountText = this.parseAmountToMilesK(cliente.vencido || 0);
         let totalAmountText = this.parseAmountToMilesK(cliente.total || 0);
         let lastQuarterSalesText = this.parseAmountToMilesK(cliente.ventas_ultimo_trimestre || 0);
-        
+
         card.innerHTML += `
             <div class="flex justify-between items-start">
                 <div class="flex-1">
@@ -2008,8 +2008,8 @@ class CobranzasApp {
                 </div>
                 <div class="flex flex-col items-end space-y-1">
                     <div class="flex space-x-2">
-                        <span class="text-sm ${cliente.vencido ? 'text-red-500' : 'text-gray-500'}">${expiredAmountText !== "0" ? expiredAmountText: " "}</span>
-                        <span class="text-sm text-gray-500">${cliente.dias_ult_fact ?  cliente.dias_ult_fact.toString() + "d" : 'N/A'}</span>
+                        <span class="text-sm ${cliente.vencido ? 'text-red-500' : 'text-gray-500'}">${expiredAmountText !== "0" ? expiredAmountText : " "}</span>
+                        <span class="text-sm text-gray-500">${cliente.dias_ult_fact ? cliente.dias_ult_fact.toString() + "d" : 'N/A'}</span>
                     </div>
                     <div class="flex space-x-2">
                         <span class="text-sm text-gray-500">&nbsp;</span>
@@ -2033,7 +2033,7 @@ class CobranzasApp {
             if (existingFab) existingFab.remove();
 
             const hasKeys = (cliente.rif !== undefined);
-            
+
             if (!this.offlineMode && hasKeys) {
                 const documentoKey = cliente.rif.trim();
                 const fab = document.createElement('button');
@@ -2119,13 +2119,13 @@ class CobranzasApp {
             if (existingFab) existingFab.remove();
 
             //const hasKeys = (cliente.rif !== undefined);
-            
+
             if (!this.offlineMode) {
                 const documentoKey = sellerId.trim();
                 const fab = document.createElement('button');
 
                 //const uuid = uuid.v4();
-                const uuid =  (crypto.randomUUID) ? crypto.randomUUID() : this.generateUUID();
+                const uuid = (crypto.randomUUID) ? crypto.randomUUID() : this.generateUUID();
 
                 fab.id = 'fabSharePdf';
                 fab.type = 'button';
@@ -2280,7 +2280,7 @@ class CobranzasApp {
             const [clienteResponse, resumenResponse, eventsResponse] = await Promise.all([
                 fetch(`${this.apiBaseUrl}/clientes/${clienteId}/`, {
                     headers: window.authService.getAuthHeaders()
-                }),                
+                }),
                 fetch(`${this.apiBaseUrl}/dashboard/client/${clienteId}`, {
                     headers: window.authService.getAuthHeaders()
                 }),
@@ -2324,7 +2324,7 @@ class CobranzasApp {
                 this.openContactsForClient(clienteId, cliente);
                 //this.LoadClientContacts(clienteId);
             };
-            
+
 
             window.scrollTo({ top: 0, behavior: 'auto' });
         } catch (error) {
@@ -2333,7 +2333,7 @@ class CobranzasApp {
         }
     }
 
-    createClienteEventsHTML(docs){
+    createClienteEventsHTML(docs) {
         const detailView = document.getElementById('cliente-detail-view');
         const documentosList = detailView.querySelector('#eventList');
 
@@ -2352,13 +2352,13 @@ class CobranzasApp {
             const tipoAbrev = this.getTipoAbreviacion(doc.tipo);
             const timeAgo = this.getTimeAgo(doc.fecha_emision);
             let diasCredito = null;
-            if (doc.fecha_emision && doc.fecha_vencimiento){
+            if (doc.fecha_emision && doc.fecha_vencimiento) {
                 diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
             }
-                
+
             const diasVencido = doc.dias_vencimiento;
             const isOverdue = doc.esta_vencido;
-            
+
             return `
                 <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200" 
                 onclick="cobranzasApp.viewDocumentoDetail(${doc.empresa}, '${doc.tipo}', ${doc.numero})">
@@ -2392,8 +2392,8 @@ class CobranzasApp {
                     <!-- Fila 3: Fecha vencimiento, Días vencido, Saldo -->
                     <div class="grid grid-cols-5 items-center text-sm">
                         <div class="col-span-2 flex items-center space-x-1">
-                            <span class="text-gray-600">${(doc.fecha_vencimiento) ? "V ": ""} </span>
-                            <span class="text-gray-900">${(doc.fecha_vencimiento) ? this.formatDate(doc.fecha_vencimiento): ""}</span>
+                            <span class="text-gray-600">${(doc.fecha_vencimiento) ? "V " : ""} </span>
+                            <span class="text-gray-900">${(doc.fecha_vencimiento) ? this.formatDate(doc.fecha_vencimiento) : ""}</span>
                         </div>
                         <div class="text-right">
                             <span class="${isOverdue ? 'text-red-500' : 'text-gray-600'} pr-10">${(diasVencido != null && diasVencido != undefined) ? diasVencido : ""}</span>
@@ -2408,7 +2408,7 @@ class CobranzasApp {
         }).join('');
     }
 
-    createClientePendingDocsHTML(docs){
+    createClientePendingDocsHTML(docs) {
 
         const documentosList = document.getElementById('clientDocsPendingList');
 
@@ -2429,7 +2429,7 @@ class CobranzasApp {
             const diasCredito = this.calculateCreditDays(doc.fecha_emision, doc.fecha_vencimiento);
             const diasVencido = doc.dias_vencimiento;
             const isOverdue = doc.esta_vencido;
-            
+
             return `
                 <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
                     <!-- Fila 1: Tipo, Cliente, Tiempo -->
@@ -2473,11 +2473,11 @@ class CobranzasApp {
     }
 
     createClienteDetailHTML(cliente, resumen) {
-        let averageSales =  cliente.ventas_ultimo_trimestre ? Math.round(cliente.ventas_ultimo_trimestre/3,2) : 0; 
+        let averageSales = cliente.ventas_ultimo_trimestre ? Math.round(cliente.ventas_ultimo_trimestre / 3, 2) : 0;
         let averageSalesStr = averageSales.toString();
-        
+
         if (averageSales > 1000)
-            averageSalesStr = (averageSales/1000).toString() + "K"
+            averageSalesStr = (averageSales / 1000).toString() + "K"
 
 
         // flex justify-between items-center mb-2
@@ -2495,7 +2495,7 @@ class CobranzasApp {
                             <span class="font-medium">${cliente.rif2}</span></p>
                         </div>
                         <div class="text-right">
-                            <span class="font-medium">${cliente.vendedor ? cliente.vendedor: "N/A"}</span>
+                            <span class="font-medium">${cliente.vendedor ? cliente.vendedor : "N/A"}</span>
                         </div>
                     </div>
                 </div>
@@ -2506,11 +2506,11 @@ class CobranzasApp {
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Desde última factura</p>
-                            <p class="text-xl font-semibold text-gray-700">${cliente.dias_ult_fact ? cliente.dias_ult_fact.toString() + "d": "N/A"}</p>
+                            <p class="text-xl font-semibold text-gray-700">${cliente.dias_ult_fact ? cliente.dias_ult_fact.toString() + "d" : "N/A"}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Días entre facturas</p>
-                            <p class="text-xl font-semibold text-gray-700">${cliente.dias_promedio_emision ? cliente.dias_promedio_emision.toString() + "d": "N/A"}</p>
+                            <p class="text-xl font-semibold text-gray-700">${cliente.dias_promedio_emision ? cliente.dias_promedio_emision.toString() + "d" : "N/A"}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Factura promedio</p>
@@ -2524,7 +2524,7 @@ class CobranzasApp {
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Vencido</p>
-                            <p class="text-sm font-semibold text-red-500">${this.formatCurrency(resumen.situacion.total_vencido, true) }</p>
+                            <p class="text-sm font-semibold text-red-500">${this.formatCurrency(resumen.situacion.total_vencido, true)}</p>
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Cantidad</p>
@@ -2556,7 +2556,7 @@ class CobranzasApp {
                         </div>
                         <div class="text-center">
                             <p class="text-xs text-gray-500">Créditos</p>
-                            <p class="text-sm font-semibold text-red-500">${this.formatCurrency(Math.abs(resumen.situacion.total_creditos)*-1, true)}</p>
+                            <p class="text-sm font-semibold text-red-500">${this.formatCurrency(Math.abs(resumen.situacion.total_creditos) * -1, true)}</p>
                         </div>
                     </div>
                 </div>
@@ -2597,7 +2597,7 @@ class CobranzasApp {
         `;
     }
 
-    formatCurrency(amount,showSign = false, showDecimal = true) {
+    formatCurrency(amount, showSign = false, showDecimal = true) {
         return new Intl.NumberFormat('es-ES', {
             minimumFractionDigits: showDecimal ? 2 : 0,
             maximumFractionDigits: showDecimal ? 2 : 0,
@@ -2605,7 +2605,7 @@ class CobranzasApp {
         }).format(amount) + (showSign ? ' $' : '');
     }
 
-    createVentasChart(data, formatCurrency) {       
+    createVentasChart(data, formatCurrency) {
         // Verificar si ya existe un gráfico
         if (this.charts.ventas) {
             this.charts.ventas.data.labels = data.map(item => item.mes);
@@ -2645,7 +2645,7 @@ class CobranzasApp {
                             weight: 'bold',
                             size: 12
                         },
-                        formatter: function(value) {
+                        formatter: function (value) {
                             return formatCurrency(value / 1000, false, false) + 'k';
                         }
                     }
@@ -2654,7 +2654,7 @@ class CobranzasApp {
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            callback: function(value) {
+                            callback: function (value) {
                                 return (value / 1000).toFixed(0) + 'k';
                             }
                         }
@@ -2662,7 +2662,7 @@ class CobranzasApp {
                 }
             }
         });
-        
+
         console.log("Gráfico de ventas creado exitosamente");
     }
 
@@ -2699,7 +2699,7 @@ class CobranzasApp {
                 dateString = dateString.split('T')[0];
             }
             const [year, month, day] = dateString.split('-').map(Number);
-        	date = new Date(year, month - 1, day); // mes empieza en 0
+            date = new Date(year, month - 1, day); // mes empieza en 0
         } else {
             date = new Date(dateString);
         }
@@ -2715,11 +2715,11 @@ class CobranzasApp {
                 dateString = dateString.split('T')[0];
             }
             const [year, month, day] = dateString.split('-').map(Number);
-        	date = new Date(year, month - 1, day); // mes empieza en 0
+            date = new Date(year, month - 1, day); // mes empieza en 0
         } else {
             date = new Date(dateString);
         }
-        
+
         return date.toLocaleDateString('es-VE', {
             day: '2-digit',
             month: '2-digit',
@@ -2741,9 +2741,9 @@ class CobranzasApp {
         const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
         notificationDiv.className = `fixed top-4 left-4 right-4 ${bgColor} text-white p-4 rounded-lg shadow-lg z-50`;
         notificationDiv.textContent = message;
-        
+
         document.body.appendChild(notificationDiv);
-        
+
         setTimeout(() => {
             notificationDiv.remove();
         }, 3000);
@@ -2766,13 +2766,13 @@ class CobranzasApp {
         //const addPhoneBtn = document.getElementById('addPhoneBtn');
         //const addEmailBtn = document.getElementById('addEmailBtn');
         //const addAddressBtn = document.getElementById('addAddressBtn');
-        const addLocationBtn = document.getElementById('addLocationBtn'); 
+        const addLocationBtn = document.getElementById('addLocationBtn');
         const editEmailBtns = document.querySelectorAll('#editEmailBtn');
 
         const editLocationBtns = document.querySelectorAll('#editLocationBtn');
         const deleteLocationBtns = document.querySelectorAll('#deleteLocationBtn');
 
-       // const deleteEmailBtns = document.querySelectorAll('#deleteEmailBtn');
+        // const deleteEmailBtns = document.querySelectorAll('#deleteEmailBtn');
         // const editAddressBtns = document.querySelectorAll('#editAddressBtn');
         // const deleteAddressBtns = document.querySelectorAll('#deleteAddressBtn');
 
@@ -2817,7 +2817,7 @@ class CobranzasApp {
         //addLocationBtn.classList.toggle('hidden');
     }
 
-    async addPhone(contactId, clientId){
+    async addPhone(contactId, clientId) {
         console.log(`Adding phone for client with ID: ${clientId}`);
         //this.showSuccess(`Adding phone for client with ID: ${clientId} clicked FUNCION EN DESARROLLO`);
 
@@ -2843,7 +2843,7 @@ class CobranzasApp {
                     const response = await fetch(`${this.apiBaseUrl}/contactos/tlf/add/`, {
                         method: 'POST',
                         headers: window.authService.getAuthHeaders(),
-                        body: JSON.stringify({ client_id: clientId, contact_id: contactId, phone: newValue, phone_type: phoneType  })
+                        body: JSON.stringify({ client_id: clientId, contact_id: contactId, phone: newValue, phone_type: phoneType })
                     });
 
                     const data = await response.json();
@@ -2854,7 +2854,7 @@ class CobranzasApp {
                     }
                 }
             } catch (err) {
-                debugger; 
+                debugger;
                 console.error('Error updating phone:', err);
                 this.showError('No fue posible actualizar el telefono');
             }
@@ -2864,7 +2864,7 @@ class CobranzasApp {
         };
     }
 
-    async addEmail(contactId, clientId){
+    async addEmail(contactId, clientId) {
         console.log(`Adding email for client with ID: ${clientId}`);
         //this.showSuccess(`Adding email for client with ID: ${clientId} clicked FUNCION EN DESARROLLO`);
 
@@ -2890,7 +2890,7 @@ class CobranzasApp {
                     const response = await fetch(`${this.apiBaseUrl}/contactos/mail/add/`, {
                         method: 'POST',
                         headers: window.authService.getAuthHeaders(),
-                        body: JSON.stringify({ client_id: clientId, contact_id: contactId, email: newValue, mail_type: mailType  })
+                        body: JSON.stringify({ client_id: clientId, contact_id: contactId, email: newValue, mail_type: mailType })
                     });
 
                     const data = await response.json();
@@ -2901,7 +2901,7 @@ class CobranzasApp {
                     }
                 }
             } catch (err) {
-                debugger; 
+                debugger;
                 console.error('Error adding email:', err);
                 this.showError('No fue posible agregar el correo');
             }
@@ -2981,7 +2981,7 @@ class CobranzasApp {
             modalIsOpen = true;
 
             // Centrar en ubicación actual o por defecto
-            let center = []; 
+            let center = [];
 
             if (currentLat && currentLng) {
                 center = [currentLat, currentLng];
@@ -3086,7 +3086,7 @@ class CobranzasApp {
                         return;
                     }
 
-                    if (locationId == -1){
+                    if (locationId == -1) {
                         const newObj = await resp.json();
                         if (newObj) locationId = newObj.id;
                     }
@@ -3134,15 +3134,15 @@ class CobranzasApp {
         }
     }
 
-    async editLocation(contactId, clientId, locationId, latitude, longitude){
-        debugger; 
+    async editLocation(contactId, clientId, locationId, latitude, longitude) {
+        debugger;
         console.log(`Editing location with ID: ${locationId}`);
         return this.addLocation(contactId, clientId, locationId, latitude, longitude);
     }
 
-    async deleteLocation(locationId){
+    async deleteLocation(locationId) {
         if (!confirm('¿Está seguro de que eliminar la Geo-localización?')) {
-            return 
+            return
         }
 
         try {
@@ -3159,9 +3159,9 @@ class CobranzasApp {
             }
 
             this.showSuccess(`Se borro la geo-localización seleccionada exitosamente!`);
-        
+
         } catch (err) {
-            debugger; 
+            debugger;
             console.error('Error updating location:', err);
             this.showError('No fue posible actualizar la geo-localización');
         }
@@ -3196,7 +3196,7 @@ class CobranzasApp {
                     const response = await fetch(`${this.apiBaseUrl}/contactos/tlf/${phoneId}/`, {
                         method: 'POST',
                         headers: window.authService.getAuthHeaders(),
-                        body: JSON.stringify({ client_id: clientId, phone: newValue, phone_type: phoneType  })
+                        body: JSON.stringify({ client_id: clientId, phone: newValue, phone_type: phoneType })
                     });
 
                     const data = await response.json();
@@ -3213,7 +3213,7 @@ class CobranzasApp {
                     //this.showSuccess(`Updating phone with ID: ${phoneId} to: ${newValue} clicked FUNCION EN DESARROLLO`);
                 }
             } catch (err) {
-                debugger; 
+                debugger;
                 console.error('Error updating phone:', err);
                 this.showError('No fue posible actualizar el telefono');
             }
@@ -3229,7 +3229,7 @@ class CobranzasApp {
         this.showSuccess(`Deleting phone with ID: ${phoneId} clicked`);
     }
 
-    async editAddress(addressId, currentValue = {}){
+    async editAddress(addressId, currentValue = {}) {
         console.log(`Editing address with ID: ${addressId}`);
         //this.showSuccess(`Editing address with ID: ${addressId} clicked FUNCION EN DESARROLLO`);
 
@@ -3250,7 +3250,7 @@ class CobranzasApp {
     }
 
 
-    async editEmail(clientId, mailId, currentValue = '', currentMailType = ''){
+    async editEmail(clientId, mailId, currentValue = '', currentMailType = '') {
         console.log(`Editing mail with ID: ${mailId}`);
         //this.showSuccess(`Editing mail with ID: ${mailId} clicked FUNCION EN DESARROLLO`);
 
@@ -3282,7 +3282,7 @@ class CobranzasApp {
                     const response = await fetch(`${this.apiBaseUrl}/contactos/mail/${mailId}/`, {
                         method: 'POST',
                         headers: window.authService.getAuthHeaders(),
-                        body: JSON.stringify({ email: newValue, mail_type: mailType, client_id: clientId  })
+                        body: JSON.stringify({ email: newValue, mail_type: mailType, client_id: clientId })
                     });
 
                     const data = await response.json();
@@ -3298,7 +3298,7 @@ class CobranzasApp {
                     //this.showSuccess(`Updating mail with ID: ${mailId} to: ${newValue} clicked FUNCION EN DESARROLLO`);
                 }
             } catch (err) {
-                debugger; 
+                debugger;
                 console.error('Error updating Email:', err);
                 this.showError('No fue posible actualizar el Email');
             }
@@ -3308,17 +3308,17 @@ class CobranzasApp {
         };
     }
 
-    async deleteMail(mailId){
+    async deleteMail(mailId) {
         console.log(`Deleting mail with ID: ${mailId}`);
         this.showSuccess(`Deleting mail with ID: ${mailId} clicked`);
     }
 
-    async editAddress(addressId){
+    async editAddress(addressId) {
         console.log(`Editing address with ID: ${addressId}`);
         this.showSuccess(`Editing address with ID: ${addressId} clicked FUNCION EN DESARROLLO`);
     }
 
-    async deleteAddress(addressId){
+    async deleteAddress(addressId) {
         console.log(`Deleting address with ID: ${addressId}`);
         this.showSuccess(`Deleting address with ID: ${addressId} clicked`);
     }
@@ -3400,7 +3400,7 @@ class CobranzasApp {
             }).join('')
             : '<p class="text-gray-500 text-sm">No hay direcciones registradas</p>';
 
-        const locationHTML = contact.location
+        const locationHTML = contact && contact.location
             ? `
                 <div class="flex items-center py-2 border-b border-gray-100 last:border-b-0">
                     <div class="text-gray-800">📍${contact.location.latitude}, ${contact.location.longitude}</div>
@@ -3499,7 +3499,7 @@ class CobranzasApp {
             </div>`;
     }
 
-    renderPhoneHTML(phone, clientId){
+    renderPhoneHTML(phone, clientId) {
         const phoneTypeLabel = {
             work: 'Trabajo',
             mobile: 'Móvil',
@@ -3509,7 +3509,7 @@ class CobranzasApp {
             other: 'Otro'
         };
 
-        return  `
+        return `
             <div id="phone-${phone.id}" class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                 <span class="text-gray-800">📞${phone.phone}</span>
                 <div class="flex items-center gap-3">
@@ -3524,7 +3524,7 @@ class CobranzasApp {
             </div>`;
     }
 
-    renderMailHTML(email, clientId){
+    renderMailHTML(email, clientId) {
         const mailTypeLabel = {
             work: 'Trabajo',
             personal: 'Personal',
@@ -3543,7 +3543,7 @@ class CobranzasApp {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>   
                 </div>
-            </div>`;            
+            </div>`;
     }
 
     // renderLocationHtml(location, clientId){

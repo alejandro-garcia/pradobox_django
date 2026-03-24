@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cobranzas-app-v27';
+const CACHE_NAME = 'cobranzas-app-v28';
 const urlsToCache = [
     '/',
     '/static/js/app.js',
@@ -41,13 +41,13 @@ self.addEventListener('activate', (event) => {
 });
 
 // Fetch event → primero busca en caché, si no existe lo trae de la red 
-self.addEventListener('fetch', (event) => 
-    { event.respondWith(caches.match(event.request)
-                        .then((response) => { 
-                                return response || fetch(event.request); 
-                            }) 
-                        ); 
-    });
+self.addEventListener('fetch', (event) => {
+    event.respondWith(caches.match(event.request)
+        .then((response) => {
+            return response || fetch(event.request);
+        })
+    );
+});
 
 
 self.addEventListener('message', (event) => {
